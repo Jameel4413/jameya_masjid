@@ -183,8 +183,8 @@ else:
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Session Security (Signed cookies for Serverless compatibility on Vercel)
-SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+# Session & Security Settings (Serverless & Proxy Compatibility)
+SESSION_ENGINE = 'django.contrib.sessions.backends.db' if DATABASE_URL else 'django.contrib.sessions.backends.signed_cookies'
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_AGE = 86400  # 24 Hours
 SESSION_SAVE_EVERY_REQUEST = True
@@ -192,7 +192,10 @@ SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
 
-# Security Headers & SSL in Production
+# Proxy & SSL Header configuration for Vercel / Cloud Hosts
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
@@ -202,12 +205,16 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.onrender.com',
     'https://*.koyeb.app',
     'http://*.vercel.app',
+    'http://127.0.0.1',
+    'http://localhost',
 ]
 
-if not DEBUG:
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False').lower() in ('true', '1', 'yes')
-    SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() in ('true', '1', 'yes')
-    CSRF_COOKIE_SECURE = os.environ.get('CSRF_COOKIE_SECURE', 'False').lower() in ('true', '1', 'yes')
+# Set secure cookies on HTTPS/production environments
+if IS_VERCEL or not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+else:
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
 
 
