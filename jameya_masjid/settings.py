@@ -95,14 +95,22 @@ IS_VERCEL = 'VERCEL' in os.environ
 SQLITE_DB_PATH = Path('/tmp/db.sqlite3') if IS_VERCEL else BASE_DIR / 'db.sqlite3'
 
 if dj_database_url and DATABASE_URL:
-    DATABASES = {
-        'default': dj_database_url.config(
+    try:
+        db_config = dj_database_url.config(
             default=DATABASE_URL,
-            conn_max_age=600,
-            conn_health_checks=True,
+            conn_max_age=0 if IS_VERCEL else 600,
+            conn_health_checks=False if IS_VERCEL else True,
             ssl_require=True if ('supabase' in DATABASE_URL or 'postgres' in DATABASE_URL or 'neon' in DATABASE_URL or 'render' in DATABASE_URL) else False,
         )
-    }
+        DATABASES = {'default': db_config}
+    except Exception as e:
+        print("DATABASE_URL parse warning:", e)
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': SQLITE_DB_PATH,
+            }
+        }
 else:
     DATABASES = {
         'default': {
