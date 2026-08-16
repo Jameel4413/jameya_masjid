@@ -33,7 +33,7 @@
 <div class="card-pro fade-in">
     <div class="card-pro-body-flush">
         <div class="table-responsive">
-            <table class="table-pro">
+            <table class="table-pro table-mobile-card">
                 <thead>
                     <tr>
                         <th>{{ T.date }}</th>
@@ -46,16 +46,16 @@
                 <tbody>
                     {% for expense in expenses %}
                     <tr>
-                        <td><strong>{{ expense.date|date:"d M, Y" }}</strong></td>
-                        <td><span class="badge-pro badge-pro-danger">{{ expense.get_category_display }}</span></td>
-                        <td>{{ expense.description }}</td>
-                        <td class="text-end amount-negative">- RS {{ expense.amount|floatformat:0 }}</td>
-                        <td>
-                            <div class="table-actions">
-                                <button class="btn-pro btn-pro-ghost btn-icon" data-bs-toggle="modal" data-bs-target="#editExpenseModal{{ expense.id }}">
+                        <td data-label="{{ T.date }}"><strong>{{ expense.date|date:"d M, Y" }}</strong></td>
+                        <td data-label="{{ T.category }}"><span class="badge-pro badge-pro-danger">{{ expense.get_category_display }}</span></td>
+                        <td data-label="{{ T.detail }}">{{ expense.description }}</td>
+                        <td data-label="{{ T.amount }}" class="text-end amount-negative">- RS {{ expense.amount|floatformat:0 }}</td>
+                        <td data-label="{{ T.actions }}">
+                            <div class="table-actions ms-auto">
+                                <button class="btn-pro btn-pro-ghost btn-icon" data-bs-toggle="modal" data-bs-target="#editExpenseModal{{ expense.id }}" title="Edit">
                                     <i class="fa-solid fa-pen text-primary-pro"></i>
                                 </button>
-                                <button class="btn-pro btn-pro-ghost btn-icon" data-bs-toggle="modal" data-bs-target="#deleteExpenseModal{{ expense.id }}">
+                                <button class="btn-pro btn-pro-ghost btn-icon" data-bs-toggle="modal" data-bs-target="#deleteExpenseModal{{ expense.id }}" title="Delete">
                                     <i class="fa-solid fa-trash text-danger-pro"></i>
                                 </button>
                             </div>

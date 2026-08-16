@@ -21,7 +21,7 @@
 <div class="card-pro fade-in mb-4">
     <div class="card-pro-body p-0">
         <div class="table-responsive">
-            <table class="table-pro">
+            <table class="table-pro table-mobile-card">
                 <thead>
                     <tr>
                         <th>{{ T.date }}</th>
@@ -36,20 +36,20 @@
                 <tbody>
                     {% for collection in eid_collections %}
                     <tr>
-                        <td>{{ collection.date|date:"d M, Y" }}</td>
-                        <td class="fw-semibold text-dark">{{ collection.get_eid_name_display }}</td>
-                        <td>{{ collection.imam_name }}</td>
-                        <td>
+                        <td data-label="{{ T.date }}">{{ collection.date|date:"d M, Y" }}</td>
+                        <td data-label="{{ T.eid_name }}" class="fw-semibold text-dark">{{ collection.get_eid_name_display }}</td>
+                        <td data-label="{{ T.imam_name }}">{{ collection.imam_name }}</td>
+                        <td data-label="{{ T.imam_type }}">
                             {% if collection.imam_type == 'RESIDENT' %}
                                 <span class="badge-pro badge-pro-primary">{{ T.resident_imam }}</span>
                             {% else %}
                                 <span class="badge-pro badge-pro-info">{{ T.guest_imam }}</span>
                             {% endif %}
                         </td>
-                        <td class="text-muted">{{ collection.notes|default:"—" }}</td>
-                        <td class="text-end fw-bold text-success">+ RS {{ collection.amount_collected|floatformat:0 }}</td>
-                        <td>
-                            <div class="table-actions">
+                        <td data-label="{{ T.notes }}" class="text-muted">{{ collection.notes|default:"—" }}</td>
+                        <td data-label="{{ T.amount_collected }}" class="text-end fw-bold text-success">+ RS {{ collection.amount_collected|floatformat:0 }}</td>
+                        <td data-label="{{ T.actions }}">
+                            <div class="table-actions ms-auto">
                                 <button class="btn-pro btn-pro-ghost btn-icon" data-bs-toggle="modal" data-bs-target="#editEidModal{{ collection.id }}" title="Edit">
                                     <i class="fa-solid fa-pen text-primary-pro"></i>
                                 </button>

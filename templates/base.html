@@ -97,17 +97,17 @@
     <!-- Main Content -->
     <div id="main-wrapper">
         <header class="top-navbar d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-3">
-                <button class="btn-pro btn-pro-outline btn-icon d-lg-none" id="sidebarToggle" aria-label="Toggle menu">
+            <div class="d-flex align-items-center gap-2 gap-sm-3 overflow-hidden">
+                <button class="btn-pro btn-pro-outline btn-icon d-lg-none flex-shrink-0" id="sidebarToggle" aria-label="Toggle menu">
                     <i class="fa-solid fa-bars"></i>
                 </button>
-                <div class="page-title-block">
-                    <h5>{% block page_title %}{{ T.dashboard }}{% endblock %}</h5>
-                    <small>{% block page_subtitle %}{{ T.masjid_financial_management }}{% endblock %}</small>
+                <div class="page-title-block text-truncate">
+                    <h5 class="text-truncate">{% block page_title %}{{ T.dashboard }}{% endblock %}</h5>
+                    <small class="d-none d-sm-block text-truncate">{% block page_subtitle %}{{ T.masjid_financial_management }}{% endblock %}</small>
                 </div>
             </div>
 
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 flex-shrink-0">
                 {% if LANG == 'en' %}
                     <a href="{% url 'set_language' %}?lang=ur" class="btn-pro btn-pro-outline-secondary btn-pro-sm fw-bold">
                         اردو
@@ -117,10 +117,11 @@
                         English
                     </a>
                 {% endif %}
-                <button type="button" class="btn-pro btn-pro-outline-primary btn-pro-sm d-none d-md-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#exportPdfModal">
-                    <i class="fa-solid fa-file-pdf"></i> {{ T.pdf_report }}
+                <button type="button" class="btn-pro btn-pro-outline-primary btn-pro-sm d-inline-flex align-items-center gap-1 gap-sm-2" data-bs-toggle="modal" data-bs-target="#exportPdfModal" title="{{ T.pdf_report }}">
+                    <i class="fa-solid fa-file-pdf text-danger"></i>
+                    <span class="d-none d-sm-inline">{{ T.pdf_report }}</span>
                 </button>
-                <a href="{% url 'admin:logout' %}" class="btn-pro btn-pro-outline-danger btn-pro-sm">
+                <a href="{% url 'admin:logout' %}" class="btn-pro btn-pro-outline-danger btn-pro-sm" title="{{ T.logout }}">
                     <i class="fa-solid fa-right-from-bracket"></i>
                     <span class="d-none d-sm-inline">{{ T.logout }}</span>
                 </a>
@@ -153,6 +154,42 @@
             {{ T.masjid_management_footer }} &copy; {% now "Y" %}
         </footer>
     </div>
+
+    <!-- Mobile Fixed Bottom Navigation Bar -->
+    <nav class="mobile-bottom-nav">
+        <ul class="mobile-bottom-nav-items">
+            <li class="mobile-bottom-nav-item">
+                <a href="{% url 'dashboard' %}" class="mobile-bottom-nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>{{ T.dashboard }}</span>
+                </a>
+            </li>
+            <li class="mobile-bottom-nav-item">
+                <a href="{% url 'weekly_income' %}" class="mobile-bottom-nav-link {% if request.resolver_match.url_name == 'weekly_income' %}active{% endif %}">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                    <span>Chanda</span>
+                </a>
+            </li>
+            <li class="mobile-bottom-nav-item">
+                <a href="{% url 'expenses' %}" class="mobile-bottom-nav-link {% if request.resolver_match.url_name == 'expenses' %}active{% endif %}">
+                    <i class="fa-solid fa-receipt"></i>
+                    <span>Kharcha</span>
+                </a>
+            </li>
+            <li class="mobile-bottom-nav-item">
+                <a href="{% url 'imam_salary' %}" class="mobile-bottom-nav-link {% if request.resolver_match.url_name == 'imam_salary' %}active{% endif %}">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>Imam</span>
+                </a>
+            </li>
+            <li class="mobile-bottom-nav-item">
+                <a href="javascript:void(0)" class="mobile-bottom-nav-link" id="mobileMenuMoreBtn">
+                    <i class="fa-solid fa-bars"></i>
+                    <span>Menu</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
 
     <!-- PDF Export Modal -->
     <div class="modal fade" id="exportPdfModal" tabindex="-1" aria-labelledby="exportPdfModalLabel" aria-hidden="true">

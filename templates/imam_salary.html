@@ -140,7 +140,7 @@
 
                 <h6 class="fw-bold text-secondary mb-2" style="font-size: 0.85rem;"><i class="fa-solid fa-list-check me-1"></i>{{ T.installments_history }}</h6>
                 <div class="table-responsive">
-                    <table class="table-pro">
+                    <table class="table-pro table-mobile-card">
                         <thead>
                             <tr>
                                 <th>{{ T.date_and_day }}</th>
@@ -152,13 +152,13 @@
                         <tbody>
                             {% for inst in salary.installments.all %}
                             <tr>
-                                <td>
+                                <td data-label="{{ T.date_and_day }}">
                                     <small class="text-dark fw-semibold d-block">{{ inst.payment_date|date:"D, d M Y" }}</small>
                                 </td>
-                                <td class="text-muted"><small>{{ inst.notes|default:"Installment" }}</small></td>
-                                <td class="text-end amount-positive">RS {{ inst.amount_paid|floatformat:0 }}</td>
-                                <td class="text-center">
-                                    <div class="table-actions">
+                                <td data-label="{{ T.notes }}" class="text-muted"><small>{{ inst.notes|default:"Installment" }}</small></td>
+                                <td data-label="{{ T.amount }}" class="text-end amount-positive">RS {{ inst.amount_paid|floatformat:0 }}</td>
+                                <td data-label="{{ T.actions }}" class="text-center">
+                                    <div class="table-actions ms-auto">
                                         <button class="btn-pro btn-pro-ghost btn-icon" style="width:28px;height:28px;" data-bs-toggle="modal" data-bs-target="#editInstallmentModal{{ inst.id }}" title="Edit">
                                             <i class="fa-solid fa-pen text-primary-pro" style="font-size:0.75rem;"></i>
                                         </button>

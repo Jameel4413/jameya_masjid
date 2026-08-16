@@ -43,7 +43,7 @@
 
         {% block extra_filters %}{% endblock %}
     </div>
-    <button type="submit" class="btn-pro btn-pro-outline btn-pro-sm">
-        <i class="fa-solid fa-magnifying-glass"></i> Apply
+    <button type="submit" class="btn-pro btn-pro-primary btn-pro-sm flex-shrink-0">
+        <i class="fa-solid fa-magnifying-glass"></i> {{ T.apply|default:"Apply" }}
     </button>
 </form>

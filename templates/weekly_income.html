@@ -22,7 +22,7 @@
 <div class="card-pro fade-in">
     <div class="card-pro-body-flush">
         <div class="table-responsive">
-            <table class="table-pro">
+            <table class="table-pro table-mobile-card">
                 <thead>
                     <tr>
                         <th>{{ T.date }}</th>
@@ -35,8 +35,8 @@
                 <tbody>
                     {% for income in incomes %}
                     <tr>
-                        <td><strong>{{ income.date|date:"d M, Y" }}</strong></td>
-                        <td>
+                        <td data-label="{{ T.date }}"><strong>{{ income.date|date:"d M, Y" }}</strong></td>
+                        <td data-label="{{ T.chanda_type }}">
                             {% if income.day_type == 'FRIDAY' %}
                                 <span class="badge-pro badge-pro-success"><i class="fa-solid fa-star"></i> {{ income.get_day_type_display }}</span>
                             {% elif income.day_type == 'THURSDAY' %}
@@ -45,10 +45,10 @@
                                 <span class="badge-pro badge-pro-warning"><i class="fa-solid fa-hand-holding-heart"></i> {{ income.get_day_type_display }}</span>
                             {% endif %}
                         </td>
-                        <td class="text-muted">{{ income.notes|default:"—" }}</td>
-                        <td class="text-end amount-positive">+ RS {{ income.amount|floatformat:0 }}</td>
-                        <td>
-                            <div class="table-actions">
+                        <td data-label="{{ T.details_note }}" class="text-muted">{{ income.notes|default:"—" }}</td>
+                        <td data-label="{{ T.amount }}" class="text-end amount-positive">+ RS {{ income.amount|floatformat:0 }}</td>
+                        <td data-label="{{ T.actions }}">
+                            <div class="table-actions ms-auto">
                                 <button class="btn-pro btn-pro-ghost btn-icon" data-bs-toggle="modal" data-bs-target="#editIncomeModal{{ income.id }}" title="Edit">
                                     <i class="fa-solid fa-pen text-primary-pro"></i>
                                 </button>

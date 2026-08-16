@@ -7,6 +7,7 @@
     /* ---- Sidebar (mobile) ---- */
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
+    const mobileMenuMoreBtn = document.getElementById('mobileMenuMoreBtn');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
 
     function closeSidebar() {
@@ -21,13 +22,16 @@
         document.body.style.overflow = 'hidden';
     }
 
-    sidebarToggle?.addEventListener('click', () => {
+    function toggleSidebar() {
         if (sidebar?.classList.contains('active')) {
             closeSidebar();
         } else {
             openSidebar();
         }
-    });
+    }
+
+    sidebarToggle?.addEventListener('click', toggleSidebar);
+    mobileMenuMoreBtn?.addEventListener('click', toggleSidebar);
 
     sidebarOverlay?.addEventListener('click', closeSidebar);
 

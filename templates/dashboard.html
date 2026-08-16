@@ -1,16 +1,16 @@
 {% extends 'base.html' %}
 
-{% block page_title %}Financial Dashboard{% endblock %}
+{% block page_title %}{{ T.dashboard }}{% endblock %}
 {% block page_subtitle %}Khazane ka mukammal overview{% endblock %}
 
 {% block content %}
 
-<!-- Period Filter -->
-<div class="filter-bar mb-4 fade-in">
+<!-- Period Filter Bar -->
+<div class="filter-bar mb-3 mb-md-4 fade-in">
     <div class="filter-bar-label">
-        <i class="fa-solid fa-calendar-days"></i> {{ T.period_filter }}
+        <i class="fa-solid fa-calendar-days"></i> <span>{{ T.period_filter }}</span>
     </div>
-    <form method="GET" action="{% url 'dashboard' %}" class="filter-bar-fields" style="flex:1;display:flex;gap:0.5rem;flex-wrap:wrap;">
+    <form method="GET" action="{% url 'dashboard' %}" class="filter-bar-fields w-100">
         <select name="month" class="form-select-pro form-select-enhanced">
             <option value="">{{ T.all_months }}</option>
             {% for num, name in months_list %}
@@ -22,7 +22,7 @@
             <option value="{{ y }}" {% if selected_year|stringformat:"s" == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
             {% endfor %}
         </select>
-        <button type="submit" class="btn-pro btn-pro-outline btn-pro-sm">
+        <button type="submit" class="btn-pro btn-pro-primary btn-pro-sm flex-shrink-0">
             <i class="fa-solid fa-magnifying-glass"></i> {{ T.apply }}
         </button>
     </form>
@@ -31,45 +31,57 @@
 <!-- Hero Balance + Period Stats -->
 <div class="row g-3 mb-4 fade-in">
     <div class="col-12 col-lg-5">
-        <div class="stat-card stat-card-success h-100">
-            <i class="fa-solid fa-vault stat-card-icon"></i>
-            <div class="stat-card-label">{{ T.total_balance_in_hand }}</div>
-            <p class="stat-card-value">RS {{ total_balance_in_hand|floatformat:0 }}</p>
-            <small style="opacity:0.7;font-size:0.78rem;">
-                <i class="fa-solid fa-infinity me-1"></i>{{ T.cash_in_hand }}
-            </small>
+        <div class="stat-card stat-card-success h-100 d-flex flex-column justify-content-between p-3 p-sm-4">
+            <div>
+                <i class="fa-solid fa-vault stat-card-icon"></i>
+                <div class="stat-card-label">{{ T.total_balance_in_hand }}</div>
+                <h2 class="stat-card-value text-white fw-bold my-2" style="font-size: clamp(1.6rem, 5vw, 2.2rem);">
+                    RS {{ total_balance_in_hand|floatformat:0 }}
+                </h2>
+            </div>
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top border-white-20">
+                <small class="text-white-80" style="font-size: 0.8rem;">
+                    <i class="fa-solid fa-shield-halved me-1"></i>{{ T.cash_in_hand }}
+                </small>
+                <span class="badge bg-white text-dark fw-bold rounded-pill px-3 py-1" style="font-size: 0.72rem;">Active</span>
+            </div>
         </div>
     </div>
+    
     <div class="col-12 col-lg-7">
-        <div class="row g-3 h-100">
+        <div class="row g-2 g-sm-3 h-100">
             <div class="col-6">
-                <div class="stat-card stat-card-neutral h-100">
-                    <i class="fa-solid fa-arrow-trend-up stat-card-icon" style="color:var(--success);opacity:0.15;"></i>
-                    <div class="stat-card-label" style="color:var(--text-muted);">{{ period_label }} {{ T.period_income }}</div>
-                    <p class="stat-card-value text-success-pro" style="font-size:1.4rem;">RS {{ grand_total_income|floatformat:0 }}</p>
+                <div class="stat-card stat-card-neutral h-100 p-3">
+                    <i class="fa-solid fa-arrow-trend-up stat-card-icon text-success"></i>
+                    <div class="stat-card-label text-muted">{{ period_label }} {{ T.period_income }}</div>
+                    <p class="stat-card-value text-success-pro mb-0 fw-bold" style="font-size: clamp(1.1rem, 4vw, 1.5rem);">
+                        + RS {{ grand_total_income|floatformat:0 }}
+                    </p>
                 </div>
             </div>
             <div class="col-6">
-                <div class="stat-card stat-card-neutral h-100">
-                    <i class="fa-solid fa-arrow-trend-down stat-card-icon" style="color:var(--danger);opacity:0.15;"></i>
-                    <div class="stat-card-label" style="color:var(--text-muted);">{{ period_label }} {{ T.period_expense }}</div>
-                    <p class="stat-card-value text-danger-pro" style="font-size:1.4rem;">RS {{ grand_total_expense|floatformat:0 }}</p>
+                <div class="stat-card stat-card-neutral h-100 p-3">
+                    <i class="fa-solid fa-arrow-trend-down stat-card-icon text-danger"></i>
+                    <div class="stat-card-label text-muted">{{ period_label }} {{ T.period_expense }}</div>
+                    <p class="stat-card-value text-danger-pro mb-0 fw-bold" style="font-size: clamp(1.1rem, 4vw, 1.5rem);">
+                        - RS {{ grand_total_expense|floatformat:0 }}
+                    </p>
                 </div>
             </div>
             <div class="col-12">
-                <div class="stat-card stat-card-info h-100" style="padding:1rem 1.25rem;">
-                    <div class="d-flex justify-content-between align-items-center">
+                <div class="stat-card stat-card-info h-100 p-3">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <div>
                             <div class="stat-card-label">{{ T.net_balance }}</div>
-                            <p class="stat-card-value mb-0" style="font-size:1.25rem;">
+                            <h4 class="stat-card-value mb-0 fw-bold" style="font-size: clamp(1.2rem, 4vw, 1.6rem);">
                                 {% if period_net >= 0 %}
                                     <span class="text-success-pro">+ RS {{ period_net|floatformat:0 }}</span>
                                 {% else %}
                                     <span class="text-danger-pro">- RS {{ period_net|floatformat:0|cut:"-" }}</span>
                                 {% endif %}
-                            </p>
+                            </h4>
                         </div>
-                        <button type="button" class="btn-pro btn-pro-outline-primary btn-pro-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#exportPdfModal">
+                        <button type="button" class="btn-pro btn-pro-primary btn-pro-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#exportPdfModal">
                             <i class="fa-solid fa-file-pdf"></i> {{ T.period_pdf }}
                         </button>
                     </div>
@@ -79,38 +91,50 @@
     </div>
 </div>
 
-<!-- Quick Links -->
-<div class="row g-3 mb-4 fade-in">
+<!-- Quick Action Touch Cards Grid -->
+<div class="row g-2 g-sm-3 mb-4 fade-in">
     <div class="col-6 col-md-3">
-        <a href="{% url 'weekly_income' %}" class="card-pro text-decoration-none d-block p-3 text-center">
-            <i class="fa-solid fa-hand-holding-dollar fa-lg text-success-pro mb-2 d-block"></i>
-            <small class="fw-bold text-dark">Chanda Add</small>
+        <a href="{% url 'weekly_income' %}" class="card-pro text-decoration-none d-block p-3 text-center h-100 transition-all hover-lift">
+            <div class="mx-auto mb-2 d-flex align-items-center justify-content-center rounded-circle bg-success-subtle" style="width: 44px; height: 44px;">
+                <i class="fa-solid fa-hand-holding-dollar fs-5 text-success"></i>
+            </div>
+            <strong class="d-block text-dark" style="font-size: 0.88rem;">Chanda Add</strong>
+            <small class="text-muted" style="font-size: 0.72rem;">Weekly Collection</small>
         </a>
     </div>
     <div class="col-6 col-md-3">
-        <a href="{% url 'expenses' %}" class="card-pro text-decoration-none d-block p-3 text-center">
-            <i class="fa-solid fa-receipt fa-lg text-danger-pro mb-2 d-block"></i>
-            <small class="fw-bold text-dark">Kharcha Add</small>
+        <a href="{% url 'expenses' %}" class="card-pro text-decoration-none d-block p-3 text-center h-100 transition-all hover-lift">
+            <div class="mx-auto mb-2 d-flex align-items-center justify-content-center rounded-circle bg-danger-subtle" style="width: 44px; height: 44px;">
+                <i class="fa-solid fa-receipt fs-5 text-danger"></i>
+            </div>
+            <strong class="d-block text-dark" style="font-size: 0.88rem;">Kharcha Add</strong>
+            <small class="text-muted" style="font-size: 0.72rem;">Masjid Expenses</small>
         </a>
     </div>
     <div class="col-6 col-md-3">
-        <a href="{% url 'imam_salary' %}" class="card-pro text-decoration-none d-block p-3 text-center">
-            <i class="fa-solid fa-user-tie fa-lg text-primary-pro mb-2 d-block"></i>
-            <small class="fw-bold text-dark">Imam Salary</small>
+        <a href="{% url 'imam_salary' %}" class="card-pro text-decoration-none d-block p-3 text-center h-100 transition-all hover-lift">
+            <div class="mx-auto mb-2 d-flex align-items-center justify-content-center rounded-circle bg-primary-subtle" style="width: 44px; height: 44px;">
+                <i class="fa-solid fa-user-tie fs-5 text-primary"></i>
+            </div>
+            <strong class="d-block text-dark" style="font-size: 0.88rem;">Imam Salary</strong>
+            <small class="text-muted" style="font-size: 0.72rem;">Monthly Salary</small>
         </a>
     </div>
     <div class="col-6 col-md-3">
-        <a href="{% url 'land_lease' %}" class="card-pro text-decoration-none d-block p-3 text-center">
-            <i class="fa-solid fa-seedling fa-lg text-warning-pro mb-2 d-block"></i>
-            <small class="fw-bold text-dark">Zameen Theka</small>
+        <a href="{% url 'land_lease' %}" class="card-pro text-decoration-none d-block p-3 text-center h-100 transition-all hover-lift">
+            <div class="mx-auto mb-2 d-flex align-items-center justify-content-center rounded-circle bg-warning-subtle" style="width: 44px; height: 44px;">
+                <i class="fa-solid fa-seedling fs-5 text-warning"></i>
+            </div>
+            <strong class="d-block text-dark" style="font-size: 0.88rem;">Zameen Ka Theka</strong>
+            <small class="text-muted" style="font-size: 0.72rem;">Land Lease</small>
         </a>
     </div>
 </div>
 
 <!-- Recent Transactions -->
-<div class="row g-4 fade-in">
+<div class="row g-3 g-lg-4 fade-in">
     <div class="col-12 col-lg-6">
-        <div class="card-pro">
+        <div class="card-pro h-100">
             <div class="card-pro-header">
                 <h6><i class="fa-solid fa-circle-arrow-down text-success-pro"></i> {{ T.recent_income }}</h6>
                 <a href="{% url 'weekly_income' %}" class="btn-pro btn-pro-outline-primary btn-pro-sm">
@@ -141,7 +165,7 @@
     </div>
 
     <div class="col-12 col-lg-6">
-        <div class="card-pro">
+        <div class="card-pro h-100">
             <div class="card-pro-header">
                 <h6><i class="fa-solid fa-circle-arrow-up text-danger-pro"></i> {{ T.recent_expenses }}</h6>
                 <a href="{% url 'expenses' %}" class="btn-pro btn-pro-outline-danger btn-pro-sm">
@@ -156,15 +180,15 @@
                             <div class="tx-icon tx-icon-expense">
                                 <i class="fa-solid fa-minus"></i>
                             </div>
-                            <div>
-                                <strong class="d-block" style="font-size:0.875rem;">{{ exp.description|truncatechars:30 }}</strong>
+                            <div class="overflow-hidden">
+                                <strong class="d-block text-truncate" style="font-size:0.875rem;">{{ exp.description|truncatechars:26 }}</strong>
                                 <small class="text-muted">
                                     {{ exp.date|date:"d M, Y" }}
                                     <span class="badge-pro badge-pro-neutral ms-1">{{ exp.get_category_display }}</span>
                                 </small>
                             </div>
                         </div>
-                        <span class="amount-negative">- RS {{ exp.amount|floatformat:0 }}</span>
+                        <span class="amount-negative flex-shrink-0">- RS {{ exp.amount|floatformat:0 }}</span>
                     </div>
                     {% endfor %}
                 {% else %}
@@ -176,3 +200,4 @@
 </div>
 
 {% endblock %}
+

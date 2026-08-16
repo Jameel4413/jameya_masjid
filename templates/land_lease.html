@@ -112,7 +112,7 @@
                     <i class="fa-solid fa-clock-rotate-left me-1"></i> {{ T.payment_history }}
                 </h6>
                 <div class="table-responsive">
-                    <table class="table-pro">
+                    <table class="table-pro table-mobile-card">
                         <thead>
                             <tr>
                                 <th>{{ T.date }}</th>
@@ -125,18 +125,18 @@
                         <tbody>
                             {% for payment in lease.payments.all %}
                             <tr>
-                                <td>{{ payment.payment_date|date:"d M, Y" }}</td>
-                                <td>
+                                <td data-label="{{ T.date }}">{{ payment.payment_date|date:"d M, Y" }}</td>
+                                <td data-label="{{ T.mode }}">
                                     {% if payment.amount_received >= lease.total_agreed_amount %}
                                         <span class="badge-pro badge-pro-success">{{ T.one_time_full }}</span>
                                     {% else %}
                                         <span class="badge-pro badge-pro-info">{{ T.installment }}</span>
                                     {% endif %}
                                 </td>
-                                <td class="text-muted">{{ payment.notes|default:"Installment" }}</td>
-                                <td class="text-end amount-positive">+ RS {{ payment.amount_received|floatformat:0 }}</td>
-                                <td>
-                                    <div class="table-actions">
+                                <td data-label="{{ T.notes }}" class="text-muted">{{ payment.notes|default:"Installment" }}</td>
+                                <td data-label="{{ T.amount }}" class="text-end amount-positive">+ RS {{ payment.amount_received|floatformat:0 }}</td>
+                                <td data-label="{{ T.actions }}">
+                                    <div class="table-actions ms-auto">
                                         <button class="btn-pro btn-pro-ghost btn-icon" data-bs-toggle="modal" data-bs-target="#editPaymentModal{{ payment.id }}" title="Edit">
                                             <i class="fa-solid fa-pen text-primary-pro"></i>
                                         </button>
