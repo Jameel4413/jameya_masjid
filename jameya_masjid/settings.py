@@ -183,9 +183,14 @@ else:
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Session Security
-SESSION_COOKIE_AGE = 1800  # 30 Minutes inactivity par auto-logout
+# Session Security (Signed cookies for Serverless compatibility on Vercel)
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_AGE = 86400  # 24 Hours
 SESSION_SAVE_EVERY_REQUEST = True
+
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
 
 # Security Headers & SSL in Production
 SECURE_BROWSER_XSS_FILTER = True
@@ -196,11 +201,13 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.vercel.app',
     'https://*.onrender.com',
     'https://*.koyeb.app',
+    'http://*.vercel.app',
 ]
 
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True').lower() in ('true', '1', 'yes')
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False').lower() in ('true', '1', 'yes')
+    SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() in ('true', '1', 'yes')
+    CSRF_COOKIE_SECURE = os.environ.get('CSRF_COOKIE_SECURE', 'False').lower() in ('true', '1', 'yes')
+
 
