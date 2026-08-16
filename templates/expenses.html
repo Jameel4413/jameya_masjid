@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Masjid Expenses{% endblock %}
+{% block page_subtitle %}Bijli, repairing aur zaroori kharajat{% endblock %}
+
+{% block content %}
+
+<div class="page-header fade-in">
+    <div>
+        <h1 class="page-header-title"><i class="fa-solid fa-receipt text-danger-pro me-2"></i>{{ T.masjid_kharajaat }}</h1>
+        <p class="page-header-subtitle">{{ T.expenses_description }}</p>
+    </div>
+    <div class="page-header-actions">
+        <button class="btn-pro btn-pro-danger" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+            <i class="fa-solid fa-plus"></i> {{ T.new_expense }}
+        </button>
+    </div>
+</div>
+
+{% include 'includes/filter_bar.html' with show_year=True show_month=True selected_year=selected_year selected_month=selected_month %}
+
+{% if total_expenses %}
+<div class="row g-3 mb-4 fade-in">
+    <div class="col-12 col-md-4">
+        <div class="stat-card stat-card-danger">
+            <div class="stat-card-label">{{ T.filtered_total_expense }}</div>
+            <p class="stat-card-value" style="font-size:1.5rem;">RS {{ total_expenses|floatformat:0 }}</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="card-pro fade-in">
+    <div class="card-pro-body-flush">
+        <div class="table-responsive">
+            <table class="table-pro">
+                <thead>
+                    <tr>
+                        <th>{{ T.date }}</th>
+                        <th>{{ T.category }}</th>
+                        <th>{{ T.detail }}</th>
+                        <th class="text-end">{{ T.amount }}</th>
+                        <th class="text-center">{{ T.actions }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expense in expenses %}
+                    <tr>
+                        <td><strong>{{ expense.date|date:"d M, Y" }}</strong></td>
+                        <td><span class="badge-pro badge-pro-danger">{{ expense.get_category_display }}</span></td>
+                        <td>{{ expense.description }}</td>
+                        <td class="text-end amount-negative">- RS {{ expense.amount|floatformat:0 }}</td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-pro btn-pro-ghost btn-icon" data-bs-toggle="modal" data-bs-target="#editExpenseModal{{ expense.id }}">
+                                    <i class="fa-solid fa-pen text-primary-pro"></i>
+                                </button>
+                                <button class="btn-pro btn-pro-ghost btn-icon" data-bs-toggle="modal" data-bs-target="#deleteExpenseModal{{ expense.id }}">
+                                    <i class="fa-solid fa-trash text-danger-pro"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Edit Modal -->
+                    <div class="modal fade modal-pro" id="editExpenseModal{{ expense.id }}" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header modal-header-danger">
+                                    <h5 class="modal-title"><i class="fa-solid fa-pen"></i> {{ T.edit_kharcha }}</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form action="{% url 'update_expense' expense.id %}" method="POST" data-loading>
+                                    {% csrf_token %}
+                                    <div class="modal-body">
+                                        <div class="form-group-pro">
+                                            <label class="form-label-pro"><i class="fa-regular fa-calendar"></i> {{ T.date }}</label>
+                                            <input type="date" name="date" class="form-control-pro" required value="{{ expense.date|date:'Y-m-d' }}">
+                                        </div>
+                                        <div class="form-group-pro">
+                                            <label class="form-label-pro"><i class="fa-solid fa-tags"></i> {{ T.category }}</label>
+                                            <select name="category" class="form-select" required>
+                                                <option value="UTILITIES" {% if expense.category == 'UTILITIES' %}selected{% endif %}>{{ T.utilities }}</option>
+                                                <option value="REPAIR" {% if expense.category == 'REPAIR' %}selected{% endif %}>{{ T.repair }}</option>
+                                                <option value="CLEANING" {% if expense.category == 'CLEANING' %}selected{% endif %}>{{ T.cleaning }}</option>
+                                                <option value="EVENT" {% if expense.category == 'EVENT' %}selected{% endif %}>{{ T.event }}</option>
+                                                <option value="OTHER" {% if expense.category == 'OTHER' %}selected{% endif %}>{{ T.other_expenses }}</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group-pro">
+                                            <label class="form-label-pro"><i class="fa-solid fa-align-left"></i> {{ T.expense_detail }}</label>
+                                            <input type="text" name="description" class="form-control-pro" value="{{ expense.description }}" required>
+                                        </div>
+                                        <div class="form-group-pro mb-0">
+                                            <label class="form-label-pro"><i class="fa-solid fa-money-bill"></i> {{ T.amount }}</label>
+                                            <div class="input-group-pro">
+                                                <span class="input-prefix">RS</span>
+                                                <input type="number" step="any" name="amount" class="form-control-pro" value="{{ expense.amount }}" min="0" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                                        <button type="submit" class="btn-pro btn-pro-danger"><i class="fa-solid fa-check"></i> {{ T.update }}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delete Modal -->
+                    <div class="modal fade modal-pro" id="deleteExpenseModal{{ expense.id }}" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered modal-sm">
+                            <div class="modal-content">
+                                <div class="modal-body text-center py-4">
+                                    <div class="modal-icon-header modal-icon-danger mx-auto">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-2">{{ T.delete_expense_confirm }}</h6>
+                                    <div class="delete-preview text-start">
+                                        <strong>{{ T.detail }}:</strong> {{ expense.description }}<br>
+                                        <strong>{{ T.amount }}:</strong> RS {{ expense.amount|floatformat:0 }}
+                                    </div>
+                                </div>
+                                <div class="modal-footer justify-content-center">
+                                    <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                                    <form action="{% url 'delete_expense' expense.id %}" method="POST">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-pro btn-pro-danger">{{ T.delete }}</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">
+                            {% include 'includes/empty_state.html' with icon='fa-solid fa-receipt' title=T.no_expense_found message=T.first_expense_message button_text=T.add_expense_btn button_target='addExpenseModal' %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Multi-Entry Add Expense Modal -->
+<div class="modal fade modal-pro" id="addExpenseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header modal-header-danger">
+                <h5 class="modal-title"><i class="fa-solid fa-receipt me-1"></i> {{ T.new_expense_entry }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{% url 'add_expense' %}" method="POST" data-loading>
+                {% csrf_token %}
+                <div class="modal-body">
+                    <!-- Single Date Picker for all expense entries below -->
+                    <div class="form-group-pro mb-3 p-3 bg-light rounded-3 border">
+                        <label class="form-label-pro fw-bold text-dark mb-1"><i class="fa-regular fa-calendar text-danger me-1"></i> {{ T.date }}</label>
+                        <input type="date" name="date" class="form-control-pro" required value="{% now 'Y-m-d' %}">
+                        <div class="form-text small text-muted">Is date ke tehat aap ek sath multiple kharchay shamil kar sakte hain.</div>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h6 class="fw-bold mb-0 text-secondary"><i class="fa-solid fa-list-check me-1"></i> Expense Entries</h6>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="addExpenseRowBtn">
+                            <i class="fa-solid fa-plus me-1"></i> {{ T.add_another_expense }}
+                        </button>
+                    </div>
+
+                    <!-- Dynamic Expense Entry Rows -->
+                    <div class="table-responsive">
+                        <table class="table align-middle" id="expenseRowsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 28%;">{{ T.category }}</th>
+                                    <th style="width: 37%;">{{ T.expense_detail }}</th>
+                                    <th style="width: 28%;">{{ T.paid_amount }}</th>
+                                    <th style="width: 7%;" class="text-center"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="expenseRowsBody">
+                                <tr class="expense-entry-row">
+                                    <td>
+                                        <select name="category[]" class="form-select form-select-sm" required>
+                                            <option value="UTILITIES">{{ T.utilities }}</option>
+                                            <option value="REPAIR">{{ T.repair }}</option>
+                                            <option value="CLEANING">{{ T.cleaning }}</option>
+                                            <option value="EVENT">{{ T.event }}</option>
+                                            <option value="OTHER" selected>{{ T.other_expenses }}</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="description[]" class="form-control form-control-sm" placeholder="{{ T.expense_detail }}" required>
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">RS</span>
+                                            <input type="number" step="any" name="amount[]" class="form-control" min="0" placeholder="0.00" required>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-expense-row-btn" title="{{ T.remove_row }}">
+                                            <i class="fa-solid fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                    <button type="submit" class="btn-pro btn-pro-danger"><i class="fa-solid fa-floppy-disk me-1"></i> {{ T.save_expense }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rowsBody = document.getElementById('expenseRowsBody');
+    const addRowBtn = document.getElementById('addExpenseRowBtn');
+
+    if (addRowBtn && rowsBody) {
+        addRowBtn.addEventListener('click', function() {
+            const newRow = document.createElement('tr');
+            newRow.className = 'expense-entry-row';
+            newRow.innerHTML = `
+                <td>
+                    <select name="category[]" class="form-select form-select-sm" required>
+                        <option value="UTILITIES">{{ T.utilities }}</option>
+                        <option value="REPAIR">{{ T.repair }}</option>
+                        <option value="CLEANING">{{ T.cleaning }}</option>
+                        <option value="EVENT">{{ T.event }}</option>
+                        <option value="OTHER" selected>{{ T.other_expenses }}</option>
+                    </select>
+                </td>
+                <td>
+                    <input type="text" name="description[]" class="form-control form-control-sm" placeholder="{{ T.expense_detail }}" required>
+                </td>
+                <td>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">RS</span>
+                        <input type="number" step="any" name="amount[]" class="form-control" min="0" placeholder="0.00" required>
+                    </div>
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-expense-row-btn" title="{{ T.remove_row }}">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </td>
+            `;
+            rowsBody.appendChild(newRow);
+            updateRemoveButtons();
+        });
+
+        rowsBody.addEventListener('click', function(e) {
+            const btn = e.target.closest('.remove-expense-row-btn');
+            if (btn) {
+                const rows = rowsBody.querySelectorAll('.expense-entry-row');
+                if (rows.length > 1) {
+                    btn.closest('tr').remove();
+                    updateRemoveButtons();
+                }
+            }
+        });
+
+        function updateRemoveButtons() {
+            const rows = rowsBody.querySelectorAll('.expense-entry-row');
+            const btns = rowsBody.querySelectorAll('.remove-expense-row-btn');
+            btns.forEach(btn => {
+                btn.disabled = (rows.length <= 1);
+            });
+        }
+
+        updateRemoveButtons();
+    }
+});
+</script>
+
+{% endblock %}

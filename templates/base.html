@@ -1,0 +1,213 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Masjid Hisab{% endblock %} | Record Management</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <!-- Choices.js — Beautiful Dropdowns -->
+    <link href="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/styles/choices.min.css" rel="stylesheet">
+    <!-- Custom Design System -->
+    <link href="{% static 'css/masjid.css' %}" rel="stylesheet">
+
+    {% block extra_css %}{% endblock %}
+    <script>
+        const CURRENT_LANG = '{{ LANG|default:"en" }}';
+    </script>
+</head>
+<body class="{% if LANG == 'ur' %}rtl-layout{% endif %}">
+
+    <!-- Mobile Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <nav id="sidebar">
+        <a href="{% url 'dashboard' %}" class="sidebar-brand">
+            <div class="sidebar-brand-icon">
+                <i class="fa-solid fa-mosque"></i>
+            </div>
+            <div class="sidebar-brand-text">
+                <strong>{{ T.masjid_hisab }}</strong>
+                <small>{{ T.financial_record_system }}</small>
+            </div>
+        </a>
+
+        <div class="flex-grow-1 overflow-y-auto py-2">
+            <div class="sidebar-section-label">{{ T.main_menu }}</div>
+
+            <a href="{% url 'dashboard' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>{{ T.dashboard }}</span>
+            </a>
+            <a href="{% url 'weekly_income' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'weekly_income' %}active{% endif %}">
+                <i class="fa-solid fa-hand-holding-dollar"></i>
+                <span>{{ T.weekly_collections }}</span>
+            </a>
+            <a href="{% url 'expenses' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'expenses' %}active{% endif %}">
+                <i class="fa-solid fa-receipt"></i>
+                <span>{{ T.masjid_expenses }}</span>
+            </a>
+            <a href="{% url 'land_lease' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'land_lease' %}active{% endif %}">
+                <i class="fa-solid fa-seedling"></i>
+                <span>{{ T.zameen_ka_theka }}</span>
+            </a>
+            <a href="{% url 'imam_salary' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'imam_salary' %}active{% endif %}">
+                <i class="fa-solid fa-user-tie"></i>
+                <span>{{ T.imam_salary }}</span>
+            </a>
+            <a href="{% url 'eid_collections' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'eid_collections' %}active{% endif %}">
+                <i class="fa-solid fa-star-and-crescent"></i>
+                <span>{{ T.eid_collections }}</span>
+            </a>
+
+            <div class="sidebar-section-label">{{ T.management }}</div>
+            <a href="{% url 'admin:index' %}" class="nav-link-custom" target="_blank">
+                <i class="fa-solid fa-gear"></i>
+                <span>{{ T.admin_panel }}</span>
+            </a>
+        </div>
+
+        <div class="sidebar-user">
+            <div class="d-flex align-items-center gap-2">
+                <div class="sidebar-user-avatar">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="overflow-hidden">
+                    <div class="text-white fw-semibold text-truncate" style="font-size: 0.85rem;">
+                        {{ request.user.get_full_name|default:request.user.username }}
+                    </div>
+                    <small class="text-white-50" style="font-size: 0.72rem;">
+                        {% if request.user.is_superuser %}{{ T.sadar_admin }}{% else %}{{ T.committee_member }}{% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div id="main-wrapper">
+        <header class="top-navbar d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn-pro btn-pro-outline btn-icon d-lg-none" id="sidebarToggle" aria-label="Toggle menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div class="page-title-block">
+                    <h5>{% block page_title %}{{ T.dashboard }}{% endblock %}</h5>
+                    <small>{% block page_subtitle %}{{ T.masjid_financial_management }}{% endblock %}</small>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                {% if LANG == 'en' %}
+                    <a href="{% url 'set_language' %}?lang=ur" class="btn-pro btn-pro-outline-secondary btn-pro-sm fw-bold">
+                        اردو
+                    </a>
+                {% else %}
+                    <a href="{% url 'set_language' %}?lang=en" class="btn-pro btn-pro-outline-secondary btn-pro-sm fw-bold">
+                        English
+                    </a>
+                {% endif %}
+                <button type="button" class="btn-pro btn-pro-outline-primary btn-pro-sm d-none d-md-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#exportPdfModal">
+                    <i class="fa-solid fa-file-pdf"></i> {{ T.pdf_report }}
+                </button>
+                <a href="{% url 'admin:logout' %}" class="btn-pro btn-pro-outline-danger btn-pro-sm">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span class="d-none d-sm-inline">{{ T.logout }}</span>
+                </a>
+            </div>
+        </header>
+
+        <main class="content-area">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert-pro alert-pro-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert" data-auto-dismiss>
+                        {% if message.tags == 'success' %}
+                            <i class="fa-solid fa-circle-check"></i>
+                        {% elif message.tags == 'error' or message.tags == 'danger' %}
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        {% elif message.tags == 'warning' %}
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        {% else %}
+                            <i class="fa-solid fa-circle-info"></i>
+                        {% endif %}
+                        <span>{{ message }}</span>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="app-footer">
+            {{ T.masjid_management_footer }} &copy; {% now "Y" %}
+        </footer>
+    </div>
+
+    <!-- PDF Export Modal -->
+    <div class="modal fade" id="exportPdfModal" tabindex="-1" aria-labelledby="exportPdfModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px);">
+                <div class="modal-header border-0 pb-0" style="padding: 24px 24px 10px 24px;">
+                    <h5 class="modal-title d-flex align-items-center gap-2 fw-bold text-primary" id="exportPdfModalLabel">
+                        <i class="fa-solid fa-file-pdf text-danger fs-4"></i> {{ T.download_pdf_report }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: 10px 24px 24px 24px;">
+                    <p class="text-muted small mb-4">{{ T.select_period }}</p>
+                    <form id="exportPdfForm" method="GET" action="{% url 'export_monthly_pdf' %}" target="_blank">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary small">{{ T.select_year }}</label>
+                                <select name="year" id="pdfExportYear" class="form-select">
+                                    {% for y in year_range %}
+                                    <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary small">{{ T.select_month }}</label>
+                                <select name="month" id="pdfExportMonth" class="form-select">
+                                    <option value="all">{{ T.annual_report }}</option>
+                                    {% for num, name in months_list %}
+                                    <option value="{{ num }}" {% if num == current_month %}selected{% endif %}>{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold text-secondary small"><i class="fa-solid fa-language me-1 text-primary"></i> {{ T.pdf_language }}</label>
+                                <select name="lang" id="pdfExportLang" class="form-select">
+                                    <option value="en" {% if LANG == 'en' %}selected{% endif %}>{{ T.english_lang_option }}</option>
+                                    <option value="ur" {% if LANG == 'ur' %}selected{% endif %}>{{ T.urdu_lang_option }}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-4 pt-2">
+                            <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal" style="border-radius: 8px;">{{ T.cancel }}</button>
+                            <button type="submit" class="btn btn-primary px-4 fw-semibold" style="border-radius: 8px;" onclick="bootstrap.Modal.getInstance(document.getElementById('exportPdfModal')).hide();">
+                                <i class="fa-solid fa-download me-1"></i> {{ T.generate_pdf }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/scripts/choices.min.js"></script>
+    <script src="{% static 'js/masjid.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

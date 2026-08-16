@@ -1,0 +1,278 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Weekly Collections{% endblock %}
+{% block page_subtitle %}Thursday / Friday Chanda record{% endblock %}
+
+{% block content %}
+
+<div class="page-header fade-in">
+    <div>
+        <h1 class="page-header-title"><i class="fa-solid fa-hand-holding-dollar text-success-pro me-2"></i>{{ T.weekly_and_event_income }}</h1>
+        <p class="page-header-subtitle">{{ T.weekly_income_subtitle }}</p>
+    </div>
+    <div class="page-header-actions">
+        <button class="btn-pro btn-pro-primary" data-bs-toggle="modal" data-bs-target="#addIncomeModal">
+            <i class="fa-solid fa-plus"></i> {{ T.new_record }}
+        </button>
+    </div>
+</div>
+
+{% include 'includes/filter_bar.html' with show_year=True show_month=True selected_year=selected_year selected_month=selected_month %}
+
+<div class="card-pro fade-in">
+    <div class="card-pro-body-flush">
+        <div class="table-responsive">
+            <table class="table-pro">
+                <thead>
+                    <tr>
+                        <th>{{ T.date }}</th>
+                        <th>{{ T.chanda_type }}</th>
+                        <th>{{ T.details_note }}</th>
+                        <th class="text-end">{{ T.amount }}</th>
+                        <th class="text-center">{{ T.actions }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for income in incomes %}
+                    <tr>
+                        <td><strong>{{ income.date|date:"d M, Y" }}</strong></td>
+                        <td>
+                            {% if income.day_type == 'FRIDAY' %}
+                                <span class="badge-pro badge-pro-success"><i class="fa-solid fa-star"></i> {{ income.get_day_type_display }}</span>
+                            {% elif income.day_type == 'THURSDAY' %}
+                                <span class="badge-pro badge-pro-info"><i class="fa-solid fa-calendar-day"></i> {{ income.get_day_type_display }}</span>
+                            {% else %}
+                                <span class="badge-pro badge-pro-warning"><i class="fa-solid fa-hand-holding-heart"></i> {{ income.get_day_type_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted">{{ income.notes|default:"—" }}</td>
+                        <td class="text-end amount-positive">+ RS {{ income.amount|floatformat:0 }}</td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-pro btn-pro-ghost btn-icon" data-bs-toggle="modal" data-bs-target="#editIncomeModal{{ income.id }}" title="Edit">
+                                    <i class="fa-solid fa-pen text-primary-pro"></i>
+                                </button>
+                                <button class="btn-pro btn-pro-ghost btn-icon" data-bs-toggle="modal" data-bs-target="#deleteIncomeModal{{ income.id }}" title="Delete">
+                                    <i class="fa-solid fa-trash text-danger-pro"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Edit Modal -->
+                    <div class="modal fade modal-pro" id="editIncomeModal{{ income.id }}" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header modal-header-primary">
+                                    <h5 class="modal-title"><i class="fa-solid fa-pen"></i> {{ T.edit_income_record }}</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form action="{% url 'update_income' income.id %}" method="POST" data-loading>
+                                    {% csrf_token %}
+                                    <div class="modal-body">
+                                        <div class="form-group-pro">
+                                            <label class="form-label-pro"><i class="fa-regular fa-calendar"></i> {{ T.date }}</label>
+                                            <input type="date" name="date" class="form-control-pro" required value="{{ income.date|date:'Y-m-d' }}">
+                                        </div>
+                                        <div class="form-group-pro">
+                                            <label class="form-label-pro"><i class="fa-solid fa-tag"></i> {{ T.chanda_type }}</label>
+                                            <select name="day_type" class="form-select" required>
+                                                <option value="THURSDAY" {% if income.day_type == 'THURSDAY' %}selected{% endif %}>{{ T.jumeraat_collection }}</option>
+                                                <option value="FRIDAY" {% if income.day_type == 'FRIDAY' %}selected{% endif %}>{{ T.juma_collection }}</option>
+                                                <option value="OTHER" {% if income.day_type == 'OTHER' %}selected{% endif %}>{{ T.other_collection }}</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group-pro">
+                                            <label class="form-label-pro"><i class="fa-solid fa-money-bill"></i> {{ T.amount }}</label>
+                                            <div class="input-group-pro">
+                                                <span class="input-prefix">RS</span>
+                                                <input type="number" step="any" name="amount" class="form-control-pro" value="{{ income.amount }}" min="0" required>
+                                            </div>
+                                        </div>
+                                        <div class="form-group-pro mb-0">
+                                            <label class="form-label-pro"><i class="fa-solid fa-note-sticky"></i> {{ T.notes }} <span class="optional-tag">(optional)</span></label>
+                                            <textarea name="notes" class="form-control-pro" rows="2">{{ income.notes }}</textarea>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                                        <button type="submit" class="btn-pro btn-pro-primary"><i class="fa-solid fa-check"></i> {{ T.update }}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delete Modal -->
+                    <div class="modal fade modal-pro" id="deleteIncomeModal{{ income.id }}" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered modal-sm">
+                            <div class="modal-content">
+                                <div class="modal-body text-center py-4">
+                                    <div class="modal-icon-header modal-icon-danger mx-auto">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-2">{{ T.delete_record_confirm }}</h6>
+                                    <p class="text-muted small mb-0">{{ T.delete_warning }}</p>
+                                    <div class="delete-preview text-start">
+                                        <strong>{{ T.date }}:</strong> {{ income.date|date:"d M, Y" }}<br>
+                                        <strong>{{ T.amount }}:</strong> RS {{ income.amount|floatformat:0 }}
+                                    </div>
+                                </div>
+                                <div class="modal-footer justify-content-center">
+                                    <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                                    <form action="{% url 'delete_income' income.id %}" method="POST">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-pro btn-pro-danger"><i class="fa-solid fa-trash"></i> {{ T.delete }}</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">
+                            {% include 'includes/empty_state.html' with icon='fa-solid fa-hand-holding-dollar' title=T.no_record message=T.first_chanda_message button_text=T.new_record button_target='addIncomeModal' %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Multi-Entry Add Modal -->
+<div class="modal fade modal-pro" id="addIncomeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header modal-header-primary">
+                <h5 class="modal-title"><i class="fa-solid fa-hand-holding-dollar"></i> {{ T.new_chanda_entry }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{% url 'add_income' %}" method="POST" data-loading>
+                {% csrf_token %}
+                <div class="modal-body">
+                    <!-- Single Date Picker for all entries below -->
+                    <div class="form-group-pro mb-3 p-3 bg-light rounded-3 border">
+                        <label class="form-label-pro fw-bold text-dark mb-1"><i class="fa-regular fa-calendar text-primary me-1"></i> {{ T.date }}</label>
+                        <input type="date" name="date" class="form-control-pro" required value="{% now 'Y-m-d' %}">
+                        <div class="form-text small text-muted">Is date ke tehat aap ek sath multiple entries shamil kar sakte hain.</div>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h6 class="fw-bold mb-0 text-secondary"><i class="fa-solid fa-list-check me-1"></i> Chanda Entries</h6>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="addIncomeRowBtn">
+                            <i class="fa-solid fa-plus me-1"></i> {{ T.add_another_entry }}
+                        </button>
+                    </div>
+
+                    <!-- Dynamic Entry Rows -->
+                    <div class="table-responsive">
+                        <table class="table align-middle" id="incomeRowsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 30%;">{{ T.chanda_type }}</th>
+                                    <th style="width: 30%;">{{ T.amount }}</th>
+                                    <th style="width: 33%;">{{ T.notes }}</th>
+                                    <th style="width: 7%;" class="text-center"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="incomeRowsBody">
+                                <tr class="income-entry-row">
+                                    <td>
+                                        <select name="day_type[]" class="form-select form-select-sm" required>
+                                            <option value="THURSDAY">{{ T.jumeraat_collection }}</option>
+                                            <option value="FRIDAY" selected>{{ T.juma_collection }}</option>
+                                            <option value="OTHER">{{ T.other_collection }}</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">RS</span>
+                                            <input type="number" step="any" name="amount[]" class="form-control" min="0" placeholder="0.00" required>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="notes[]" class="form-control form-control-sm" placeholder="{{ T.details_note }} (optional)">
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-income-row-btn" title="{{ T.remove_row }}">
+                                            <i class="fa-solid fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                    <button type="submit" class="btn-pro btn-pro-primary"><i class="fa-solid fa-floppy-disk me-1"></i> {{ T.save }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rowsBody = document.getElementById('incomeRowsBody');
+    const addRowBtn = document.getElementById('addIncomeRowBtn');
+
+    if (addRowBtn && rowsBody) {
+        addRowBtn.addEventListener('click', function() {
+            const newRow = document.createElement('tr');
+            newRow.className = 'income-entry-row';
+            newRow.innerHTML = `
+                <td>
+                    <select name="day_type[]" class="form-select form-select-sm" required>
+                        <option value="THURSDAY">{{ T.jumeraat_collection }}</option>
+                        <option value="FRIDAY">{{ T.juma_collection }}</option>
+                        <option value="OTHER" selected>{{ T.other_collection }}</option>
+                    </select>
+                </td>
+                <td>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">RS</span>
+                        <input type="number" step="any" name="amount[]" class="form-control" min="0" placeholder="0.00" required>
+                    </div>
+                </td>
+                <td>
+                    <input type="text" name="notes[]" class="form-control form-control-sm" placeholder="{{ T.details_note }} (optional)">
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-income-row-btn" title="{{ T.remove_row }}">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </td>
+            `;
+            rowsBody.appendChild(newRow);
+            updateRemoveButtons();
+        });
+
+        rowsBody.addEventListener('click', function(e) {
+            const btn = e.target.closest('.remove-income-row-btn');
+            if (btn) {
+                const rows = rowsBody.querySelectorAll('.income-entry-row');
+                if (rows.length > 1) {
+                    btn.closest('tr').remove();
+                    updateRemoveButtons();
+                }
+            }
+        });
+
+        function updateRemoveButtons() {
+            const rows = rowsBody.querySelectorAll('.income-entry-row');
+            const btns = rowsBody.querySelectorAll('.remove-income-row-btn');
+            btns.forEach(btn => {
+                btn.disabled = (rows.length <= 1);
+            });
+        }
+
+        updateRemoveButtons();
+    }
+});
+</script>
+
+{% endblock %}

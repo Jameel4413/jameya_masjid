@@ -1,0 +1,12 @@
+<div class="empty-state">
+    <div class="empty-state-icon">
+        <i class="{{ icon|default:'fa-solid fa-inbox' }}"></i>
+    </div>
+    <h6>{{ title|default:"Koi record nahi mila" }}</h6>
+    <p>{{ message|default:"Abhi tak koi entry add nahi hui hai." }}</p>
+    {% if button_text and button_target %}
+    <button class="btn-pro btn-pro-primary btn-pro-sm" data-bs-toggle="modal" data-bs-target="#{{ button_target }}">
+        <i class="fa-solid fa-plus"></i> {{ button_text }}
+    </button>
+    {% endif %}
+</div>

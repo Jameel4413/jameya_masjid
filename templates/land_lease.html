@@ -1,0 +1,412 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Zameen ka Theka{% endblock %}
+{% block page_subtitle %}Land lease management & payment tracking{% endblock %}
+
+{% block content %}
+
+<div class="page-header fade-in">
+    <div>
+        <h1 class="page-header-title"><i class="fa-solid fa-seedling text-success-pro me-2"></i>{{ T.agricultural_land_lease }}</h1>
+        <p class="page-header-subtitle">{{ T.land_lease_subtitle }}</p>
+    </div>
+    <div class="page-header-actions">
+        <button class="btn-pro btn-pro-primary" data-bs-toggle="modal" data-bs-target="#addLeaseModal">
+            <i class="fa-solid fa-plus"></i> {{ T.new_theka_entry }}
+        </button>
+    </div>
+</div>
+
+{% include 'includes/filter_bar.html' with show_year=True show_month=False selected_year=selected_year %}
+
+{% if total_pending_lease_amount %}
+<div class="row g-3 mb-4 fade-in">
+    <div class="col-12 col-md-4">
+        <div class="stat-card stat-card-warning">
+            <div class="stat-card-label">{{ T.total_baqaya }}</div>
+            <p class="stat-card-value" style="font-size:1.5rem;">RS {{ total_pending_lease_amount|floatformat:0 }}</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-4 fade-in">
+    {% for lease in leases %}
+    <div class="col-12">
+        <div class="card-pro">
+            <div class="card-pro-header">
+                <div class="lease-card-header">
+                    <div>
+                        <h6 style="font-size:1rem;font-weight:800;margin-bottom:0.25rem;">
+                            <i class="fa-solid fa-user text-success-pro me-1"></i> {{ lease.tenant_name }}
+                        </h6>
+                        <small class="text-muted">
+                            <i class="fa-solid fa-map me-1"></i>{{ lease.land_area }}
+                            {% if lease.tenant_contact %} | <i class="fa-solid fa-phone me-1"></i>{{ lease.tenant_contact }}{% endif %}
+                        </small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="badge-pro badge-pro-info">
+                            <i class="fa-regular fa-calendar"></i> {{ lease.start_date|date:"Y" }} — {{ lease.end_date|date:"Y" }}
+                        </span>
+                        {% if lease.remaining_lease_amount > 0 %}
+                        <button class="btn-pro btn-pro-success btn-pro-sm" data-bs-toggle="modal" data-bs-target="#addPaymentModal{{ lease.id }}">
+                            <i class="fa-solid fa-plus"></i> {{ T.payment }}
+                        </button>
+                        {% else %}
+                        <span class="badge-pro badge-pro-success"><i class="fa-solid fa-check"></i> {{ T.completed }}</span>
+                        {% endif %}
+                        <div class="dropdown">
+                            <button class="btn-pro btn-pro-ghost btn-icon" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-pro dropdown-menu-end">
+                                <li>
+                                    <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editLeaseModal{{ lease.id }}">
+                                        <i class="fa-solid fa-pen text-primary-pro"></i> {{ T.edit_theka }}
+                                    </button>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteLeaseModal{{ lease.id }}">
+                                        <i class="fa-solid fa-trash"></i> {{ T.delete }}
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-pro-body">
+                <!-- Progress -->
+                {% with received=lease.total_received total=lease.total_agreed_amount %}
+                {% if total > 0 %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-muted fw-semibold">{{ T.payment_progress }}</span>
+                        <span class="fw-bold text-success-pro">{{ received|floatformat:0 }} / {{ total|floatformat:0 }}</span>
+                    </div>
+                    <div class="progress-pro">
+                        <div class="progress-pro-bar" style="width: {% widthratio received total 100 %}%;"></div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                <div class="lease-stats-row">
+                    <div class="lease-stat-box">
+                        <span>{{ T.total_agreed }}</span>
+                        <strong class="text-dark">RS {{ lease.total_agreed_amount|floatformat:0 }}</strong>
+                    </div>
+                    <div class="lease-stat-box received">
+                        <span>{{ T.total_received }}</span>
+                        <strong class="text-success-pro">RS {{ lease.total_received|floatformat:0 }}</strong>
+                    </div>
+                    <div class="lease-stat-box pending">
+                        <span>{{ T.pending }}</span>
+                        <strong class="text-danger-pro">RS {{ lease.remaining_lease_amount|floatformat:0 }}</strong>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-secondary mb-3" style="font-size:0.85rem;">
+                    <i class="fa-solid fa-clock-rotate-left me-1"></i> {{ T.payment_history }}
+                </h6>
+                <div class="table-responsive">
+                    <table class="table-pro">
+                        <thead>
+                            <tr>
+                                <th>{{ T.date }}</th>
+                                <th>{{ T.mode }}</th>
+                                <th>{{ T.notes }}</th>
+                                <th class="text-end">{{ T.amount }}</th>
+                                <th class="text-center">{{ T.actions }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in lease.payments.all %}
+                            <tr>
+                                <td>{{ payment.payment_date|date:"d M, Y" }}</td>
+                                <td>
+                                    {% if payment.amount_received >= lease.total_agreed_amount %}
+                                        <span class="badge-pro badge-pro-success">{{ T.one_time_full }}</span>
+                                    {% else %}
+                                        <span class="badge-pro badge-pro-info">{{ T.installment }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted">{{ payment.notes|default:"Installment" }}</td>
+                                <td class="text-end amount-positive">+ RS {{ payment.amount_received|floatformat:0 }}</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="btn-pro btn-pro-ghost btn-icon" data-bs-toggle="modal" data-bs-target="#editPaymentModal{{ payment.id }}" title="Edit">
+                                            <i class="fa-solid fa-pen text-primary-pro"></i>
+                                        </button>
+                                        <button class="btn-pro btn-pro-ghost btn-icon" data-bs-toggle="modal" data-bs-target="#deletePaymentModal{{ payment.id }}" title="Delete">
+                                            <i class="fa-solid fa-trash text-danger-pro"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Edit Payment Modal -->
+                            <div class="modal fade modal-pro" id="editPaymentModal{{ payment.id }}" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header modal-header-success">
+                                            <h5 class="modal-title"><i class="fa-solid fa-pen"></i> {{ T.edit_payment_record }}</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form action="{% url 'update_lease_payment' payment.id %}" method="POST" data-loading>
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <div class="form-group-pro">
+                                                    <label class="form-label-pro"><i class="fa-regular fa-calendar"></i> {{ T.payment_date }}</label>
+                                                    <input type="date" name="payment_date" class="form-control-pro" required value="{{ payment.payment_date|date:'Y-m-d' }}">
+                                                </div>
+                                                <div class="form-group-pro">
+                                                    <label class="form-label-pro"><i class="fa-solid fa-money-bill"></i> {{ T.received_amount }}</label>
+                                                    <div class="input-group-pro">
+                                                        <span class="input-prefix">RS</span>
+                                                        <input type="number" step="any" name="amount_received" class="form-control-pro" value="{{ payment.amount_received }}" min="0" required>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group-pro mb-0">
+                                                    <label class="form-label-pro"><i class="fa-solid fa-note-sticky"></i> {{ T.notes }} <span class="optional-tag">(optional)</span></label>
+                                                    <input type="text" name="notes" class="form-control-pro" value="{{ payment.notes|default:'' }}">
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                                                <button type="submit" class="btn-pro btn-pro-success"><i class="fa-solid fa-check"></i> {{ T.update }}</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Delete Payment Modal -->
+                            <div class="modal fade modal-pro" id="deletePaymentModal{{ payment.id }}" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered modal-sm">
+                                    <div class="modal-content">
+                                        <div class="modal-body text-center py-4">
+                                            <div class="modal-icon-header modal-icon-danger mx-auto">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-2">{{ T.delete_payment_confirm }}</h6>
+                                            <p class="text-muted small mb-0">{{ T.delete_payment_warning }}</p>
+                                            <div class="delete-preview text-start">
+                                                <strong>{{ T.date }}:</strong> {{ payment.payment_date|date:"d M, Y" }}<br>
+                                                <strong>{{ T.amount }}:</strong> RS {{ payment.amount_received|floatformat:0 }}
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer justify-content-center">
+                                            <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                                            <form action="{% url 'delete_lease_payment' payment.id %}" method="POST">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn-pro btn-pro-danger"><i class="fa-solid fa-trash"></i> {{ T.delete }}</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">{{ T.no_payment }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Payment Modal -->
+    <div class="modal fade modal-pro" id="addPaymentModal{{ lease.id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header modal-header-success">
+                    <h5 class="modal-title"><i class="fa-solid fa-money-bill-wave"></i> {{ T.add_payment }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{% url 'add_lease_payment' %}" method="POST" data-loading>
+                    {% csrf_token %}
+                    <input type="hidden" name="lease_id" value="{{ lease.id }}">
+                    <div class="modal-body">
+                        <div class="alert-pro alert-pro-info mb-3" style="margin-bottom:1rem!important;">
+                            <i class="fa-solid fa-info-circle"></i>
+                            <span><strong>{{ lease.tenant_name }}</strong> — {{ T.pending }}: RS {{ lease.remaining_lease_amount|floatformat:0 }}</span>
+                        </div>
+                        <div class="form-group-pro">
+                            <label class="form-label-pro"><i class="fa-regular fa-calendar"></i> {{ T.payment_date }}</label>
+                            <input type="date" name="payment_date" class="form-control-pro" required value="{% now 'Y-m-d' %}">
+                        </div>
+                        <div class="form-group-pro">
+                            <label class="form-label-pro"><i class="fa-solid fa-money-bill"></i> {{ T.received_amount }}</label>
+                            <div class="input-group-pro">
+                                <span class="input-prefix">RS</span>
+                                <input type="number" step="any" name="amount_received" class="form-control-pro" min="0" max="{{ lease.remaining_lease_amount }}" required>
+                            </div>
+                            <div class="form-hint">Maximum: RS {{ lease.remaining_lease_amount|floatformat:0 }}</div>
+                        </div>
+                        <div class="form-group-pro mb-0">
+                            <label class="form-label-pro"><i class="fa-solid fa-note-sticky"></i> {{ T.notes }} <span class="optional-tag">(optional)</span></label>
+                            <input type="text" name="notes" class="form-control-pro">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                        <button type="submit" class="btn-pro btn-pro-success"><i class="fa-solid fa-check"></i> {{ T.save_payment }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Lease Modal -->
+    <div class="modal fade modal-pro" id="editLeaseModal{{ lease.id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header modal-header-primary">
+                    <h5 class="modal-title"><i class="fa-solid fa-pen"></i> {{ T.edit_theka_record }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{% url 'update_land_lease' lease.id %}" method="POST" data-loading>
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="form-row-pro">
+                            <div class="form-group-pro">
+                                <label class="form-label-pro"><i class="fa-solid fa-user"></i> {{ T.tenant_name }}</label>
+                                <input type="text" name="tenant_name" class="form-control-pro" value="{{ lease.tenant_name }}" required>
+                            </div>
+                            <div class="form-group-pro">
+                                <label class="form-label-pro"><i class="fa-solid fa-phone"></i> {{ T.tenant_contact }}</label>
+                                <input type="text" name="tenant_contact" class="form-control-pro" value="{{ lease.tenant_contact|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="form-row-pro">
+                            <div class="form-group-pro">
+                                <label class="form-label-pro"><i class="fa-solid fa-map"></i> {{ T.land_area }}</label>
+                                <input type="text" name="land_area" class="form-control-pro" value="{{ lease.land_area }}" required>
+                            </div>
+                            <div class="form-group-pro">
+                                <label class="form-label-pro"><i class="fa-solid fa-clock"></i> {{ T.duration_years }}</label>
+                                <input type="number" name="duration_years" class="form-control-pro" value="{{ lease.duration_years }}" min="1" required>
+                            </div>
+                        </div>
+                        <div class="form-row-pro">
+                            <div class="form-group-pro">
+                                <label class="form-label-pro"><i class="fa-regular fa-calendar"></i> {{ T.start_date }}</label>
+                                <input type="date" name="start_date" class="form-control-pro" value="{{ lease.start_date|date:'Y-m-d' }}" required>
+                            </div>
+                            <div class="form-group-pro">
+                                <label class="form-label-pro"><i class="fa-regular fa-calendar"></i> {{ T.end_date }}</label>
+                                <input type="date" name="end_date" class="form-control-pro" value="{{ lease.end_date|date:'Y-m-d' }}" required>
+                            </div>
+                        </div>
+                        <div class="form-group-pro mb-0">
+                            <label class="form-label-pro"><i class="fa-solid fa-money-bill"></i> {{ T.total_agreed_amount }}</label>
+                            <div class="input-group-pro">
+                                <span class="input-prefix">RS</span>
+                                <input type="number" step="any" name="total_agreed_amount" class="form-control-pro" value="{{ lease.total_agreed_amount }}" min="0" required>
+                            </div>
+                    </div>
+                <div class="modal-footer">
+                        <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                        <button type="submit" class="btn-pro btn-pro-primary"><i class="fa-solid fa-check"></i> {{ T.update }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Lease Modal -->
+    <div class="modal fade modal-pro" id="deleteLeaseModal{{ lease.id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-body text-center py-4">
+                    <div class="modal-icon-header modal-icon-danger mx-auto"><i class="fa-solid fa-trash"></i></div>
+                    <h6 class="fw-bold">{{ T.delete_theka_confirm }}</h6>
+                    <p class="text-muted small">{{ T.delete_theka_warning }}</p>
+                    <div class="delete-preview text-start">
+                        <strong>{{ T.tenant_name }}:</strong> {{ lease.tenant_name }}
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                    <form action="{% url 'delete_land_lease' lease.id %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-pro btn-pro-danger">{{ T.delete }}</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% empty %}
+    <div class="col-12">
+        <div class="card-pro">
+            {% include 'includes/empty_state.html' with icon='fa-solid fa-seedling' title=T.no_lease_record message=T.new_lease_message button_text=T.new_theka_entry button_target='addLeaseModal' %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Add Lease Modal -->
+<div class="modal fade modal-pro" id="addLeaseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header modal-header-primary">
+                <h5 class="modal-title"><i class="fa-solid fa-plus"></i> {{ T.new_theka_entry }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{% url 'add_land_lease' %}" method="POST" data-loading>
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-row-pro">
+                        <div class="form-group-pro">
+                            <label class="form-label-pro"><i class="fa-solid fa-user"></i> {{ T.tenant_name }}</label>
+                            <input type="text" name="tenant_name" class="form-control-pro" required>
+                        </div>
+                        <div class="form-group-pro">
+                            <label class="form-label-pro"><i class="fa-solid fa-phone"></i> {{ T.tenant_contact }} <span class="optional-tag">(optional)</span></label>
+                            <input type="text" name="tenant_contact" class="form-control-pro">
+                        </div>
+                    </div>
+                    <div class="form-row-pro">
+                        <div class="form-group-pro">
+                            <label class="form-label-pro"><i class="fa-solid fa-map"></i> {{ T.land_area }}</label>
+                            <input type="text" name="land_area" class="form-control-pro" required>
+                        </div>
+                        <div class="form-group-pro">
+                            <label class="form-label-pro"><i class="fa-solid fa-clock"></i> {{ T.duration_years }}</label>
+                            <input type="number" name="duration_years" class="form-control-pro" value="1" min="1" required>
+                        </div>
+                    </div>
+                    <div class="form-row-pro">
+                        <div class="form-group-pro">
+                            <label class="form-label-pro"><i class="fa-regular fa-calendar"></i> {{ T.start_date }}</label>
+                            <input type="date" name="start_date" class="form-control-pro" required value="{% now 'Y-m-d' %}">
+                        </div>
+                        <div class="form-group-pro">
+                            <label class="form-label-pro"><i class="fa-regular fa-calendar"></i> {{ T.end_date }}</label>
+                            <input type="date" name="end_date" class="form-control-pro" required>
+                        </div>
+                    </div>
+                    <div class="form-group-pro mb-0">
+                        <label class="form-label-pro"><i class="fa-solid fa-money-bill"></i> {{ T.total_agreed_amount }}</label>
+                        <div class="input-group-pro">
+                            <span class="input-prefix">RS</span>
+                            <input type="number" step="any" name="total_agreed_amount" class="form-control-pro" min="0" required>
+                        </div>
+                    </div>
+                </div>
+            <div class="modal-footer">
+                    <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                    <button type="submit" class="btn-pro btn-pro-primary"><i class="fa-solid fa-floppy-disk"></i> {{ T.save_theka }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

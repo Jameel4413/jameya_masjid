@@ -1,0 +1,488 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Imam Salary Record & History{% endblock %}
+
+{% block content %}
+
+<div class="page-header fade-in">
+    <div>
+        <h1 class="page-header-title"><i class="fa-solid fa-user-tie text-primary-pro me-2"></i>{{ T.imam_salary_management }}</h1>
+        <p class="page-header-subtitle">
+           {% if is_default_view %}
+    {{ formatted_month_showing }}
+{% else %}
+    {{ T.showing_period }} <strong>{{ current_period_label }}</strong>
+{% endif %}
+        </p>
+    </div>
+    
+    <div class="page-header-actions">
+        <button type="button" class="btn-pro btn-pro-outline-primary btn-pro-sm" data-bs-toggle="modal" data-bs-target="#exportImamPdfModal">
+            <i class="fa-solid fa-file-pdf"></i> {{ T.salary_status_pdf }}
+        </button>
+        <button class="btn-pro btn-pro-primary btn-pro-sm" data-bs-toggle="modal" data-bs-target="#createSalaryModal">
+            <i class="fa-solid fa-plus"></i> {{ T.add_new_salary }}
+        </button>
+    </div>
+</div>
+
+{% include 'includes/filter_bar.html' with show_year=True show_month=True selected_year=selected_year selected_month=selected_month %}
+
+<!-- Month vs Year Totals -->
+<div class="row g-3 mb-4 fade-in">
+    <div class="col-12 col-md-6">
+        <div class="card-pro h-100">
+            <div class="card-pro-header py-2" style="background: var(--surface-3);">
+                <h6 class="text-primary-pro mb-0"><i class="fa-solid fa-calendar-day me-2"></i>{{ T.this_month_salary }} ({{ current_period_label }})</h6>
+            </div>
+            <div class="card-pro-body">
+                <div class="stat-mini-grid">
+                    <div>
+                        <span class="stat-mini-label">{{ T.total }}</span>
+                        <strong class="stat-mini-value text-dark">RS {{ total_month_salary_value|floatformat:0 }}</strong>
+                    </div>
+                    <div>
+                        <span class="stat-mini-label">{{ T.paid }}</span>
+                        <strong class="stat-mini-value text-success-pro">RS {{ total_month_paid|floatformat:0 }}</strong>
+                    </div>
+                    <div>
+                        <span class="stat-mini-label">{{ T.remaining }}</span>
+                        <strong class="stat-mini-value text-danger-pro">RS {{ total_month_remaining|floatformat:0 }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="card-pro h-100">
+            <div class="card-pro-header py-2" style="background: var(--surface-3);">
+                <h6 class="text-success-pro mb-0"><i class="fa-solid fa-calendar me-2"></i>{{ T.this_year_salary }} ({{ selected_year }})</h6>
+            </div>
+            <div class="card-pro-body">
+                <div class="stat-mini-grid">
+                    <div>
+                        <span class="stat-mini-label">{{ T.total }}</span>
+                        <strong class="stat-mini-value text-dark">RS {{ total_year_salary_value|floatformat:0 }}</strong>
+                    </div>
+                    <div>
+                        <span class="stat-mini-label">{{ T.paid }}</span>
+                        <strong class="stat-mini-value text-success-pro">RS {{ total_year_paid|floatformat:0 }}</strong>
+                    </div>
+                    <div>
+                        <span class="stat-mini-label">{{ T.remaining }}</span>
+                        <strong class="stat-mini-value text-danger-pro">RS {{ total_year_remaining|floatformat:0 }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 fade-in">
+    {% for salary in salaries %}
+    <div class="col-12 col-md-6">
+        <div class="card-pro h-100">
+            <div class="card-pro-header">
+                <div>
+                    <h6 class="fw-bold mb-0 text-dark" style="font-size:1.05rem;">
+                        <i class="fa-solid fa-user-graduate me-2 text-primary-pro"></i>{{ salary.imam_name }}
+                    </h6>
+                    <small class="text-muted">
+                        <i class="fa-regular fa-calendar me-1"></i>{{ T.salary_month }}: <strong>{{ salary.month_year|date:"F Y" }}</strong>
+                    </small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    {% if salary.is_fully_paid %}
+                        <span class="badge-pro badge-pro-success">{{ T.fully_paid }}</span>
+                    {% else %}
+                        <span class="badge-pro badge-pro-warning">{{ T.remaining }}</span>
+                        <button class="btn-pro btn-pro-success btn-pro-sm" data-bs-toggle="modal" data-bs-target="#addPaymentModal{{ salary.id }}">
+                            <i class="fa-solid fa-plus"></i> {{ T.pay }}
+                        </button>
+                    {% endif %}
+
+                    <div class="dropdown">
+                        <button class="btn-pro btn-pro-ghost btn-icon" type="button" data-bs-toggle="dropdown">
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-pro dropdown-menu-end">
+                            <li>
+                                <button type="button" class="dropdown-item text-primary-pro" data-bs-toggle="modal" data-bs-target="#editSalaryModal{{ salary.id }}">
+                                    <i class="fa-solid fa-pen-to-square"></i> {{ T.edit_header }}
+                                </button>
+                            </li>
+                            <li>
+                                <button type="button" class="dropdown-item text-danger-pro" data-bs-toggle="modal" data-bs-target="#deleteSalaryModal{{ salary.id }}">
+                                    <i class="fa-solid fa-trash"></i> {{ T.delete_record }}
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-pro-body">
+                <!-- Financial Summary -->
+                <div class="lease-stats-row mb-3">
+                    <div class="lease-stat-box" style="padding: 0.75rem 0.5rem;">
+                        <span>{{ T.per_month_salary }}</span>
+                        <strong class="text-dark" style="font-size: 1rem;">RS {{ salary.total_salary|floatformat:0 }}</strong>
+                    </div>
+                    <div class="lease-stat-box received" style="padding: 0.75rem 0.5rem;">
+                        <span>{{ T.total_paid }}</span>
+                        <strong class="text-success-pro" style="font-size: 1rem;">RS {{ salary.total_paid|floatformat:0 }}</strong>
+                    </div>
+                    <div class="lease-stat-box pending" style="padding: 0.75rem 0.5rem;">
+                        <span>{{ T.remaining }}</span>
+                        <strong class="text-danger-pro" style="font-size: 1rem;">RS {{ salary.remaining_salary|floatformat:0 }}</strong>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-secondary mb-2" style="font-size: 0.85rem;"><i class="fa-solid fa-list-check me-1"></i>{{ T.installments_history }}</h6>
+                <div class="table-responsive">
+                    <table class="table-pro">
+                        <thead>
+                            <tr>
+                                <th>{{ T.date_and_day }}</th>
+                                <th>{{ T.notes }}</th>
+                                <th class="text-end">{{ T.amount }}</th>
+                                <th class="text-center">{{ T.actions }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inst in salary.installments.all %}
+                            <tr>
+                                <td>
+                                    <small class="text-dark fw-semibold d-block">{{ inst.payment_date|date:"D, d M Y" }}</small>
+                                </td>
+                                <td class="text-muted"><small>{{ inst.notes|default:"Installment" }}</small></td>
+                                <td class="text-end amount-positive">RS {{ inst.amount_paid|floatformat:0 }}</td>
+                                <td class="text-center">
+                                    <div class="table-actions">
+                                        <button class="btn-pro btn-pro-ghost btn-icon" style="width:28px;height:28px;" data-bs-toggle="modal" data-bs-target="#editInstallmentModal{{ inst.id }}" title="Edit">
+                                            <i class="fa-solid fa-pen text-primary-pro" style="font-size:0.75rem;"></i>
+                                        </button>
+                                        <button class="btn-pro btn-pro-ghost btn-icon" style="width:28px;height:28px;" data-bs-toggle="modal" data-bs-target="#deleteInstallmentModal{{ inst.id }}" title="Delete">
+                                            <i class="fa-solid fa-trash text-danger-pro" style="font-size:0.75rem;"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- MODAL: Edit Installment -->
+                            <div class="modal fade modal-pro" id="editInstallmentModal{{ inst.id }}" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header modal-header-primary">
+                                            <h5 class="modal-title"><i class="fa-solid fa-pen"></i> {{ T.installment_update }}</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form action="{% url 'update_imam_installment' inst.id %}" method="POST" data-loading>
+                                            {% csrf_token %}
+                                            <div class="modal-body text-start">
+                                                <div class="form-group-pro">
+                                                    <label class="form-label-pro"><i class="fa-regular fa-calendar"></i> {{ T.payment_date }}</label>
+                                                    <input type="date" name="payment_date" class="form-control-pro" value="{{ inst.payment_date|date:'Y-m-d' }}" required>
+                                                </div>
+                                                <div class="form-group-pro">
+                                                    <label class="form-label-pro"><i class="fa-solid fa-money-bill"></i> {{ T.amount_paid }}</label>
+                                                    <div class="input-group-pro">
+                                                        <span class="input-prefix">RS</span>
+                                                        <input type="number" step="any" name="amount_paid" class="form-control-pro" value="{{ inst.amount_paid }}" required>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group-pro mb-0">
+                                                    <label class="form-label-pro"><i class="fa-solid fa-note-sticky"></i> {{ T.notes }}</label>
+                                                    <input type="text" name="notes" class="form-control-pro" value="{{ inst.notes|default:'' }}">
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                                                <button type="submit" class="btn-pro btn-pro-primary"><i class="fa-solid fa-check"></i> {{ T.update }}</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- MODAL: Delete Installment -->
+                            <div class="modal fade modal-pro" id="deleteInstallmentModal{{ inst.id }}" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered modal-sm">
+                                    <div class="modal-content">
+                                        <div class="modal-body text-center py-4">
+                                            <div class="modal-icon-header modal-icon-danger mx-auto">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-2">{{ T.delete_payment_confirm }}</h6>
+                                            <p class="text-muted small mb-0">{{ T.delete_warning }}</p>
+                                            <div class="delete-preview text-start">
+                                                <strong>{{ T.date }}:</strong> {{ inst.payment_date|date:"d M, Y" }}<br>
+                                                <strong>{{ T.amount }}:</strong> RS {{ inst.amount_paid|floatformat:0 }}
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer justify-content-center">
+                                            <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                                            <form action="{% url 'delete_imam_installment' inst.id %}" method="POST">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn-pro btn-pro-danger"><i class="fa-solid fa-trash"></i> {{ T.delete }}</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted small py-3">{{ T.no_payment_added }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Add Payment (Installment or Full) -->
+    <div class="modal fade modal-pro" id="addPaymentModal{{ salary.id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header modal-header-success">
+                    <h5 class="modal-title"><i class="fa-solid fa-money-bill-wave"></i> {{ T.add_payment_record }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{% url 'add_imam_installment' %}" method="POST" data-loading>
+                    {% csrf_token %}
+                    <input type="hidden" name="salary_id" value="{{ salary.id }}">
+                    <div class="modal-body text-start">
+                        <div class="alert-pro alert-pro-info mb-3" style="margin-bottom: 1rem!important;">
+                            <i class="fa-solid fa-info-circle"></i>
+                            <span><strong>{{ salary.imam_name }}</strong> ({{ salary.month_year|date:"F Y" }}) — {{ T.remaining }}: RS {{ salary.remaining_salary|floatformat:0 }}</span>
+                        </div>
+
+                        <div class="form-group-pro">
+                            <label class="form-label-pro"><i class="fa-solid fa-credit-card"></i> {{ T.payment_mode }}</label>
+                            <select name="payment_type" id="paymentTypeSelect{{ salary.id }}" class="form-select" onchange="toggleAmountField(this, '{{ salary.id }}')" required>
+                                <option value="installment">{{ T.installment_option }}</option>
+                                <option value="full">{{ T.full_payment_option }} (RS {{ salary.remaining_salary|floatformat:0 }})</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group-pro">
+                            <label class="form-label-pro"><i class="fa-regular fa-calendar"></i> {{ T.payment_date }}</label>
+                            <input type="date" name="payment_date" class="form-control-pro" required value="{% now 'Y-m-d' %}">
+                        </div>
+
+                        <div class="form-group-pro" id="amountInputDiv{{ salary.id }}">
+                            <label class="form-label-pro"><i class="fa-solid fa-money-bill"></i> {{ T.amount_paid }}</label>
+                            <div class="input-group-pro">
+                                <span class="input-prefix">RS</span>
+                                <input type="number" step="any" name="amount_paid" class="form-control-pro" max="{{ salary.remaining_salary }}" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group-pro mb-0">
+                            <label class="form-label-pro"><i class="fa-solid fa-note-sticky"></i> {{ T.notes }}</label>
+                            <input type="text" name="notes" class="form-control-pro">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                        <button type="submit" class="btn-pro btn-pro-success"><i class="fa-solid fa-check"></i> {{ T.save_payment }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Edit Main Salary Header -->
+    <div class="modal fade modal-pro" id="editSalaryModal{{ salary.id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header modal-header-primary">
+                    <h5 class="modal-title"><i class="fa-solid fa-pen"></i> {{ T.edit_main_salary_record }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{% url 'update_imam_salary' salary.id %}" method="POST" data-loading>
+                    {% csrf_token %}
+                    <div class="modal-body text-start">
+                        <div class="form-group-pro">
+                            <label class="form-label-pro"><i class="fa-solid fa-user"></i> {{ T.imam_name }}</label>
+                            <input type="text" name="imam_name" class="form-control-pro" value="{{ salary.imam_name }}" required>
+                        </div>
+                        <div class="form-group-pro">
+                            <label class="form-label-pro"><i class="fa-regular fa-calendar"></i> {{ T.salary_month_year }}</label>
+                            <input type="month" name="month_year" class="form-control-pro" value="{{ salary.month_year|date:'Y-m' }}" required>
+                        </div>
+                        <div class="form-group-pro mb-0">
+                            <label class="form-label-pro"><i class="fa-solid fa-money-bill"></i> {{ T.per_month_salary }}</label>
+                            <div class="input-group-pro">
+                                <span class="input-prefix">RS</span>
+                                <input type="number" step="any" name="total_salary" class="form-control-pro" value="{{ salary.total_salary }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                        <button type="submit" class="btn-pro btn-pro-primary"><i class="fa-solid fa-check"></i> {{ T.update }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Delete Main Salary Header -->
+    <div class="modal fade modal-pro" id="deleteSalaryModal{{ salary.id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-body text-center py-4">
+                    <div class="modal-icon-header modal-icon-danger mx-auto">
+                        <i class="fa-solid fa-trash"></i>
+                    </div>
+                    <h6 class="fw-bold mb-2">{{ T.delete_main_salary_record }}</h6>
+                    <p class="text-muted small">{{ T.delete_salary_warning }}</p>
+                    <div class="delete-preview text-start">
+                        <strong>{{ T.imam_name }}:</strong> {{ salary.imam_name }}<br>
+                        <strong>{{ T.salary_month }}:</strong> {{ salary.month_year|date:"F Y" }}
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                    <form action="{% url 'delete_imam_salary' salary.id %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-pro btn-pro-danger"><i class="fa-solid fa-trash"></i> {{ T.delete }}</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5 bg-white card-pro rounded-3">
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fa-solid fa-user-tie"></i>
+            </div>
+            <h6>{{ T.no_salary_record }}</h6>
+            <p>{{ T.no_record_this_period }}</p>
+            <button class="btn-pro btn-pro-primary btn-pro-sm" data-bs-toggle="modal" data-bs-target="#createSalaryModal">
+                <i class="fa-solid fa-plus"></i> {{ T.add_now }}
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- MODAL: Create Main Monthly Salary -->
+<div class="modal fade modal-pro" id="createSalaryModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header modal-header-primary">
+                <h5 class="modal-title"><i class="fa-solid fa-plus"></i> {{ T.new_monthly_salary_record }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{% url 'add_imam_salary' %}" method="POST" data-loading>
+                {% csrf_token %}
+                <div class="modal-body text-start">
+                    <div class="form-group-pro">
+                        <label class="form-label-pro"><i class="fa-solid fa-user"></i> {{ T.imam_name }}</label>
+                        <input type="text" name="imam_name" class="form-control-pro" required>
+                    </div>
+                    <div class="form-group-pro">
+                        <label class="form-label-pro"><i class="fa-regular fa-calendar"></i> {{ T.salary_month_year }}</label>
+                        <input type="month" name="month_year" class="form-control-pro" value="{% now 'Y-m' %}" required>
+                    </div>
+                    <div class="form-group-pro">
+                        <label class="form-label-pro"><i class="fa-solid fa-money-bill"></i> {{ T.per_month_salary }}</label>
+                        <div class="input-group-pro">
+                            <span class="input-prefix">RS</span>
+                            <input type="number" step="any" name="total_salary" id="new_total_salary" class="form-control-pro" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group-pro">
+                        <label class="form-label-pro"><i class="fa-solid fa-credit-card"></i> {{ T.payment_mode }}</label>
+                        <select name="payment_type" id="createPaymentType" class="form-select" onchange="toggleCreateAmountField(this)" required>
+                            <option value="full">{{ T.full_payment_option }}</option>
+                            <option value="installment">{{ T.installment_option }}</option>
+                            <option value="none">{{ T.no_payment_now }}</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group-pro">
+                        <label class="form-label-pro"><i class="fa-regular fa-calendar"></i> {{ T.payment_date }}</label>
+                        <input type="date" name="payment_date" class="form-control-pro" value="{% now 'Y-m-d' %}">
+                    </div>
+
+                    <div class="form-group-pro" id="createAmountInputDiv" style="display: none;">
+                        <label class="form-label-pro"><i class="fa-solid fa-money-bill"></i> {{ T.initial_paid_amount }}</label>
+                        <div class="input-group-pro">
+                            <span class="input-prefix">RS</span>
+                            <input type="number" step="any" name="initial_amount_paid" class="form-control-pro">
+                        </div>
+                    </div>
+
+                    <div class="form-group-pro mb-0">
+                        <label class="form-label-pro"><i class="fa-solid fa-note-sticky"></i> {{ T.notes }}</label>
+                        <input type="text" name="notes" class="form-control-pro">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.close }}</button>
+                    <button type="submit" class="btn-pro btn-pro-primary"><i class="fa-solid fa-floppy-disk"></i> {{ T.save }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Imam PDF Export Modal -->
+<div class="modal fade" id="exportImamPdfModal" tabindex="-1" aria-labelledby="exportImamPdfModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px);">
+            <div class="modal-header border-0 pb-0" style="padding: 24px 24px 10px 24px;">
+                <h5 class="modal-title d-flex align-items-center gap-2 fw-bold text-primary" id="exportImamPdfModalLabel">
+                    <i class="fa-solid fa-file-pdf text-danger fs-4"></i> {{ T.download_imam_salary_pdf }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 10px 24px 24px 24px;">
+                <p class="text-muted small mb-4">{{ T.export_pdf_description }}</p>
+                <form id="exportImamPdfForm" method="GET" action="{% url 'export_imam_salary_pdf' %}" target="_blank">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">{{ T.select_year }}</label>
+                            <select name="year" id="imamPdfExportYear" class="form-select">
+                                {% for y in year_range %}
+                                <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">{{ T.select_month }}</label>
+                            <select name="month" id="imamPdfExportMonth" class="form-select">
+                                <option value="all">{{ T.annual_report }}</option>
+                                {% for num, name in months_list %}
+                                <option value="{{ num }}" {% if num == selected_month %}selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold text-secondary small"><i class="fa-solid fa-language me-1 text-primary"></i> {{ T.pdf_language }}</label>
+                            <select name="lang" id="imamPdfExportLang" class="form-select">
+                                <option value="en" {% if LANG == 'en' %}selected{% endif %}>{{ T.english_lang_option }}</option>
+                                <option value="ur" {% if LANG == 'ur' %}selected{% endif %}>{{ T.urdu_lang_option }}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-2">
+                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal" style="border-radius: 8px;">{{ T.cancel }}</button>
+                        <button type="submit" class="btn btn-primary px-4 fw-semibold" style="border-radius: 8px;" onclick="bootstrap.Modal.getInstance(document.getElementById('exportImamPdfModal')).hide();">
+                            <i class="fa-solid fa-download me-1"></i> {{ T.generate_pdf }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

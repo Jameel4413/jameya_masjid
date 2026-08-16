@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Financial Dashboard{% endblock %}
+{% block page_subtitle %}Khazane ka mukammal overview{% endblock %}
+
+{% block content %}
+
+<!-- Period Filter -->
+<div class="filter-bar mb-4 fade-in">
+    <div class="filter-bar-label">
+        <i class="fa-solid fa-calendar-days"></i> {{ T.period_filter }}
+    </div>
+    <form method="GET" action="{% url 'dashboard' %}" class="filter-bar-fields" style="flex:1;display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <select name="month" class="form-select-pro form-select-enhanced">
+            <option value="">{{ T.all_months }}</option>
+            {% for num, name in months_list %}
+            <option value="{{ num }}" {% if selected_month|stringformat:"s" == num|stringformat:"s" %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+        <select name="year" class="form-select-pro form-select-enhanced">
+            {% for y in year_range %}
+            <option value="{{ y }}" {% if selected_year|stringformat:"s" == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn-pro btn-pro-outline btn-pro-sm">
+            <i class="fa-solid fa-magnifying-glass"></i> {{ T.apply }}
+        </button>
+    </form>
+</div>
+
+<!-- Hero Balance + Period Stats -->
+<div class="row g-3 mb-4 fade-in">
+    <div class="col-12 col-lg-5">
+        <div class="stat-card stat-card-success h-100">
+            <i class="fa-solid fa-vault stat-card-icon"></i>
+            <div class="stat-card-label">{{ T.total_balance_in_hand }}</div>
+            <p class="stat-card-value">RS {{ total_balance_in_hand|floatformat:0 }}</p>
+            <small style="opacity:0.7;font-size:0.78rem;">
+                <i class="fa-solid fa-infinity me-1"></i>{{ T.cash_in_hand }}
+            </small>
+        </div>
+    </div>
+    <div class="col-12 col-lg-7">
+        <div class="row g-3 h-100">
+            <div class="col-6">
+                <div class="stat-card stat-card-neutral h-100">
+                    <i class="fa-solid fa-arrow-trend-up stat-card-icon" style="color:var(--success);opacity:0.15;"></i>
+                    <div class="stat-card-label" style="color:var(--text-muted);">{{ period_label }} {{ T.period_income }}</div>
+                    <p class="stat-card-value text-success-pro" style="font-size:1.4rem;">RS {{ grand_total_income|floatformat:0 }}</p>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="stat-card stat-card-neutral h-100">
+                    <i class="fa-solid fa-arrow-trend-down stat-card-icon" style="color:var(--danger);opacity:0.15;"></i>
+                    <div class="stat-card-label" style="color:var(--text-muted);">{{ period_label }} {{ T.period_expense }}</div>
+                    <p class="stat-card-value text-danger-pro" style="font-size:1.4rem;">RS {{ grand_total_expense|floatformat:0 }}</p>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="stat-card stat-card-info h-100" style="padding:1rem 1.25rem;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="stat-card-label">{{ T.net_balance }}</div>
+                            <p class="stat-card-value mb-0" style="font-size:1.25rem;">
+                                {% if period_net >= 0 %}
+                                    <span class="text-success-pro">+ RS {{ period_net|floatformat:0 }}</span>
+                                {% else %}
+                                    <span class="text-danger-pro">- RS {{ period_net|floatformat:0|cut:"-" }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <button type="button" class="btn-pro btn-pro-outline-primary btn-pro-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#exportPdfModal">
+                            <i class="fa-solid fa-file-pdf"></i> {{ T.period_pdf }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="row g-3 mb-4 fade-in">
+    <div class="col-6 col-md-3">
+        <a href="{% url 'weekly_income' %}" class="card-pro text-decoration-none d-block p-3 text-center">
+            <i class="fa-solid fa-hand-holding-dollar fa-lg text-success-pro mb-2 d-block"></i>
+            <small class="fw-bold text-dark">Chanda Add</small>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'expenses' %}" class="card-pro text-decoration-none d-block p-3 text-center">
+            <i class="fa-solid fa-receipt fa-lg text-danger-pro mb-2 d-block"></i>
+            <small class="fw-bold text-dark">Kharcha Add</small>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'imam_salary' %}" class="card-pro text-decoration-none d-block p-3 text-center">
+            <i class="fa-solid fa-user-tie fa-lg text-primary-pro mb-2 d-block"></i>
+            <small class="fw-bold text-dark">Imam Salary</small>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'land_lease' %}" class="card-pro text-decoration-none d-block p-3 text-center">
+            <i class="fa-solid fa-seedling fa-lg text-warning-pro mb-2 d-block"></i>
+            <small class="fw-bold text-dark">Zameen Theka</small>
+        </a>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="row g-4 fade-in">
+    <div class="col-12 col-lg-6">
+        <div class="card-pro">
+            <div class="card-pro-header">
+                <h6><i class="fa-solid fa-circle-arrow-down text-success-pro"></i> {{ T.recent_income }}</h6>
+                <a href="{% url 'weekly_income' %}" class="btn-pro btn-pro-outline-primary btn-pro-sm">
+                    {{ T.detail }} <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="card-pro-body-flush">
+                {% if recent_incomes %}
+                    {% for inc in recent_incomes %}
+                    <div class="tx-list-item">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="tx-icon tx-icon-income">
+                                <i class="fa-solid fa-plus"></i>
+                            </div>
+                            <div>
+                                <strong class="d-block" style="font-size:0.875rem;">{{ inc.get_day_type_display }}</strong>
+                                <small class="text-muted">{{ inc.date|date:"d M, Y" }}</small>
+                            </div>
+                        </div>
+                        <span class="amount-positive">+ RS {{ inc.amount|floatformat:0 }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    {% include 'includes/empty_state.html' with icon='fa-solid fa-hand-holding-dollar' title='Koi income record nahi' message='Weekly collections page se add karein.' %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="card-pro">
+            <div class="card-pro-header">
+                <h6><i class="fa-solid fa-circle-arrow-up text-danger-pro"></i> {{ T.recent_expenses }}</h6>
+                <a href="{% url 'expenses' %}" class="btn-pro btn-pro-outline-danger btn-pro-sm">
+                    {{ T.detail }} <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="card-pro-body-flush">
+                {% if recent_expenses %}
+                    {% for exp in recent_expenses %}
+                    <div class="tx-list-item">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="tx-icon tx-icon-expense">
+                                <i class="fa-solid fa-minus"></i>
+                            </div>
+                            <div>
+                                <strong class="d-block" style="font-size:0.875rem;">{{ exp.description|truncatechars:30 }}</strong>
+                                <small class="text-muted">
+                                    {{ exp.date|date:"d M, Y" }}
+                                    <span class="badge-pro badge-pro-neutral ms-1">{{ exp.get_category_display }}</span>
+                                </small>
+                            </div>
+                        </div>
+                        <span class="amount-negative">- RS {{ exp.amount|floatformat:0 }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    {% include 'includes/empty_state.html' with icon='fa-solid fa-receipt' title='Koi kharcha record nahi' message='Expenses page se add karein.' %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

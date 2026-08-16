@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Eid Special Collections{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in">
+    <div>
+        <h4 class="fw-bold mb-1 text-warning"><i class="fa-solid fa-kaaba me-2"></i>{{ T.eid_collections }}</h4>
+        <p class="text-muted small mb-0">{{ T.eid_collections_subtitle }}</p>
+    </div>
+    
+    <div class="page-header-actions">
+        <button class="btn-pro btn-pro-warning fw-semibold btn-pro-sm" data-bs-toggle="modal" data-bs-target="#addEidModal">
+            <i class="fa-solid fa-plus me-1"></i> {{ T.add_eid_record }}
+        </button>
+    </div>
+</div>
+
+{% include 'includes/filter_bar.html' with show_year=True show_month=True show_imam_type=True selected_year=selected_year selected_month=selected_month selected_imam_type=selected_imam_type %}
+
+<div class="card-pro fade-in mb-4">
+    <div class="card-pro-body p-0">
+        <div class="table-responsive">
+            <table class="table-pro">
+                <thead>
+                    <tr>
+                        <th>{{ T.date }}</th>
+                        <th>{{ T.eid_name }}</th>
+                        <th>{{ T.imam_name }}</th>
+                        <th>{{ T.imam_type }}</th>
+                        <th>{{ T.notes }}</th>
+                        <th class="text-end">{{ T.amount_collected }}</th>
+                        <th class="text-center" style="width: 120px;">{{ T.actions }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for collection in eid_collections %}
+                    <tr>
+                        <td>{{ collection.date|date:"d M, Y" }}</td>
+                        <td class="fw-semibold text-dark">{{ collection.get_eid_name_display }}</td>
+                        <td>{{ collection.imam_name }}</td>
+                        <td>
+                            {% if collection.imam_type == 'RESIDENT' %}
+                                <span class="badge-pro badge-pro-primary">{{ T.resident_imam }}</span>
+                            {% else %}
+                                <span class="badge-pro badge-pro-info">{{ T.guest_imam }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted">{{ collection.notes|default:"—" }}</td>
+                        <td class="text-end fw-bold text-success">+ RS {{ collection.amount_collected|floatformat:0 }}</td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-pro btn-pro-ghost btn-icon" data-bs-toggle="modal" data-bs-target="#editEidModal{{ collection.id }}" title="Edit">
+                                    <i class="fa-solid fa-pen text-primary-pro"></i>
+                                </button>
+                                <button class="btn-pro btn-pro-ghost btn-icon" data-bs-toggle="modal" data-bs-target="#deleteEidModal{{ collection.id }}" title="Delete">
+                                    <i class="fa-solid fa-trash text-danger-pro"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Edit Eid Modal -->
+                    <div class="modal fade modal-pro" id="editEidModal{{ collection.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header modal-header-warning">
+                                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen"></i> {{ T.edit_eid_collection }}</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form action="{% url 'update_eid_collection' collection.id %}" method="POST" data-loading>
+                                    {% csrf_token %}
+                                    <div class="modal-body text-start">
+                                        <div class="form-group-pro">
+                                            <label class="form-label-pro"><i class="fa-regular fa-calendar"></i> {{ T.date }}</label>
+                                            <input type="date" name="date" class="form-control-pro" required value="{{ collection.date|date:'Y-m-d' }}">
+                                        </div>
+                                        <div class="form-group-pro">
+                                            <label class="form-label-pro"><i class="fa-solid fa-kaaba"></i> {{ T.eid_category }}</label>
+                                            <select name="eid_name" class="form-select" required>
+                                                <option value="EID_UL_FITR" {% if collection.eid_name == 'EID_UL_FITR' %}selected{% endif %}>{{ T.eid_ul_fitr }}</option>
+                                                <option value="EID_UL_ADHA" {% if collection.eid_name == 'EID_UL_ADHA' %}selected{% endif %}>{{ T.eid_ul_adha }}</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group-pro">
+                                            <label class="form-label-pro"><i class="fa-solid fa-user"></i> {{ T.imam_name }}</label>
+                                            <input type="text" name="imam_name" class="form-control-pro" value="{{ collection.imam_name }}" required>
+                                        </div>
+                                        <div class="form-group-pro">
+                                            <label class="form-label-pro"><i class="fa-solid fa-user-tag"></i> {{ T.imam_type }}</label>
+                                            <select name="imam_type" class="form-select" required>
+                                                <option value="RESIDENT" {% if collection.imam_type == 'RESIDENT' %}selected{% endif %}>{{ T.resident_imam }}</option>
+                                                <option value="GUEST" {% if collection.imam_type == 'GUEST' %}selected{% endif %}>{{ T.guest_imam }}</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group-pro">
+                                            <label class="form-label-pro"><i class="fa-solid fa-money-bill"></i> {{ T.amount_collected }}</label>
+                                            <div class="input-group-pro">
+                                                <span class="input-prefix">RS</span>
+                                                <input type="number" step="any" name="amount_collected" class="form-control-pro" value="{{ collection.amount_collected }}" required>
+                                            </div>
+                                        </div>
+                                        <div class="form-group-pro mb-0">
+                                            <label class="form-label-pro"><i class="fa-solid fa-note-sticky"></i> {{ T.notes }} <span class="optional-tag">(optional)</span></label>
+                                            <textarea name="notes" class="form-control-pro" rows="2">{{ collection.notes|default:'' }}</textarea>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                                        <button type="submit" class="btn-pro btn-pro-warning"><i class="fa-solid fa-check"></i> {{ T.update_eid_record }}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delete Eid Modal -->
+                    <div class="modal fade modal-pro" id="deleteEidModal{{ collection.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-sm">
+                            <div class="modal-content">
+                                <div class="modal-body text-center py-4">
+                                    <div class="modal-icon-header modal-icon-danger mx-auto">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-2">{{ T.delete_eid_collection_confirm }}</h6>
+                                    <p class="text-muted small mb-0">{{ T.delete_eid_warning }}</p>
+                                    <div class="delete-preview text-start">
+                                        <strong>{{ T.eid_name }}:</strong> {{ collection.get_eid_name_display }} <br>
+                                        <strong>{{ T.imam_name }}:</strong> {{ collection.imam_name }} <br>
+                                        <strong>{{ T.amount_collected }}:</strong> RS {{ collection.amount_collected|floatformat:0 }}
+                                    </div>
+                                </div>
+                                <div class="modal-footer justify-content-center">
+                                    <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                                    <form action="{% url 'delete_eid_collection' collection.id %}" method="POST">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-pro btn-pro-danger"><i class="fa-solid fa-trash"></i> {{ T.delete }}</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <i class="fa-solid fa-kaaba"></i>
+                                </div>
+                                <h6>{{ T.no_eid_record }}</h6>
+                                <p>{{ T.no_record_this_period_eid }}</p>
+                                <button class="btn-pro btn-pro-warning btn-pro-sm" data-bs-toggle="modal" data-bs-target="#addEidModal">
+                                    <i class="fa-solid fa-plus"></i> {{ T.add_eid_record }}
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Eid Collection Modal -->
+<div class="modal fade modal-pro" id="addEidModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header modal-header-warning">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-kaaba me-2"></i>{{ T.new_eid_collection_entry }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{% url 'add_eid_collection' %}" method="POST" data-loading>
+                {% csrf_token %}
+                <div class="modal-body text-start">
+                    <div class="form-group-pro">
+                        <label class="form-label-pro"><i class="fa-regular fa-calendar"></i> {{ T.date }}</label>
+                        <input type="date" name="date" class="form-control-pro" required value="{% now 'Y-m-d' %}">
+                    </div>
+                    <div class="form-group-pro">
+                        <label class="form-label-pro"><i class="fa-solid fa-kaaba"></i> {{ T.eid_category }}</label>
+                        <select name="eid_name" class="form-select" required>
+                            <option value="EID_UL_FITR">{{ T.eid_ul_fitr }}</option>
+                            <option value="EID_UL_ADHA">{{ T.eid_ul_adha }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group-pro">
+                        <label class="form-label-pro"><i class="fa-solid fa-user"></i> {{ T.imam_name }}</label>
+                        <input type="text" name="imam_name" class="form-control-pro" required>
+                    </div>
+                    <div class="form-group-pro">
+                        <label class="form-label-pro"><i class="fa-solid fa-user-tag"></i> {{ T.imam_type }}</label>
+                        <select name="imam_type" class="form-select" required>
+                            <option value="RESIDENT">{{ T.resident_imam }}</option>
+                            <option value="GUEST">{{ T.guest_imam }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group-pro">
+                        <label class="form-label-pro"><i class="fa-solid fa-money-bill"></i> {{ T.amount_collected }}</label>
+                        <div class="input-group-pro">
+                            <span class="input-prefix">RS</span>
+                            <input type="number" step="any" name="amount_collected" class="form-control-pro" required>
+                        </div>
+                    </div>
+                    <div class="form-group-pro mb-0">
+                        <label class="form-label-pro"><i class="fa-solid fa-note-sticky"></i> {{ T.notes }} <span class="optional-tag">(optional)</span></label>
+                        <textarea name="notes" class="form-control-pro" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-pro btn-pro-outline" data-bs-dismiss="modal">{{ T.cancel }}</button>
+                    <button type="submit" class="btn-pro btn-pro-warning fw-semibold"><i class="fa-solid fa-floppy-disk"></i> {{ T.save_eid_collection }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

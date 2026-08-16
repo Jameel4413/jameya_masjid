@@ -1,0 +1,49 @@
+<form method="GET" class="filter-bar mb-4 fade-in" {% if filter_id %}id="{{ filter_id }}"{% endif %}>
+    <div class="filter-bar-label">
+        <i class="fa-solid fa-sliders"></i>
+        {{ label|default:"Filter Records" }}
+    </div>
+    <div class="filter-bar-fields">
+        {% if show_year %}
+        <select name="year" class="form-select-pro form-select-enhanced">
+            <option value="">Tamam Saal</option>
+            {% for y in year_range %}
+            <option value="{{ y }}" {% if selected_year|stringformat:"s" == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+        {% endif %}
+
+        {% if show_month %}
+        <select name="month" class="form-select-pro form-select-enhanced">
+            <option value="">Tamam Mahine</option>
+            {% for num, name in months_list %}
+            <option value="{{ num }}" {% if selected_month|stringformat:"s" == num|stringformat:"s" %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+        {% endif %}
+
+        {% if show_imam_type %}
+        <select name="imam_type" class="form-select-pro form-select-enhanced">
+            <option value="">Tamam Imams</option>
+            <option value="RESIDENT" {% if selected_imam_type == 'RESIDENT' %}selected{% endif %}>Resident Imam</option>
+            <option value="GUEST" {% if selected_imam_type == 'GUEST' %}selected{% endif %}>Guest Imam</option>
+        </select>
+        {% endif %}
+
+        {% if show_category %}
+        <select name="category" class="form-select-pro form-select-enhanced">
+            <option value="">Tamam Categories</option>
+            <option value="UTILITIES" {% if selected_category == 'UTILITIES' %}selected{% endif %}>Bijli / Pani</option>
+            <option value="REPAIR" {% if selected_category == 'REPAIR' %}selected{% endif %}>Repairing</option>
+            <option value="CLEANING" {% if selected_category == 'CLEANING' %}selected{% endif %}>Safai</option>
+            <option value="EVENT" {% if selected_category == 'EVENT' %}selected{% endif %}>Event / Program</option>
+            <option value="OTHER" {% if selected_category == 'OTHER' %}selected{% endif %}>Digar</option>
+        </select>
+        {% endif %}
+
+        {% block extra_filters %}{% endblock %}
+    </div>
+    <button type="submit" class="btn-pro btn-pro-outline btn-pro-sm">
+        <i class="fa-solid fa-magnifying-glass"></i> Apply
+    </button>
+</form>
