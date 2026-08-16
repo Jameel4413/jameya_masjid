@@ -93,7 +93,8 @@ WSGI_APPLICATION = 'jameya_masjid.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
+IS_VERCEL = 'VERCEL' in os.environ
+SQLITE_DB_PATH = Path('/tmp/db.sqlite3') if IS_VERCEL else BASE_DIR / 'db.sqlite3'
 
 if dj_database_url and DATABASE_URL:
     try:
@@ -109,14 +110,14 @@ if dj_database_url and DATABASE_URL:
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
+                'NAME': SQLITE_DB_PATH,
             }
         }
 else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': SQLITE_DB_PATH,
         }
     }
 
