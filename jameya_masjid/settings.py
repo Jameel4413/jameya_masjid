@@ -102,6 +102,7 @@ if dj_database_url and DATABASE_URL:
                 DATABASE_URL,
                 conn_max_age=600,
                 conn_health_checks=True,
+                ssl_require='supabase' in DATABASE_URL or 'postgres' in DATABASE_URL,
             )
         }
     except Exception as e:
