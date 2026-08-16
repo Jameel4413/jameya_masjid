@@ -2,18 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "jameya_masjid/wsgi.py",
+      "src": "api/index.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
-    },
-    {
       "src": "/(.*)",
-      "dest": "jameya_masjid/wsgi.py"
+      "dest": "api/index.py"
     }
   ]
 }
