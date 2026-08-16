@@ -1,11 +1,13 @@
 import os
 import sys
 
-# Ensure current workspace root is in sys.path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'jameya_masjid.settings')
 
 from django.core.wsgi import get_wsgi_application
 
-app = get_wsgi_application()
+application = get_wsgi_application()
+app = application
