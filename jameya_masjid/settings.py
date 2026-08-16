@@ -93,6 +93,7 @@ WSGI_APPLICATION = 'jameya_masjid.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
 IS_VERCEL = 'VERCEL' in os.environ
 SQLITE_DB_PATH = Path('/tmp/db.sqlite3') if IS_VERCEL else BASE_DIR / 'db.sqlite3'
 
