@@ -104,8 +104,13 @@ if dj_database_url and DATABASE_URL:
             default=db_url,
             conn_max_age=0 if IS_VERCEL else 600,
             conn_health_checks=False if IS_VERCEL else True,
-            ssl_require=True if any(host in db_url for host in ['supabase', 'postgres', 'neon', 'render']) else False,
         )
+        if any(host in db_url for host in ['supabase', 'postgres', 'neon', 'render']) and 'sslmode' not in db_url:
+            db_config.setdefault('OPTIONS', {})['sslmode'] = 'require'
+
+        # CRITICAL: Disable server-side cursors for pgBouncer (Supabase Pooler compatibility)
+        db_config['DISABLE_SERVER_SIDE_CURSORS'] = True
+
         DATABASES = {'default': db_config}
     except Exception as e:
         print("DATABASE_URL parse warning:", e)
@@ -188,7 +193,7 @@ else:
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Session & Security Settings (Serverless & Proxy Compatibility)
-SESSION_ENGINE = 'django.contrib.sessions.backends.db' if DATABASE_URL else 'django.contrib.sessions.backends.signed_cookies'
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_AGE = 86400  # 24 Hours
 SESSION_SAVE_EVERY_REQUEST = True
