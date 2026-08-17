@@ -1542,39 +1542,4 @@ def export_monthly_pdf(request, year=None, month=None):
     filename = f"Masjid_Detailed_Report_{selected_year}_{selected_month or 'annual'}_{pdf_lang}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
-
-
-import sys
-import traceback
-from django.http import HttpResponseServerError
-
-def custom_500(request):
-    exc_type, exc_value, exc_tb = sys.exc_info()
-    error_msg = str(exc_value) if exc_value else "Server Error (500)"
-    tb_str = "".join(traceback.format_exception(exc_type, exc_value, exc_tb)) if exc_type else "No traceback available"
-
-    html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <title>Server Error 500 Diagnostics</title>
-        <style>
-            body {{ font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; }}
-            .card {{ max-width: 900px; margin: 30px auto; background: #1e293b; border-radius: 12px; border: 1px solid #ef4444; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }}
-            h1 {{ color: #f87171; margin-top: 0; font-size: 22px; }}
-            .msg {{ background: #450a0a; color: #fca5a5; padding: 14px; border-radius: 8px; border-left: 4px solid #ef4444; font-size: 15px; font-weight: bold; margin-bottom: 20px; word-break: break-word; }}
-            pre {{ background: #090d16; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.5; }}
-        </style>
-    </head>
-    <body>
-        <div class="card">
-            <h1>⚠️ Live Server Error (500) Diagnostic</h1>
-            <div class="msg">{error_msg}</div>
-            <h3>Detailed Exception Traceback:</h3>
-            <pre>{tb_str}</pre>
-        </div>
-    </body>
-    </html>
-    """
-    return HttpResponseServerError(html)
+
