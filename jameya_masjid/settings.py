@@ -95,12 +95,16 @@ IS_VERCEL = 'VERCEL' in os.environ
 SQLITE_DB_PATH = Path('/tmp/db.sqlite3') if IS_VERCEL else BASE_DIR / 'db.sqlite3'
 
 if dj_database_url and DATABASE_URL:
+    db_url = DATABASE_URL
+    if db_url.startswith('postgres://'):
+        db_url = db_url.replace('postgres://', 'postgresql://', 1)
+
     try:
         db_config = dj_database_url.config(
-            default=DATABASE_URL,
+            default=db_url,
             conn_max_age=0 if IS_VERCEL else 600,
             conn_health_checks=False if IS_VERCEL else True,
-            ssl_require=True if ('supabase' in DATABASE_URL or 'postgres' in DATABASE_URL or 'neon' in DATABASE_URL or 'render' in DATABASE_URL) else False,
+            ssl_require=True if any(host in db_url for host in ['supabase', 'postgres', 'neon', 'render']) else False,
         )
         DATABASES = {'default': db_config}
     except Exception as e:
