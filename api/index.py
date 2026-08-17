@@ -11,7 +11,7 @@ from django.core.wsgi import get_wsgi_application
 
 application = get_wsgi_application()
 
-# Run database migrations and guarantee admin superuser
+# Run database migrations and create admin superuser only if none exists
 try:
     from django.core.management import call_command
     from django.contrib.auth import get_user_model
@@ -19,16 +19,9 @@ try:
     call_command('migrate', interactive=False)
 
     User = get_user_model()
-    user, created = User.objects.get_or_create(
-        username='admin',
-        defaults={'email': 'admin@masjid.com'}
-    )
-    user.set_password('admin12345')
-    user.is_staff = True
-    user.is_superuser = True
-    user.is_active = True
-    user.save()
-    print("Guaranteed admin superuser (admin / admin12345)")
+    if not User.objects.filter(is_superuser=True).exists():
+        User.objects.create_superuser('admin', 'admin@masjid.com', 'admin12345')
+        print("Created initial default admin superuser")
 except Exception as e:
     print("Vercel Auto-Migration Info:", e)
 
