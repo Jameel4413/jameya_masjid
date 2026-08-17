@@ -21,3 +21,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('donation.urls'))
 ]
+
+handler500 = 'donation.views.custom_500'
+
