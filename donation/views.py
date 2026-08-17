@@ -2,16 +2,33 @@ import io
 import os
 from datetime import datetime
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import logout
-from django.db.models import Sum
-from django.http import HttpResponse
-from django.utils import timezone
-from django.contrib import messages
+from django.contrib.auth import logout, update_session_auth_hash
 
 def logout_view(request):
     logout(request)
     return redirect('admin:login')
+
+@login_required
+def change_password_view(request):
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password', '').strip()
+        new_password = request.POST.get('new_password', '').strip()
+        confirm_password = request.POST.get('confirm_password', '').strip()
+
+        if not request.user.check_password(old_password):
+            messages.error(request, 'Purana password sahi nahi hai! (Incorrect old password)')
+        elif new_password != confirm_password:
+            messages.error(request, 'Naya password dono jagah match nahi ho raha! (Passwords do not match)')
+        elif len(new_password) < 6:
+            messages.error(request, 'Naya password kam az kam 6 aksar (characters) ka hona chahiye!')
+        else:
+            request.user.set_password(new_password)
+            request.user.save()
+            update_session_auth_hash(request, request.user)
+            messages.success(request, 'Password kamyabi se badal diya gaya hai! (Password updated successfully)')
+
+    return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
+
 
 
 import arabic_reshaper
