@@ -171,45 +171,38 @@
                         </button>
                     </div>
 
-                    <!-- Dynamic Expense Entry Rows -->
-                    <div class="table-responsive">
-                        <table class="table align-middle" id="expenseRowsTable">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 28%;">{{ T.category }}</th>
-                                    <th style="width: 37%;">{{ T.expense_detail }}</th>
-                                    <th style="width: 28%;">{{ T.paid_amount }}</th>
-                                    <th style="width: 7%;" class="text-center"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="expenseRowsBody">
-                                <tr class="expense-entry-row">
-                                    <td>
-                                        <select name="category[]" class="form-select form-select-sm" required>
-                                            <option value="UTILITIES">{{ T.utilities }}</option>
-                                            <option value="REPAIR">{{ T.repair }}</option>
-                                            <option value="CLEANING">{{ T.cleaning }}</option>
-                                            <option value="EVENT">{{ T.event }}</option>
-                                            <option value="OTHER" selected>{{ T.other_expenses }}</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <input type="text" name="description[]" class="form-control form-control-sm" placeholder="{{ T.expense_detail }}" required>
-                                    </td>
-                                    <td>
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text">RS</span>
-                                            <input type="number" step="any" name="amount[]" class="form-control" min="0" placeholder="0.00" required>
-                                        </div>
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-outline-danger remove-expense-row-btn" title="{{ T.remove_row }}">
-                                            <i class="fa-solid fa-times"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <!-- Dynamic Expense Entry Container -->
+                    <div id="expenseRowsContainer">
+                        <div class="expense-entry-row card p-3 mb-3 bg-light border-0 shadow-sm rounded-3">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label-pro text-dark small mb-1"><i class="fa-solid fa-tags text-danger me-1"></i> {{ T.category }}</label>
+                                    <select name="category[]" class="form-select form-select-pro" required style="font-size: 16px; min-height: 46px;">
+                                        <option value="UTILITIES">{{ T.utilities }}</option>
+                                        <option value="REPAIR">{{ T.repair }}</option>
+                                        <option value="CLEANING">{{ T.cleaning }}</option>
+                                        <option value="EVENT">{{ T.event }}</option>
+                                        <option value="OTHER" selected>{{ T.other_expenses }}</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label-pro text-dark small mb-1"><i class="fa-solid fa-align-left text-secondary me-1"></i> {{ T.expense_detail }}</label>
+                                    <input type="text" name="description[]" class="form-control-pro" placeholder="{{ T.expense_detail }}" required style="font-size: 16px; min-height: 46px;">
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <label class="form-label-pro text-dark small mb-1"><i class="fa-solid fa-money-bill text-danger me-1"></i> {{ T.paid_amount }}</label>
+                                    <div class="input-group-pro">
+                                        <span class="input-prefix" style="min-height: 46px; font-size: 15px;">RS</span>
+                                        <input type="number" step="any" name="amount[]" class="form-control-pro" min="0" placeholder="0.00" required style="font-size: 16px; min-height: 46px;">
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-1 text-end text-md-center">
+                                    <button type="button" class="btn btn-outline-danger btn-pro-sm w-100 remove-expense-row-btn" title="{{ T.remove_row }}" style="min-height: 44px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fa-solid fa-trash d-md-none me-1"></i><i class="fa-solid fa-times d-none d-md-inline"></i> <span class="d-md-none">{{ T.remove_row }}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -223,56 +216,61 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const rowsBody = document.getElementById('expenseRowsBody');
+    const rowsContainer = document.getElementById('expenseRowsContainer');
     const addRowBtn = document.getElementById('addExpenseRowBtn');
 
-    if (addRowBtn && rowsBody) {
+    if (addRowBtn && rowsContainer) {
         addRowBtn.addEventListener('click', function() {
-            const newRow = document.createElement('tr');
-            newRow.className = 'expense-entry-row';
-            newRow.innerHTML = `
-                <td>
-                    <select name="category[]" class="form-select form-select-sm" required>
-                        <option value="UTILITIES">{{ T.utilities }}</option>
-                        <option value="REPAIR">{{ T.repair }}</option>
-                        <option value="CLEANING">{{ T.cleaning }}</option>
-                        <option value="EVENT">{{ T.event }}</option>
-                        <option value="OTHER" selected>{{ T.other_expenses }}</option>
-                    </select>
-                </td>
-                <td>
-                    <input type="text" name="description[]" class="form-control form-control-sm" placeholder="{{ T.expense_detail }}" required>
-                </td>
-                <td>
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text">RS</span>
-                        <input type="number" step="any" name="amount[]" class="form-control" min="0" placeholder="0.00" required>
+            const newCard = document.createElement('div');
+            newCard.className = 'expense-entry-row card p-3 mb-3 bg-light border-0 shadow-sm rounded-3';
+            newCard.innerHTML = `
+                <div class="row g-2 align-items-end">
+                    <div class="col-12 col-md-4">
+                        <label class="form-label-pro text-dark small mb-1"><i class="fa-solid fa-tags text-danger me-1"></i> {{ T.category }}</label>
+                        <select name="category[]" class="form-select form-select-pro" required style="font-size: 16px; min-height: 46px;">
+                            <option value="UTILITIES">{{ T.utilities }}</option>
+                            <option value="REPAIR">{{ T.repair }}</option>
+                            <option value="CLEANING">{{ T.cleaning }}</option>
+                            <option value="EVENT">{{ T.event }}</option>
+                            <option value="OTHER" selected>{{ T.other_expenses }}</option>
+                        </select>
                     </div>
-                </td>
-                <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-outline-danger remove-expense-row-btn" title="{{ T.remove_row }}">
-                        <i class="fa-solid fa-times"></i>
-                    </button>
-                </td>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label-pro text-dark small mb-1"><i class="fa-solid fa-align-left text-secondary me-1"></i> {{ T.expense_detail }}</label>
+                        <input type="text" name="description[]" class="form-control-pro" placeholder="{{ T.expense_detail }}" required style="font-size: 16px; min-height: 46px;">
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label class="form-label-pro text-dark small mb-1"><i class="fa-solid fa-money-bill text-danger me-1"></i> {{ T.paid_amount }}</label>
+                        <div class="input-group-pro">
+                            <span class="input-prefix" style="min-height: 46px; font-size: 15px;">RS</span>
+                            <input type="number" step="any" name="amount[]" class="form-control-pro" min="0" placeholder="0.00" required style="font-size: 16px; min-height: 46px;">
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-1 text-end text-md-center">
+                        <button type="button" class="btn btn-outline-danger btn-pro-sm w-100 remove-expense-row-btn" title="{{ T.remove_row }}" style="min-height: 44px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-trash d-md-none me-1"></i><i class="fa-solid fa-times d-none d-md-inline"></i> <span class="d-md-none">{{ T.remove_row }}</span>
+                        </button>
+                    </div>
+                </div>
             `;
-            rowsBody.appendChild(newRow);
+            rowsContainer.appendChild(newCard);
             updateRemoveButtons();
         });
 
-        rowsBody.addEventListener('click', function(e) {
+        rowsContainer.addEventListener('click', function(e) {
             const btn = e.target.closest('.remove-expense-row-btn');
             if (btn) {
-                const rows = rowsBody.querySelectorAll('.expense-entry-row');
+                const rows = rowsContainer.querySelectorAll('.expense-entry-row');
                 if (rows.length > 1) {
-                    btn.closest('tr').remove();
+                    btn.closest('.expense-entry-row').remove();
                     updateRemoveButtons();
                 }
             }
         });
 
         function updateRemoveButtons() {
-            const rows = rowsBody.querySelectorAll('.expense-entry-row');
-            const btns = rowsBody.querySelectorAll('.remove-expense-row-btn');
+            const rows = rowsContainer.querySelectorAll('.expense-entry-row');
+            const btns = rowsContainer.querySelectorAll('.remove-expense-row-btn');
             btns.forEach(btn => {
                 btn.disabled = (rows.length <= 1);
             });
