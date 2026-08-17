@@ -3,7 +3,9 @@ from . import views
 
 urlpatterns = [
     path('', views.dashboard_view, name='dashboard'),
+    path('logout/', views.logout_view, name='logout'),
     path('set-language/', views.set_language, name='set_language'),
+
 
     # Weekly Income
     path('weekly-income/', views.weekly_income_view, name='weekly_income'),
