@@ -192,14 +192,16 @@ else:
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Session & Security Settings (Serverless & Proxy Compatibility)
-SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+# Session & Security Settings (Persistent Database Sessions)
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_AGE = 86400  # 24 Hours
+SESSION_COOKIE_AGE = 2592000  # 30 Days (1 Month)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_SAVE_EVERY_REQUEST = True
 
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
+
 
 # Proxy & SSL Header configuration for Vercel / Cloud Hosts
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
