@@ -399,7 +399,163 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/scripts/choices.min.js"></script>
-    <script src="{% static 'js/masjid.js' %}?v=3.0"></script>
+    <script src="{% static 'js/masjid.js' %}?v=4.0"></script>
+
+    <!-- LIGHTNING-FAST INLINE SPA NAVIGATION ENGINE -->
+    <script>
+    (function () {
+        'use strict';
+
+        function getProgressBar() {
+            var bar = document.getElementById('spa-top-progress');
+            if (!bar) {
+                bar = document.createElement('div');
+                bar.id = 'spa-top-progress';
+                document.body.appendChild(bar);
+            }
+            return bar;
+        }
+
+        var progressTimer = null;
+        function startProgressBar() {
+            var bar = getProgressBar();
+            bar.style.transition = 'width 0.15s ease, opacity 0.15s ease';
+            bar.style.opacity = '1';
+            bar.style.width = '30%';
+
+            clearInterval(progressTimer);
+            progressTimer = setInterval(function () {
+                var w = parseFloat(bar.style.width) || 30;
+                if (w < 88) {
+                    bar.style.width = (w + Math.random() * 15) + '%';
+                }
+            }, 80);
+        }
+
+        function finishProgressBar() {
+            clearInterval(progressTimer);
+            var bar = getProgressBar();
+            bar.style.width = '100%';
+            setTimeout(function () {
+                bar.style.opacity = '0';
+                setTimeout(function () {
+                    bar.style.width = '0%';
+                }, 150);
+            }, 100);
+        }
+
+        function updateActiveLinks(pathname) {
+            document.querySelectorAll('.mobile-bottom-nav-link, .nav-link-custom, .dropdown-item-pro').forEach(function (link) {
+                var href = link.getAttribute('href');
+                if (href && !href.startsWith('javascript') && !href.startsWith('#')) {
+                    try {
+                        var linkPath = new URL(href, window.location.origin).pathname;
+                        if (linkPath === pathname) {
+                            link.classList.add('active');
+                        } else {
+                            link.classList.remove('active');
+                        }
+                    } catch (e) {}
+                }
+            });
+        }
+
+        function reexecuteScripts(container) {
+            var scripts = container.querySelectorAll('script');
+            scripts.forEach(function (oldScript) {
+                var newScript = document.createElement('script');
+                Array.from(oldScript.attributes).forEach(function (attr) {
+                    newScript.setAttribute(attr.name, attr.value);
+                });
+                newScript.textContent = oldScript.textContent;
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+        }
+
+        function loadPageSPA(url, pushState) {
+            startProgressBar();
+
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(function (res) {
+                if (!res.ok) throw new Error('Network error ' + res.status);
+                return res.text();
+            })
+            .then(function (html) {
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(html, 'text/html');
+
+                var newContent = doc.querySelector('.content-area') || doc.querySelector('#main-wrapper') || doc.body;
+                var currentContent = document.querySelector('.content-area') || document.querySelector('#main-wrapper') || document.body;
+
+                if (newContent && currentContent && newContent !== doc.body) {
+                    currentContent.innerHTML = newContent.innerHTML;
+                    document.title = doc.title;
+
+                    if (pushState !== false) {
+                        window.history.pushState({ url: url }, doc.title, url);
+                    }
+
+                    updateActiveLinks(new URL(url, window.location.origin).pathname);
+                    reexecuteScripts(currentContent);
+
+                    if (typeof window.reinitPageUI === 'function') {
+                        window.reinitPageUI();
+                    }
+
+                    window.scrollTo({ top: 0, behavior: 'instant' });
+                    finishProgressBar();
+                } else {
+                    window.location.href = url;
+                }
+            })
+            .catch(function (err) {
+                console.warn('SPA navigation fallback:', err);
+                finishProgressBar();
+                window.location.href = url;
+            });
+        }
+
+        /* CAPTURE PHASE CLICK INTERCEPTOR */
+        document.addEventListener('click', function (e) {
+            var link = e.target.closest('a');
+            if (!link) return;
+
+            var href = link.getAttribute('href');
+            if (!href || href === 'javascript:void(0)' || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || link.getAttribute('target') === '_blank' || link.hasAttribute('data-no-spa')) {
+                return;
+            }
+
+            if (href.includes('export_pdf') || href.includes('logout') || href.includes('admin')) {
+                return;
+            }
+
+            try {
+                var targetUrl = new URL(href, window.location.origin);
+                if (targetUrl.origin !== window.location.origin) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                loadPageSPA(targetUrl.href, true);
+            } catch (err) {}
+        }, true);
+
+        window.addEventListener('popstate', function (e) {
+            if (e.state && e.state.url) {
+                loadPageSPA(e.state.url, false);
+            } else {
+                window.location.reload();
+            }
+        });
+
+        window.loadPageSPA = loadPageSPA;
+    })();
+    </script>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -286,6 +286,8 @@
         closeSidebar();
     }
 
+    window.reinitPageUI = reinitUIComponents;
+
     function loadPageSPA(url, pushState) {
         startProgressBar();
 
