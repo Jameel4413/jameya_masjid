@@ -39,11 +39,11 @@
             position: fixed;
             top: 0;
             left: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #10b981, #3b82f6, #6366f1);
+            height: 4px;
+            background: linear-gradient(90deg, #10b981, #06b6d4, #3b82f6);
             z-index: 99999;
             transition: width 0.15s ease, opacity 0.15s ease;
-            box-shadow: 0 0 12px rgba(16, 185, 129, 0.9);
+            box-shadow: 0 0 14px rgba(16, 185, 129, 1);
             width: 0%;
             pointer-events: none;
         }
@@ -480,11 +480,41 @@
             document.body.style.overflow = '';
         }
 
-        function loadPageSPA(url, pushState) {
-            closeMobileSidebar();
-            startProgressBar();
+        window.spaPageCache = window.spaPageCache || {};
 
-            fetch(url, {
+        function renderPageHTML(html, url, pushState) {
+            var parser = new DOMParser();
+            var doc = parser.parseFromString(html, 'text/html');
+
+            var newContent = doc.querySelector('.content-area') || doc.querySelector('#main-wrapper') || doc.body;
+            var currentContent = document.querySelector('.content-area') || document.querySelector('#main-wrapper') || document.body;
+
+            if (newContent && currentContent && newContent !== doc.body) {
+                currentContent.innerHTML = newContent.innerHTML;
+                document.title = doc.title;
+
+                if (pushState !== false) {
+                    window.history.pushState({ url: url }, doc.title, url);
+                }
+
+                updateActiveLinks(new URL(url, window.location.origin).pathname);
+                reexecuteScripts(currentContent);
+
+                if (typeof window.reinitPageUI === 'function') {
+                    window.reinitPageUI();
+                }
+
+                closeMobileSidebar();
+                window.scrollTo({ top: 0, behavior: 'instant' });
+                return true;
+            }
+            return false;
+        }
+
+        function fetchAndCache(url, pushState, isInitialLoad) {
+            if (isInitialLoad) startProgressBar();
+
+            return fetch(url, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
@@ -494,39 +524,34 @@
                 return res.text();
             })
             .then(function (html) {
-                var parser = new DOMParser();
-                var doc = parser.parseFromString(html, 'text/html');
+                window.spaPageCache[url] = html;
 
-                var newContent = doc.querySelector('.content-area') || doc.querySelector('#main-wrapper') || doc.body;
-                var currentContent = document.querySelector('.content-area') || document.querySelector('#main-wrapper') || document.body;
-
-                if (newContent && currentContent && newContent !== doc.body) {
-                    currentContent.innerHTML = newContent.innerHTML;
-                    document.title = doc.title;
-
-                    if (pushState !== false) {
-                        window.history.pushState({ url: url }, doc.title, url);
-                    }
-
-                    updateActiveLinks(new URL(url, window.location.origin).pathname);
-                    reexecuteScripts(currentContent);
-
-                    if (typeof window.reinitPageUI === 'function') {
-                        window.reinitPageUI();
-                    }
-
-                    closeMobileSidebar();
-                    window.scrollTo({ top: 0, behavior: 'instant' });
+                if (isInitialLoad) {
+                    var success = renderPageHTML(html, url, pushState);
                     finishProgressBar();
-                } else {
-                    window.location.href = url;
+                    if (!success) window.location.href = url;
                 }
             })
             .catch(function (err) {
                 console.warn('SPA navigation fallback:', err);
-                finishProgressBar();
-                window.location.href = url;
+                if (isInitialLoad) {
+                    finishProgressBar();
+                    window.location.href = url;
+                }
             });
+        }
+
+        function loadPageSPA(url, pushState) {
+            closeMobileSidebar();
+            var targetUrl = new URL(url, window.location.origin).href;
+
+            if (window.spaPageCache[targetUrl]) {
+                renderPageHTML(window.spaPageCache[targetUrl], targetUrl, pushState);
+                fetchAndCache(targetUrl, pushState, false);
+                return;
+            }
+
+            fetchAndCache(targetUrl, pushState, true);
         }
 
         /* CAPTURE PHASE CLICK INTERCEPTOR */
