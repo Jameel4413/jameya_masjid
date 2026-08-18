@@ -68,9 +68,26 @@
 
     initChoices();
 
-    /* Re-init Choices when modals open (hidden selects need fresh init) */
-    document.querySelectorAll('.modal').forEach((modal) => {
-        modal.addEventListener('shown.bs.modal', () => {
+    /* Global Bootstrap Modal events — hide mobile bottom nav & re-init Choices */
+    document.addEventListener('show.bs.modal', function () {
+        const nav = document.querySelector('.mobile-bottom-nav');
+        if (nav) {
+            nav.style.setProperty('display', 'none', 'important');
+            nav.style.setProperty('visibility', 'hidden', 'important');
+        }
+    }, true);
+
+    document.addEventListener('hidden.bs.modal', function () {
+        const nav = document.querySelector('.mobile-bottom-nav');
+        if (nav && !document.querySelector('.modal.show')) {
+            nav.style.removeProperty('display');
+            nav.style.removeProperty('visibility');
+        }
+    }, true);
+
+    document.addEventListener('shown.bs.modal', function (e) {
+        const modal = e.target;
+        if (modal && modal.querySelectorAll) {
             modal.querySelectorAll('select.form-select-pro:not([data-choices-init="true"])').forEach((el) => {
                 if (typeof Choices !== 'undefined') {
                     new Choices(el, {
@@ -81,8 +98,8 @@
                     el.dataset.choicesInit = 'true';
                 }
             });
-        });
-    });
+        }
+    }, true);
 
     /* ---- Payment type toggles (Imam Salary) ---- */
     window.toggleAmountField = function (selectElem, salaryId) {
@@ -237,6 +254,25 @@
             });
         });
     }
+
+    /* ---- Instant Navigation Prefetching ---- */
+    const prefetchUrl = (url) => {
+        if (!url || url === 'javascript:void(0)' || url.startsWith('#')) return;
+        if (!document.querySelector(`link[rel="prefetch"][href="${url}"]`)) {
+            const link = document.createElement('link');
+            link.rel = 'prefetch';
+            link.href = url;
+            document.head.appendChild(link);
+        }
+    };
+
+    document.querySelectorAll('.mobile-bottom-nav-link, .nav-link-pro, .dropdown-item-pro').forEach((el) => {
+        const href = el.getAttribute('href');
+        if (href && href !== 'javascript:void(0)' && !href.startsWith('#')) {
+            el.addEventListener('touchstart', () => prefetchUrl(href), { passive: true });
+            el.addEventListener('mouseenter', () => prefetchUrl(href), { passive: true });
+        }
+    });
 
     // Initialize Urdu keyboard if language is Urdu
     document.addEventListener('DOMContentLoaded', enableUrduKeyboard);

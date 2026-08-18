@@ -255,6 +255,25 @@
         });
     }
 
+    /* ---- Instant Navigation Prefetching ---- */
+    const prefetchUrl = (url) => {
+        if (!url || url === 'javascript:void(0)' || url.startsWith('#')) return;
+        if (!document.querySelector(`link[rel="prefetch"][href="${url}"]`)) {
+            const link = document.createElement('link');
+            link.rel = 'prefetch';
+            link.href = url;
+            document.head.appendChild(link);
+        }
+    };
+
+    document.querySelectorAll('.mobile-bottom-nav-link, .nav-link-pro, .dropdown-item-pro').forEach((el) => {
+        const href = el.getAttribute('href');
+        if (href && href !== 'javascript:void(0)' && !href.startsWith('#')) {
+            el.addEventListener('touchstart', () => prefetchUrl(href), { passive: true });
+            el.addEventListener('mouseenter', () => prefetchUrl(href), { passive: true });
+        }
+    });
+
     // Initialize Urdu keyboard if language is Urdu
     document.addEventListener('DOMContentLoaded', enableUrduKeyboard);
 

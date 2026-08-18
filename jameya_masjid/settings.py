@@ -102,7 +102,7 @@ if dj_database_url and DATABASE_URL:
     try:
         db_config = dj_database_url.config(
             default=db_url,
-            conn_max_age=0 if IS_VERCEL else 600,
+            conn_max_age=60 if IS_VERCEL else 600,
             conn_health_checks=False if IS_VERCEL else True,
         )
         if any(host in db_url for host in ['supabase', 'postgres', 'neon', 'render']) and 'sslmode' not in db_url:
