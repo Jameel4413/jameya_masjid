@@ -68,8 +68,17 @@
 
     initChoices();
 
-    /* Re-init Choices when modals open (hidden selects need fresh init) */
+    /* Re-init Choices and hide mobile bottom nav when modals open */
+    const mobileNavEl = document.querySelector('.mobile-bottom-nav');
     document.querySelectorAll('.modal').forEach((modal) => {
+        modal.addEventListener('show.bs.modal', () => {
+            if (mobileNavEl) mobileNavEl.style.setProperty('display', 'none', 'important');
+        });
+        modal.addEventListener('hidden.bs.modal', () => {
+            if (mobileNavEl && !document.querySelector('.modal.show')) {
+                mobileNavEl.style.removeProperty('display');
+            }
+        });
         modal.addEventListener('shown.bs.modal', () => {
             modal.querySelectorAll('select.form-select-pro:not([data-choices-init="true"])').forEach((el) => {
                 if (typeof Choices !== 'undefined') {
