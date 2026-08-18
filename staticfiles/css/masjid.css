@@ -891,6 +891,14 @@ textarea.form-control-pro {
     z-index: 10050 !important;
 }
 
+.modal-content > form {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+}
+
 .modal-pro .modal-content {
     border: none;
     border-radius: var(--radius-xl);
@@ -1284,7 +1292,7 @@ body.modal-open .mobile-bottom-nav,
     }
 
     .mobile-bottom-nav {
-        display: block !important;
+        display: block;
     }
 }
 
@@ -1540,10 +1548,6 @@ body.modal-open .mobile-bottom-nav,
     .table-mobile-card tbody td:only-child {
         display: block;
         padding: 0 !important;
-    }
-
-    .mobile-bottom-nav {
-        display: block;
     }
 }
 

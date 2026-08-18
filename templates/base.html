@@ -18,7 +18,108 @@
     <!-- Choices.js — Beautiful Dropdowns -->
     <link href="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/styles/choices.min.css" rel="stylesheet">
     <!-- Custom Design System -->
-    <link href="{% static 'css/masjid.css' %}?v=1.5" rel="stylesheet">
+    <link href="{% static 'css/masjid.css' %}?v=2.0" rel="stylesheet">
+
+    <style>
+        /* CRITICAL LIVE FIX: Hide mobile bottom navbar on any modal show */
+        body.modal-open .mobile-bottom-nav,
+        .modal.show ~ .mobile-bottom-nav,
+        body:has(.modal.show) .mobile-bottom-nav,
+        .modal-open .mobile-bottom-nav {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+        }
+
+        .modal-backdrop {
+            z-index: 10040 !important;
+        }
+
+        .modal {
+            z-index: 10050 !important;
+        }
+
+        .modal-content > form {
+            display: flex !important;
+            flex-direction: column !important;
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+        }
+
+        @media (max-width: 767.98px) {
+            .modal-dialog {
+                margin: 0.5rem auto 80px auto !important;
+                max-width: calc(100% - 1rem) !important;
+            }
+
+            .modal-dialog-centered {
+                min-height: calc(100% - 90px) !important;
+                min-height: calc(100dvh - 90px) !important;
+                display: flex !important;
+                align-items: flex-start !important;
+            }
+
+            .modal-content {
+                border-radius: 16px !important;
+                max-height: calc(100vh - 90px) !important;
+                max-height: calc(100dvh - 90px) !important;
+                display: flex !important;
+                flex-direction: column !important;
+                overflow: hidden !important;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+            }
+
+            .modal-body {
+                padding: 1.15rem 0.85rem !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch;
+                flex: 1 1 auto !important;
+                min-height: 0 !important;
+            }
+
+            .modal-footer {
+                padding: 0.75rem 0.85rem !important;
+                background: #ffffff !important;
+                border-top: 1px solid var(--border-light) !important;
+                flex-shrink: 0 !important;
+                display: flex !important;
+                gap: 0.5rem !important;
+                align-items: center !important;
+                justify-content: flex-end !important;
+                position: sticky !important;
+                bottom: 0 !important;
+                z-index: 10 !important;
+            }
+
+            .modal-footer .btn-pro,
+            .modal-footer .btn {
+                min-height: 44px !important;
+                font-size: 0.92rem !important;
+                padding: 0.5rem 1.25rem !important;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('show.bs.modal', function () {
+            document.body.classList.add('modal-open');
+            var nav = document.querySelector('.mobile-bottom-nav');
+            if (nav) nav.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;';
+        }, true);
+
+        document.addEventListener('hidden.bs.modal', function () {
+            if (!document.querySelector('.modal.show')) {
+                document.body.classList.remove('modal-open');
+                var nav = document.querySelector('.mobile-bottom-nav');
+                if (nav) nav.style.cssText = '';
+            }
+        }, true);
+    </script>
 
     {% block extra_css %}{% endblock %}
     <script>

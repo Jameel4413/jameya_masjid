@@ -68,18 +68,26 @@
 
     initChoices();
 
-    /* Re-init Choices and hide mobile bottom nav when modals open */
-    const mobileNavEl = document.querySelector('.mobile-bottom-nav');
-    document.querySelectorAll('.modal').forEach((modal) => {
-        modal.addEventListener('show.bs.modal', () => {
-            if (mobileNavEl) mobileNavEl.style.setProperty('display', 'none', 'important');
-        });
-        modal.addEventListener('hidden.bs.modal', () => {
-            if (mobileNavEl && !document.querySelector('.modal.show')) {
-                mobileNavEl.style.removeProperty('display');
-            }
-        });
-        modal.addEventListener('shown.bs.modal', () => {
+    /* Global Bootstrap Modal events — hide mobile bottom nav & re-init Choices */
+    document.addEventListener('show.bs.modal', function () {
+        const nav = document.querySelector('.mobile-bottom-nav');
+        if (nav) {
+            nav.style.setProperty('display', 'none', 'important');
+            nav.style.setProperty('visibility', 'hidden', 'important');
+        }
+    }, true);
+
+    document.addEventListener('hidden.bs.modal', function () {
+        const nav = document.querySelector('.mobile-bottom-nav');
+        if (nav && !document.querySelector('.modal.show')) {
+            nav.style.removeProperty('display');
+            nav.style.removeProperty('visibility');
+        }
+    }, true);
+
+    document.addEventListener('shown.bs.modal', function (e) {
+        const modal = e.target;
+        if (modal && modal.querySelectorAll) {
             modal.querySelectorAll('select.form-select-pro:not([data-choices-init="true"])').forEach((el) => {
                 if (typeof Choices !== 'undefined') {
                     new Choices(el, {
@@ -90,8 +98,8 @@
                     el.dataset.choicesInit = 'true';
                 }
             });
-        });
-    });
+        }
+    }, true);
 
     /* ---- Payment type toggles (Imam Salary) ---- */
     window.toggleAmountField = function (selectElem, salaryId) {
