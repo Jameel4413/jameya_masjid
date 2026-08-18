@@ -472,7 +472,16 @@
             });
         }
 
+        function closeMobileSidebar() {
+            var sidebar = document.getElementById('sidebar');
+            var sidebarOverlay = document.getElementById('sidebarOverlay');
+            if (sidebar) sidebar.classList.remove('active');
+            if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
         function loadPageSPA(url, pushState) {
+            closeMobileSidebar();
             startProgressBar();
 
             fetch(url, {
@@ -506,6 +515,7 @@
                         window.reinitPageUI();
                     }
 
+                    closeMobileSidebar();
                     window.scrollTo({ top: 0, behavior: 'instant' });
                     finishProgressBar();
                 } else {
