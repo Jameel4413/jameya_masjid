@@ -1,5 +1,5 @@
 /**
- * Masjid Hisab — UI Enhancements
+ * Masjid Hisab — UI Enhancements & Lightning Fast SPA Engine
  */
 (function () {
     'use strict';
@@ -36,14 +36,20 @@
     sidebarOverlay?.addEventListener('click', closeSidebar);
 
     /* ---- Auto-dismiss alerts ---- */
-    document.querySelectorAll('.alert-pro[data-auto-dismiss]').forEach((alert) => {
-        setTimeout(() => {
-            alert.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-            alert.style.opacity = '0';
-            alert.style.transform = 'translateY(-8px)';
-            setTimeout(() => alert.remove(), 400);
-        }, 4500);
-    });
+    function initAlerts() {
+        document.querySelectorAll('.alert-pro[data-auto-dismiss]').forEach((alert) => {
+            if (alert.dataset.dismissInit) return;
+            alert.dataset.dismissInit = 'true';
+            setTimeout(() => {
+                alert.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                alert.style.opacity = '0';
+                alert.style.transform = 'translateY(-8px)';
+                setTimeout(() => alert.remove(), 400);
+            }, 4500);
+        });
+    }
+
+    initAlerts();
 
     /* ---- Choices.js — beautiful dropdowns ---- */
     function initChoices() {
@@ -131,91 +137,43 @@
     };
 
     /* ---- Form submit loading state ---- */
-    document.querySelectorAll('form[data-loading]').forEach((form) => {
-        form.addEventListener('submit', function () {
-            const btn = form.querySelector('[type="submit"]');
-            if (btn && !btn.disabled) {
-                btn.disabled = true;
-                const original = btn.innerHTML;
-                btn.dataset.originalHtml = original;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
-            }
-        });
-    });
-
-    /* ---- Number input — prevent negative where min=0 ---- */
-    document.querySelectorAll('input[type="number"][min="0"]').forEach((input) => {
-        input.addEventListener('keydown', (e) => {
-            if (e.key === '-' || e.key === 'e') e.preventDefault();
-        });
-    });
-
-    /* ---- Sync PDF Export Modal with active URL filters ---- */
-    const exportPdfModal = document.getElementById('exportPdfModal');
-    if (exportPdfModal) {
-        exportPdfModal.addEventListener('show.bs.modal', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const year = urlParams.get('year');
-            const month = urlParams.get('month');
-
-            const yearSelect = document.getElementById('pdfExportYear');
-            const monthSelect = document.getElementById('pdfExportMonth');
-
-            if (yearSelect && year) {
-                yearSelect.value = year;
-            }
-            if (monthSelect) {
-                if (month) {
-                    monthSelect.value = month;
-                } else if (urlParams.has('month') && month === '') {
-                    monthSelect.value = 'all';
+    function initFormLoading() {
+        document.querySelectorAll('form[data-loading]').forEach((form) => {
+            if (form.dataset.loadingAttached) return;
+            form.dataset.loadingAttached = 'true';
+            form.addEventListener('submit', function () {
+                const btn = form.querySelector('[type="submit"]');
+                if (btn && !btn.disabled) {
+                    btn.disabled = true;
+                    const original = btn.innerHTML;
+                    btn.dataset.originalHtml = original;
+                    btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin me-1"></i> Processing...`;
                 }
-            }
+            });
         });
     }
 
-    const exportImamPdfModal = document.getElementById('exportImamPdfModal');
-    if (exportImamPdfModal) {
-        exportImamPdfModal.addEventListener('show.bs.modal', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const year = urlParams.get('year');
-            const month = urlParams.get('month');
+    initFormLoading();
 
-            const yearSelect = document.getElementById('imamPdfExportYear');
-            const monthSelect = document.getElementById('imamPdfExportMonth');
-
-            if (yearSelect && year) {
-                yearSelect.value = year;
-            }
-            if (monthSelect) {
-                if (month) {
-                    monthSelect.value = month;
-                } else if (urlParams.has('month') && month === '') {
-                    monthSelect.value = 'all';
-                }
-            }
-        });
-    }
-
-    /* ---- Roman Urdu to Urdu Phonetic Keyboard ---- */
+    /* ---- Urdu Phonetic Keyboard Handler ---- */
     const urduPhoneticMap = {
         'a': 'ا', 'A': 'آ',
         'b': 'ب', 'B': 'ب',
         'c': 'چ', 'C': 'ث',
         'd': 'د', 'D': 'ڈ',
-        'e': 'ع', 'E': 'ع',
+        'e': 'ع', 'E': 'ء',
         'f': 'ف', 'F': 'ف',
         'g': 'گ', 'G': 'غ',
-        'h': 'ہ', 'H': 'ح',
-        'i': 'ی', 'I': 'ی',
+        'h': 'ح', 'H': 'ھ',
+        'i': 'ی', 'I': 'ٰ',
         'j': 'ج', 'J': 'ض',
         'k': 'ک', 'K': 'خ',
         'l': 'ل', 'L': 'ل',
-        'm': 'م', 'M': 'م',
+        'm': 'م', 'M': 'ں',
         'n': 'ن', 'N': 'ں',
-        'o': 'و', 'O': 'و',
-        'p': 'پ', 'P': 'پ',
-        'q': 'ق', 'Q': 'ق',
+        'o': 'ہ', 'O': 'ۃ',
+        'p': 'پ', 'P': 'ُ',
+        'q': 'ق', 'Q': 'ٹ',
         'r': 'ر', 'R': 'ڑ',
         's': 'س', 'S': 'ص',
         't': 'ت', 'T': 'ٹ',
@@ -234,28 +192,176 @@
         }
 
         document.querySelectorAll('input[type="text"], textarea').forEach(input => {
+            if (input.dataset.urduInit) return;
+            input.dataset.urduInit = 'true';
             input.addEventListener('keypress', function(e) {
-                // If ctrl or alt is pressed, ignore
                 if (e.ctrlKey || e.altKey) return;
-                
                 const char = e.key;
                 if (urduPhoneticMap.hasOwnProperty(char)) {
                     e.preventDefault();
-                    
                     const urduChar = urduPhoneticMap[char];
                     const start = this.selectionStart;
                     const end = this.selectionEnd;
-                    
                     const text = this.value;
                     this.value = text.substring(0, start) + urduChar + text.substring(end);
-                    
                     this.selectionStart = this.selectionEnd = start + 1;
                 }
             });
         });
     }
 
-    /* ---- Instant Navigation Prefetching ---- */
+    document.addEventListener('DOMContentLoaded', enableUrduKeyboard);
+
+    /* =========================================================
+     * LIGHTNING FAST NATIVE SPA NAVIGATION ENGINE
+     * ========================================================= */
+    function getProgressBar() {
+        let bar = document.getElementById('spa-top-progress');
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.id = 'spa-top-progress';
+            document.body.appendChild(bar);
+        }
+        return bar;
+    }
+
+    let progressTimer = null;
+    function startProgressBar() {
+        const bar = getProgressBar();
+        bar.style.transition = 'width 0.15s ease, opacity 0.15s ease';
+        bar.style.opacity = '1';
+        bar.style.width = '20%';
+
+        clearInterval(progressTimer);
+        progressTimer = setInterval(() => {
+            const currentWidth = parseFloat(bar.style.width) || 20;
+            if (currentWidth < 88) {
+                bar.style.width = (currentWidth + Math.random() * 12) + '%';
+            }
+        }, 120);
+    }
+
+    function finishProgressBar() {
+        clearInterval(progressTimer);
+        const bar = getProgressBar();
+        bar.style.width = '100%';
+        setTimeout(() => {
+            bar.style.opacity = '0';
+            setTimeout(() => {
+                bar.style.width = '0%';
+            }, 200);
+        }, 120);
+    }
+
+    function updateActiveLinks(pathname) {
+        document.querySelectorAll('.mobile-bottom-nav-link, .nav-link-custom, .dropdown-item-pro').forEach((link) => {
+            const href = link.getAttribute('href');
+            if (href && !href.startsWith('javascript') && !href.startsWith('#')) {
+                try {
+                    const linkPath = new URL(href, window.location.origin).pathname;
+                    if (linkPath === pathname) {
+                        link.classList.add('active');
+                    } else {
+                        link.classList.remove('active');
+                    }
+                } catch (e) {}
+            }
+        });
+    }
+
+    function reexecuteScripts(container) {
+        container.querySelectorAll('script').forEach((oldScript) => {
+            const newScript = document.createElement('script');
+            Array.from(oldScript.attributes).forEach((attr) => newScript.setAttribute(attr.name, attr.value));
+            newScript.textContent = oldScript.textContent;
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+    }
+
+    function reinitUIComponents() {
+        initChoices();
+        initAlerts();
+        initFormLoading();
+        enableUrduKeyboard();
+        closeSidebar();
+    }
+
+    function loadPageSPA(url, pushState) {
+        startProgressBar();
+
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then((res) => {
+            if (!res.ok) throw new Error('Network response not ok');
+            return res.text();
+        })
+        .then((html) => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const newContentArea = doc.querySelector('.content-area');
+            const currentContentArea = document.querySelector('.content-area');
+
+            if (newContentArea && currentContentArea) {
+                currentContentArea.innerHTML = newContentArea.innerHTML;
+                document.title = doc.title;
+
+                if (pushState) {
+                    window.history.pushState({ url: url }, doc.title, url);
+                }
+
+                updateActiveLinks(new URL(url, window.location.origin).pathname);
+                reexecuteScripts(currentContentArea);
+                reinitUIComponents();
+                window.scrollTo({ top: 0, behavior: 'instant' });
+            } else {
+                window.location.href = url;
+            }
+            finishProgressBar();
+        })
+        .catch((err) => {
+            console.warn('SPA Navigation fallback:', err);
+            finishProgressBar();
+            window.location.href = url;
+        });
+    }
+
+    /* Intercept click on navigation links */
+    document.addEventListener('click', function (e) {
+        const link = e.target.closest('a');
+        if (!link) return;
+
+        const href = link.getAttribute('href');
+        if (!href || href === 'javascript:void(0)' || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || link.getAttribute('target') === '_blank' || link.hasAttribute('data-no-spa')) {
+            return;
+        }
+
+        if (href.includes('export_pdf') || href.includes('logout') || href.includes('admin')) {
+            return;
+        }
+
+        try {
+            const targetUrl = new URL(href, window.location.origin);
+            if (targetUrl.origin !== window.location.origin) return;
+
+            e.preventDefault();
+            loadPageSPA(targetUrl.href, true);
+        } catch (err) {}
+    });
+
+    /* Handle browser back and forward buttons */
+    window.addEventListener('popstate', function (e) {
+        if (e.state && e.state.url) {
+            loadPageSPA(e.state.url, false);
+        } else {
+            window.location.reload();
+        }
+    });
+
+    /* Touch / Hover Prefetching for instant response */
     const prefetchUrl = (url) => {
         if (!url || url === 'javascript:void(0)' || url.startsWith('#')) return;
         if (!document.querySelector(`link[rel="prefetch"][href="${url}"]`)) {
@@ -266,15 +372,14 @@
         }
     };
 
-    document.querySelectorAll('.mobile-bottom-nav-link, .nav-link-pro, .dropdown-item-pro').forEach((el) => {
-        const href = el.getAttribute('href');
-        if (href && href !== 'javascript:void(0)' && !href.startsWith('#')) {
-            el.addEventListener('touchstart', () => prefetchUrl(href), { passive: true });
-            el.addEventListener('mouseenter', () => prefetchUrl(href), { passive: true });
+    document.addEventListener('touchstart', function(e) {
+        const link = e.target.closest('a');
+        if (link) {
+            const href = link.getAttribute('href');
+            if (href && !href.startsWith('javascript') && !href.startsWith('#')) {
+                prefetchUrl(href);
+            }
         }
-    });
-
-    // Initialize Urdu keyboard if language is Urdu
-    document.addEventListener('DOMContentLoaded', enableUrduKeyboard);
+    }, { passive: true });
 
 })();
