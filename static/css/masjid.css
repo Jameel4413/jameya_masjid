@@ -1181,10 +1181,17 @@ textarea.form-control-pro {
     background: rgba(15, 23, 42, 0.96) !important;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    z-index: 9999 !important;
+    z-index: 1030 !important;
     border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3) !important;
     padding: 0 0.35rem !important;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+/* Hide mobile bottom navigation bar when any modal is open */
+body.modal-open .mobile-bottom-nav,
+.modal.show ~ .mobile-bottom-nav {
+    display: none !important;
 }
 
 .mobile-bottom-nav-items {
@@ -1252,7 +1259,7 @@ textarea.form-control-pro {
 
     #main-wrapper {
         margin-left: 0;
-        padding-bottom: 76px; /* Space for fixed bottom navigation bar */
+        padding-bottom: 85px; /* Space for fixed bottom navigation bar */
     }
 
     .content-area {
@@ -1351,16 +1358,51 @@ textarea.form-control-pro {
     }
 
     .modal-dialog {
-        margin: 0.4rem !important;
-        max-width: calc(100% - 0.8rem) !important;
+        margin: 0.5rem auto !important;
+        max-width: calc(100% - 1rem) !important;
+    }
+
+    .modal-dialog-centered {
+        min-height: calc(100% - 1rem) !important;
+        display: flex !important;
+        align-items: center !important;
     }
 
     .modal-content {
         border-radius: 16px !important;
+        max-height: calc(100vh - 2rem) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    .modal-header {
+        flex-shrink: 0 !important;
     }
 
     .modal-body {
         padding: 1.15rem 0.85rem !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        flex: 1 1 auto !important;
+    }
+
+    .modal-footer {
+        padding: 0.75rem 0.85rem !important;
+        background: #ffffff !important;
+        border-top: 1px solid var(--border-light) !important;
+        flex-shrink: 0 !important;
+        display: flex !important;
+        gap: 0.5rem !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+    }
+
+    .modal-footer .btn-pro,
+    .modal-footer .btn {
+        min-height: 44px !important;
+        font-size: 0.92rem !important;
     }
 
     #incomeRowsTable,
