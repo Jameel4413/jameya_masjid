@@ -108,12 +108,11 @@ def register_urdu_fonts():
     global _URDU_FONT_REGISTERED
     if not _URDU_FONT_REGISTERED:
         local_font_dir = os.path.join(settings.BASE_DIR, 'donation', 'fonts')
-        local_nastaliq = os.path.join(local_font_dir, 'NotoNastaliqUrdu.ttf')
         local_reg = os.path.join(local_font_dir, 'tahoma.ttf')
         local_bold = os.path.join(local_font_dir, 'tahomabd.ttf')
 
         font_paths = [
-            # 1. Bundled Local Naskh Fonts (Perfect for Bismillah & Arabic diacritics)
+            # 1. Bundled High-Precision Book Fonts (Fully compatible with ReportLab shaping)
             (local_reg, local_bold),
             # 2. Windows System Fonts
             ("C:/Windows/Fonts/tahoma.ttf", "C:/Windows/Fonts/tahomabd.ttf"),
@@ -130,15 +129,11 @@ def register_urdu_fonts():
                     pdfmetrics.registerFont(TTFont('UrduNaskh-Bold', bold))
                     pdfmetrics.registerFont(TTFont('UrduFont', regular))
                     pdfmetrics.registerFont(TTFont('UrduFont-Bold', bold))
+                    pdfmetrics.registerFont(TTFont('UrduNastaliq', bold))
+                    _URDU_FONT_REGISTERED = True
                     break
                 except Exception:
                     pass
-
-        if os.path.exists(local_nastaliq):
-            try:
-                pdfmetrics.registerFont(TTFont('UrduNastaliq', local_nastaliq))
-            except Exception:
-                pass
 
         _URDU_FONT_REGISTERED = True
 
