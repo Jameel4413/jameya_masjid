@@ -567,7 +567,7 @@ def export_imam_salary_pdf(request):
     """Dedicated PDF - ONLY the Imam Salary status (per-month + year total). Supports English and Urdu."""
     year = request.GET.get('year')
     month = request.GET.get('month')
-    pdf_lang = request.GET.get('lang') or request.GET.get('pdf_lang') or request.session.get('lang', 'en')
+    pdf_lang = request.GET.get('lang') or request.GET.get('pdf_lang') or (request.session.get('lang', 'en') if hasattr(request, 'session') and request.session is not None else 'en')
     is_urdu = (pdf_lang == 'ur')
 
     font_normal = 'UrduFont' if is_urdu else 'Helvetica'
@@ -1161,7 +1161,7 @@ def export_monthly_pdf(request, year=None, month=None):
     # Get from GET query parameter or argument
     get_year = request.GET.get('year')
     get_month = request.GET.get('month')
-    pdf_lang = request.GET.get('lang') or request.GET.get('pdf_lang') or request.session.get('lang', 'en')
+    pdf_lang = request.GET.get('lang') or request.GET.get('pdf_lang') or (request.session.get('lang', 'en') if hasattr(request, 'session') and request.session is not None else 'en')
     is_urdu = (pdf_lang == 'ur')
 
     font_normal = 'UrduFont' if is_urdu else 'Helvetica'
