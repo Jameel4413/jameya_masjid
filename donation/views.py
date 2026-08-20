@@ -36,6 +36,7 @@ def change_password_view(request):
 
 
 
+from django.conf import settings
 import arabic_reshaper
 from bidi.algorithm import get_display
 
@@ -106,16 +107,20 @@ import re
 def register_urdu_fonts():
     global _URDU_FONT_REGISTERED
     if not _URDU_FONT_REGISTERED:
+        local_font_dir = os.path.join(settings.BASE_DIR, 'donation', 'fonts')
+        local_reg = os.path.join(local_font_dir, 'tahoma.ttf')
+        local_bold = os.path.join(local_font_dir, 'tahomabd.ttf')
+
         font_paths = [
-            # Windows System Fonts
-            ("C:/Windows/Fonts/arial.ttf", "C:/Windows/Fonts/arialbd.ttf"),
+            # 1. Bundled Local Repository Fonts (Guaranteed to exist on Vercel!)
+            (local_reg, local_bold),
+            # 2. Windows System Fonts
             ("C:/Windows/Fonts/tahoma.ttf", "C:/Windows/Fonts/tahomabd.ttf"),
+            ("C:/Windows/Fonts/arial.ttf", "C:/Windows/Fonts/arialbd.ttf"),
             ("C:/Windows/Fonts/segoeui.ttf", "C:/Windows/Fonts/segoeuib.ttf"),
-            # Linux / Vercel Serverless Fonts
+            # 3. Linux / Vercel Serverless System Fonts
             ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
             ("/usr/share/fonts/truetype/freefont/FreeSans.ttf", "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf"),
-            ("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"),
-            ("/usr/share/fonts/dejavu/DejaVuSans.ttf", "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf"),
         ]
         for regular, bold in font_paths:
             if os.path.exists(regular) and os.path.exists(bold):
@@ -480,34 +485,34 @@ def delete_imam_salary_view(request, pk):
 def draw_islamic_pdf_background(canvas, doc):
     """
     Renders an Executive Islamic Theme background with 0% DB overhead:
-    - Soft Greenish Islamic Canvas Tint (#edf5f1)
-    - Full Golden & Emerald Double Border (#d4af37 & #044e3a)
-    - Corner Geometric Diamond Ornaments in Gold & Emerald
+    - Rich Soft Islamic Sage Canvas Tint (#e1f0e6)
+    - Bold Double Golden Frame (#c59b27 Rich Metallic Gold & #044e3a Emerald)
+    - Four Corner Geometric Architectural Diamonds in Gold & Emerald
     - Subtle Center Watermark
     - Executive Footer line
     """
     canvas.saveState()
     width, height = doc.pagesize
 
-    # 1. Canvas Fill: Soft Greenish Islamic Tint (#edf5f1)
-    canvas.setFillColor(colors.HexColor('#edf5f1'))
+    # 1. Canvas Fill: Rich Soft Islamic Sage Tint (#e1f0e6)
+    canvas.setFillColor(colors.HexColor('#e1f0e6'))
     canvas.rect(0, 0, width, height, fill=1, stroke=0)
 
-    # 2. Outer Golden Islamic Border Frame (#d4af37 - Rich Gold)
-    margin = 20
-    canvas.setStrokeColor(colors.HexColor('#d4af37'))
-    canvas.setLineWidth(2.2)
+    # 2. Outer Bold Golden Frame (#c59b27 - Rich Gold)
+    margin = 18
+    canvas.setStrokeColor(colors.HexColor('#c59b27'))
+    canvas.setLineWidth(3.0)
     canvas.rect(margin, margin, width - (2 * margin), height - (2 * margin))
 
     # Inner Emerald Accent Line (#044e3a)
     canvas.setStrokeColor(colors.HexColor('#044e3a'))
-    canvas.setLineWidth(0.8)
+    canvas.setLineWidth(1.2)
     canvas.rect(margin + 4, margin + 4, width - (2 * margin) - 8, height - (2 * margin) - 8)
 
     # Corner Geometric Diamond Ornaments (Golden & Emerald)
-    canvas.setStrokeColor(colors.HexColor('#d4af37'))
+    canvas.setStrokeColor(colors.HexColor('#c59b27'))
     canvas.setFillColor(colors.HexColor('#044e3a')) # Deep Emerald
-    canvas.setLineWidth(1)
+    canvas.setLineWidth(1.2)
     c_off = margin + 4
 
     corners = [
@@ -518,17 +523,17 @@ def draw_islamic_pdf_background(canvas, doc):
     ]
     for x_c, y_c in corners:
         p = canvas.beginPath()
-        p.moveTo(x_c - 7, y_c)
-        p.lineTo(x_c, y_c + 7)
-        p.lineTo(x_c + 7, y_c)
-        p.lineTo(x_c, y_c - 7)
+        p.moveTo(x_c - 9, y_c)
+        p.lineTo(x_c, y_c + 9)
+        p.lineTo(x_c + 9, y_c)
+        p.lineTo(x_c, y_c - 9)
         p.close()
         canvas.drawPath(p, fill=1, stroke=1)
 
     # 3. Subtle Center Watermark
     canvas.saveState()
     canvas.setFillColor(colors.HexColor('#044e3a'))
-    canvas.setFillAlpha(0.035)
+    canvas.setFillAlpha(0.04)
     canvas.setFont('Helvetica-Bold', 36)
     canvas.drawCentredString(width / 2.0, height / 2.0 + 10, "JAMEYA MASJID")
     canvas.setFont('Helvetica-Bold', 15)
@@ -537,8 +542,8 @@ def draw_islamic_pdf_background(canvas, doc):
 
     # 4. Executive Footer Line
     footer_y = 26
-    canvas.setStrokeColor(colors.HexColor('#d4af37'))
-    canvas.setLineWidth(1)
+    canvas.setStrokeColor(colors.HexColor('#c59b27'))
+    canvas.setLineWidth(1.2)
     canvas.line(margin + 6, footer_y + 8, width - margin - 6, footer_y + 8)
 
     canvas.setFillColor(colors.HexColor('#044e3a'))
@@ -563,7 +568,7 @@ def export_imam_salary_pdf(request):
 
     font_normal = 'UrduFont' if (is_urdu and 'UrduFont' in registered_fonts) else 'Helvetica'
     font_bold = 'UrduFont-Bold' if (is_urdu and 'UrduFont-Bold' in registered_fonts) else 'Helvetica-Bold'
-    font_bism = 'UrduFont-Bold' if ('UrduFont-Bold' in registered_fonts) else 'Helvetica-Bold'
+    font_bism = 'UrduFont-Bold' if ('UrduFont-Bold' in registered_fonts) else font_bold
 
     now = timezone.now()
     selected_year = int(year) if (year and year.isdigit()) else now.year
@@ -606,15 +611,11 @@ def export_imam_salary_pdf(request):
     story = []
     styles = getSampleStyleSheet()
 
-    # Large Prominent Bold Bismillah Header in Rich Gold Color
-    if 'UrduFont-Bold' in registered_fonts:
-        bismillah_str = shape_ur("بسم اللہ الرحمن الرحیم", is_urdu=True)
-    else:
-        bismillah_str = "Bismillah ir-Rahman ir-Rahim"
-
+    # Large Prominent Bold Arabic Bismillah Header in Rich Metallic Gold (Used in BOTH English & Urdu Modes)
+    bismillah_str = shape_ur("بسم اللہ الرحمن الرحیم", is_urdu=True)
     bism_style = ParagraphStyle(
-        'BismHdrArabic', parent=styles['Normal'], fontName=font_bism, fontSize=22 if 'UrduFont-Bold' in registered_fonts else 16, leading=26,
-        textColor=colors.HexColor("#b8860b"), alignment=1, spaceAfter=10
+        'BismHdrArabic', parent=styles['Normal'], fontName=font_bism, fontSize=24, leading=28,
+        textColor=colors.HexColor("#b8860b"), alignment=1, spaceAfter=12
     )
     story.append(Paragraph(f"<b>{bismillah_str}</b>", bism_style))
 
@@ -1295,15 +1296,11 @@ def export_monthly_pdf(request, year=None, month=None):
     story = []
     styles = getSampleStyleSheet()
 
-    # Large Prominent Bold Bismillah Header in Rich Gold Color
-    if 'UrduFont-Bold' in registered_fonts:
-        bismillah_str = shape_ur("بسم اللہ الرحمن الرحیم", is_urdu=True)
-    else:
-        bismillah_str = "Bismillah ir-Rahman ir-Rahim"
-
+    # Large Prominent Bold Arabic Bismillah Header in Rich Metallic Gold (Used in BOTH English & Urdu Modes)
+    bismillah_str = shape_ur("بسم اللہ الرحمن الرحیم", is_urdu=True)
     bism_style = ParagraphStyle(
-        'BismHdrArabicM', parent=styles['Normal'], fontName=font_bism, fontSize=22 if 'UrduFont-Bold' in registered_fonts else 16, leading=26,
-        textColor=colors.HexColor("#b8860b"), alignment=1, spaceAfter=10
+        'BismHdrArabicM', parent=styles['Normal'], fontName=font_bism, fontSize=24, leading=28,
+        textColor=colors.HexColor("#b8860b"), alignment=1, spaceAfter=12
     )
     story.append(Paragraph(f"<b>{bismillah_str}</b>", bism_style))
 
