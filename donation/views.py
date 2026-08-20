@@ -620,7 +620,7 @@ def export_imam_salary_pdf(request):
     # Authentic Islamic Crest Banner for Bismillah with exact Arabic diacritics & side titles
     bismillah_exact_text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
     bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
-    allah_str = shape_ur("ﷲﷻ", is_urdu=True)
+    allah_str = shape_ur("یا اللہ", is_urdu=True)
     rasool_str = shape_ur("یا رسول اللہ", is_urdu=True)
 
     bism_center_style = ParagraphStyle(
@@ -1340,7 +1340,7 @@ def export_monthly_pdf(request, year=None, month=None):
     # Authentic Islamic Crest Banner for Bismillah with exact Arabic diacritics & side titles
     bismillah_exact_text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
     bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
-    allah_str = shape_ur("ﷲﷻ", is_urdu=True)
+    allah_str = shape_ur("یا اللہ", is_urdu=True)
     rasool_str = shape_ur("یا رسول اللہ", is_urdu=True)
 
     bism_center_style = ParagraphStyle(
