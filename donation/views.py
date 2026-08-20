@@ -113,27 +113,33 @@ def register_urdu_fonts():
         local_bold = os.path.join(local_font_dir, 'tahomabd.ttf')
 
         font_paths = [
-            # 1. Bundled Authentic Nastaliq Book Script Font
-            (local_nastaliq, local_nastaliq),
-            # 2. Bundled Local Naskh Fonts
+            # 1. Bundled Local Naskh Fonts (Perfect for Bismillah & Arabic diacritics)
             (local_reg, local_bold),
-            # 3. Windows System Fonts
+            # 2. Windows System Fonts
             ("C:/Windows/Fonts/tahoma.ttf", "C:/Windows/Fonts/tahomabd.ttf"),
             ("C:/Windows/Fonts/arial.ttf", "C:/Windows/Fonts/arialbd.ttf"),
             ("C:/Windows/Fonts/segoeui.ttf", "C:/Windows/Fonts/segoeuib.ttf"),
-            # 4. Linux / Vercel Serverless System Fonts
+            # 3. Linux / Vercel Serverless System Fonts
             ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
             ("/usr/share/fonts/truetype/freefont/FreeSans.ttf", "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf"),
         ]
         for regular, bold in font_paths:
             if os.path.exists(regular) and os.path.exists(bold):
                 try:
+                    pdfmetrics.registerFont(TTFont('UrduNaskh', regular))
+                    pdfmetrics.registerFont(TTFont('UrduNaskh-Bold', bold))
                     pdfmetrics.registerFont(TTFont('UrduFont', regular))
                     pdfmetrics.registerFont(TTFont('UrduFont-Bold', bold))
-                    _URDU_FONT_REGISTERED = True
                     break
                 except Exception:
                     pass
+
+        if os.path.exists(local_nastaliq):
+            try:
+                pdfmetrics.registerFont(TTFont('UrduNastaliq', local_nastaliq))
+            except Exception:
+                pass
+
         _URDU_FONT_REGISTERED = True
 
 _ARABIC_RESHAPER_PRESERVE_HARAKAT = arabic_reshaper.ArabicReshaper({
@@ -1216,9 +1222,14 @@ def export_monthly_pdf(request, year=None, month=None):
     pdf_lang = request.GET.get('lang') or request.GET.get('pdf_lang') or (request.session.get('lang', 'en') if hasattr(request, 'session') and request.session is not None else 'en')
     is_urdu = (pdf_lang == 'ur')
 
-    font_normal = 'UrduFont' if (is_urdu and 'UrduFont' in registered_fonts) else 'Helvetica'
-    font_bold = 'UrduFont-Bold' if (is_urdu and 'UrduFont-Bold' in registered_fonts) else 'Helvetica-Bold'
-    font_bism = 'UrduFont-Bold' if ('UrduFont-Bold' in registered_fonts) else 'Helvetica-Bold'
+    font_bism = 'UrduNaskh-Bold' if 'UrduNaskh-Bold' in registered_fonts else ('UrduFont-Bold' if 'UrduFont-Bold' in registered_fonts else 'Helvetica-Bold')
+
+    if is_urdu:
+        font_normal = 'UrduNastaliq' if 'UrduNastaliq' in registered_fonts else ('UrduFont' if 'UrduFont' in registered_fonts else 'Helvetica')
+        font_bold = 'UrduNastaliq' if 'UrduNastaliq' in registered_fonts else ('UrduFont-Bold' if 'UrduFont-Bold' in registered_fonts else 'Helvetica-Bold')
+    else:
+        font_normal = 'Helvetica'
+        font_bold = 'Helvetica-Bold'
 
     selected_year = year or (int(get_year) if get_year and get_year.isdigit() else None) or now.year
     raw_month = month or get_month
