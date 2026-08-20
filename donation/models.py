@@ -50,16 +50,27 @@ class ImamSalary(models.Model):
     imam_name = models.CharField(max_length=100, default="Imam Masjid")
     month_year = models.DateField(help_text="Select month (e.g., 2026-07-01 for July 2026)")
     total_salary = models.DecimalField(max_digits=10, decimal_places=2, help_text="Per Month Total Salary")
+    yearly_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="Per Year Total Salary")
+
+    @property
+    def effective_yearly_salary(self):
+        if self.yearly_salary and float(self.yearly_salary) > 0:
+            return float(self.yearly_salary)
+        return float(self.total_salary) * 12
 
     @property
     def total_paid(self):
         # Calculate total installments paid so far
         paid = self.installments.aggregate(total=Sum('amount_paid'))['total']
-        return paid if paid else 0
+        return float(paid) if paid else 0.0
 
     @property
     def remaining_salary(self):
-        return self.total_salary - self.total_paid
+        return float(self.total_salary) - self.total_paid
+
+    @property
+    def remaining_yearly_salary(self):
+        return self.effective_yearly_salary - self.total_paid
 
     @property
     def is_fully_paid(self):

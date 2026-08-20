@@ -127,14 +127,16 @@
                     <div class="lease-stat-box" style="padding: 0.75rem 0.5rem;">
                         <span>{{ T.per_month_salary }}</span>
                         <strong class="text-dark" style="font-size: 1rem;">RS {{ salary.total_salary|floatformat:0 }}</strong>
+                        <small class="d-block text-muted" style="font-size: 0.75rem;">{{ T.remaining }}: RS {{ salary.remaining_salary|floatformat:0 }}</small>
+                    </div>
+                    <div class="lease-stat-box" style="padding: 0.75rem 0.5rem; background: #fff8f8; border-color: #f5c2c7;">
+                        <span class="text-danger-pro">{{ T.per_year_salary }}</span>
+                        <strong class="text-dark" style="font-size: 1rem;">RS {{ salary.effective_yearly_salary|floatformat:0 }}</strong>
+                        <small class="d-block text-danger-pro fw-semibold" style="font-size: 0.75rem;">{{ T.year_remaining }}: RS {{ salary.remaining_yearly_salary|floatformat:0 }}</small>
                     </div>
                     <div class="lease-stat-box received" style="padding: 0.75rem 0.5rem;">
                         <span>{{ T.total_paid }}</span>
                         <strong class="text-success-pro" style="font-size: 1rem;">RS {{ salary.total_paid|floatformat:0 }}</strong>
-                    </div>
-                    <div class="lease-stat-box pending" style="padding: 0.75rem 0.5rem;">
-                        <span>{{ T.remaining }}</span>
-                        <strong class="text-danger-pro" style="font-size: 1rem;">RS {{ salary.remaining_salary|floatformat:0 }}</strong>
                     </div>
                 </div>
 
@@ -313,11 +315,18 @@
                             <label class="form-label-pro"><i class="fa-regular fa-calendar"></i> {{ T.salary_month_year }}</label>
                             <input type="month" name="month_year" class="form-control-pro" value="{{ salary.month_year|date:'Y-m' }}" required>
                         </div>
-                        <div class="form-group-pro mb-0">
+                        <div class="form-group-pro">
                             <label class="form-label-pro"><i class="fa-solid fa-money-bill"></i> {{ T.per_month_salary }}</label>
                             <div class="input-group-pro">
                                 <span class="input-prefix">RS</span>
-                                <input type="number" step="any" name="total_salary" class="form-control-pro" value="{{ salary.total_salary }}" required>
+                                <input type="number" step="any" name="total_salary" class="form-control-pro" value="{{ salary.total_salary }}" oninput="autoCalcYearly(this, 'edit_yearly_salary_{{ salary.id }}')" required>
+                            </div>
+                        </div>
+                        <div class="form-group-pro mb-0">
+                            <label class="form-label-pro"><i class="fa-solid fa-calendar-check"></i> {{ T.per_year_salary }}</label>
+                            <div class="input-group-pro">
+                                <span class="input-prefix">RS</span>
+                                <input type="number" step="any" name="yearly_salary" id="edit_yearly_salary_{{ salary.id }}" class="form-control-pro" value="{{ salary.effective_yearly_salary }}" required>
                             </div>
                         </div>
                     </div>
@@ -394,7 +403,14 @@
                         <label class="form-label-pro"><i class="fa-solid fa-money-bill"></i> {{ T.per_month_salary }}</label>
                         <div class="input-group-pro">
                             <span class="input-prefix">RS</span>
-                            <input type="number" step="any" name="total_salary" id="new_total_salary" class="form-control-pro" required>
+                            <input type="number" step="any" name="total_salary" id="new_total_salary" class="form-control-pro" oninput="autoCalcYearly(this, 'new_yearly_salary')" required>
+                        </div>
+                    </div>
+                    <div class="form-group-pro">
+                        <label class="form-label-pro"><i class="fa-solid fa-calendar-check"></i> {{ T.per_year_salary }}</label>
+                        <div class="input-group-pro">
+                            <span class="input-prefix">RS</span>
+                            <input type="number" step="any" name="yearly_salary" id="new_yearly_salary" class="form-control-pro" placeholder="e.g. 180000">
                         </div>
                     </div>
 
@@ -484,5 +500,15 @@
         </div>
     </div>
 </div>
+
+<script>
+function autoCalcYearly(inputElem, targetId) {
+    var val = parseFloat(inputElem.value);
+    var target = document.getElementById(targetId);
+    if (target && !isNaN(val) && val > 0) {
+        target.value = val * 12;
+    }
+}
+</script>
 
 {% endblock %}

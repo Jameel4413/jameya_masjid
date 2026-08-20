@@ -302,9 +302,15 @@ def imam_salary_view(request):
 
     # Year-wise totals (independent of month filter)
     year_salaries = ImamSalary.objects.filter(month_year__year=curr_year)
-    total_year_salary_value = sum(s.total_salary for s in year_salaries)
+    distinct_imams = set(year_salaries.values_list('imam_name', flat=True))
+    total_year_salary_value = 0.0
+    for imam in distinct_imams:
+        imam_latest = year_salaries.filter(imam_name=imam).order_by('-month_year').first()
+        if imam_latest:
+            total_year_salary_value += imam_latest.effective_yearly_salary
+
     total_year_paid = sum(s.total_paid for s in year_salaries)
-    total_year_remaining = total_year_salary_value - total_year_paid
+    total_year_remaining = max(0.0, total_year_salary_value - total_year_paid)
 
     context = {
         'salaries': salaries,
@@ -329,6 +335,7 @@ def add_imam_salary_view(request):
         imam_name = request.POST.get('imam_name')
         month_year = request.POST.get('month_year')
         total_salary = request.POST.get('total_salary')
+        yearly_sal_raw = request.POST.get('yearly_salary')
         payment_type = request.POST.get('payment_type')
         payment_date = request.POST.get('payment_date')
         initial_amount_paid = request.POST.get('initial_amount_paid')
@@ -336,10 +343,17 @@ def add_imam_salary_view(request):
 
         if imam_name and month_year and total_salary:
             date_obj = datetime.strptime(month_year, '%Y-%m').date()
+            tot_sal_float = float(total_salary)
+            if yearly_sal_raw and float(yearly_sal_raw) > 0:
+                yearly_sal_val = float(yearly_sal_raw)
+            else:
+                yearly_sal_val = tot_sal_float * 12
+
             salary_obj = ImamSalary.objects.create(
                 imam_name=imam_name,
                 month_year=date_obj,
-                total_salary=float(total_salary)
+                total_salary=tot_sal_float,
+                yearly_salary=yearly_sal_val
             )
 
             # If the user chose to record a payment right away (full or first installment)
@@ -347,7 +361,7 @@ def add_imam_salary_view(request):
                 ImamSalaryInstallment.objects.create(
                     salary_record=salary_obj,
                     payment_date=payment_date or timezone.now().date(),
-                    amount_paid=float(total_salary),
+                    amount_paid=tot_sal_float,
                     notes=f"Full Payment ({notes})" if notes else "Full Payment"
                 )
             elif payment_type == 'installment' and initial_amount_paid:
@@ -429,7 +443,13 @@ def update_imam_salary_view(request, pk):
     salary = get_object_or_404(ImamSalary, pk=pk)
     if request.method == 'POST':
         salary.imam_name = request.POST.get('imam_name')
-        salary.total_salary = float(request.POST.get('total_salary'))
+        tot_sal = float(request.POST.get('total_salary'))
+        salary.total_salary = tot_sal
+        yearly_sal_raw = request.POST.get('yearly_salary')
+        if yearly_sal_raw and float(yearly_sal_raw) > 0:
+            salary.yearly_salary = float(yearly_sal_raw)
+        else:
+            salary.yearly_salary = tot_sal * 12
         month_year_str = request.POST.get('month_year')
         if month_year_str:
             salary.month_year = datetime.strptime(month_year_str, '%Y-%m').date()
@@ -473,10 +493,18 @@ def export_imam_salary_pdf(request):
         salaries = salaries.filter(month_year__month=selected_month)
     salaries = salaries.order_by('month_year')
 
-    # Compute grand totals
-    total_budgeted = sum(s.total_salary for s in salaries)
+    # Compute totals
+    total_month_budgeted = sum(s.total_salary for s in salaries)
+    distinct_imams_pdf = set(salaries.values_list('imam_name', flat=True))
+    total_year_budgeted = 0.0
+    for imam in distinct_imams_pdf:
+        imam_latest = salaries.filter(imam_name=imam).order_by('-month_year').first()
+        if imam_latest:
+            total_year_budgeted += imam_latest.effective_yearly_salary
+
     total_paid = sum(s.total_paid for s in salaries)
-    total_remaining = sum(s.remaining_salary for s in salaries)
+    total_month_remaining = sum(s.remaining_salary for s in salaries)
+    total_year_remaining = max(0.0, total_year_budgeted - total_paid)
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -523,7 +551,7 @@ def export_imam_salary_pdf(request):
         textColor=colors.HexColor("#495057")
     )
     card_footer_style = ParagraphStyle(
-        'CardF', parent=styles['Normal'], fontName=font_normal, fontSize=9, leading=14,
+        'CardF', parent=styles['Normal'], fontName=font_normal, fontSize=8.5, leading=12,
         textColor=colors.HexColor("#212529")
     )
 
@@ -540,49 +568,49 @@ def export_imam_salary_pdf(request):
     story.append(Paragraph(shape_ur(period_text, is_urdu), subtitle_style))
     story.append(Spacer(1, 15))
 
-    # Summary Cards
+    # Summary Cards Table
     card_title_style = ParagraphStyle(
-        'CardT', parent=styles['Normal'], fontName=font_bold, fontSize=9, leading=12,
+        'CardT', parent=styles['Normal'], fontName=font_bold, fontSize=8.5, leading=11,
         textColor=colors.HexColor("#495057"), alignment=1
     )
     card_val_inc = ParagraphStyle(
-        'CardValInc', parent=styles['Normal'], fontName=font_bold, fontSize=13, leading=16,
+        'CardValInc', parent=styles['Normal'], fontName=font_bold, fontSize=11, leading=14,
         textColor=colors.HexColor("#0d6efd"), alignment=1
     )
     card_val_paid = ParagraphStyle(
-        'CardValPaid', parent=styles['Normal'], fontName=font_bold, fontSize=13, leading=16,
+        'CardValPaid', parent=styles['Normal'], fontName=font_bold, fontSize=11, leading=14,
         textColor=colors.HexColor("#198754"), alignment=1
     )
     card_val_rem = ParagraphStyle(
-        'CardValRem', parent=styles['Normal'], fontName=font_bold, fontSize=13, leading=16,
+        'CardValRem', parent=styles['Normal'], fontName=font_bold, fontSize=11, leading=14,
         textColor=colors.HexColor("#dc3545"), alignment=1
     )
 
-    lbl_budget = "کل مختص تنخواہ" if is_urdu else "TOTAL BUDGETED SALARY"
+    lbl_month_tot = "ماہانہ تنخواہ (کل / بقایا)" if is_urdu else "MONTH SALARY (TOTAL / REM)"
+    lbl_year_tot = "سالانہ تنخواہ (کل / بقایا)" if is_urdu else "YEAR SALARY (TOTAL / REM)"
     lbl_paid = "کل ادا شدہ" if is_urdu else "TOTAL PAID"
-    lbl_rem = "کل باقی" if is_urdu else "TOTAL REMAINING"
 
     summary_data = [
         [
-            Paragraph(shape_ur(lbl_budget, is_urdu), card_title_style),
-            Paragraph(shape_ur(lbl_paid, is_urdu), card_title_style),
-            Paragraph(shape_ur(lbl_rem, is_urdu), card_title_style)
+            Paragraph(shape_ur(lbl_month_tot, is_urdu), card_title_style),
+            Paragraph(shape_ur(lbl_year_tot, is_urdu), card_title_style),
+            Paragraph(shape_ur(lbl_paid, is_urdu), card_title_style)
         ],
         [
-            Paragraph(f"RS {total_budgeted:,.0f}", card_val_inc),
-            Paragraph(f"RS {total_paid:,.0f}", card_val_paid),
-            Paragraph(f"RS {total_remaining:,.0f}", card_val_rem)
+            Paragraph(f"RS {total_month_budgeted:,.0f} <font color='#dc3545'>({total_month_remaining:,.0f})</font>", card_val_inc),
+            Paragraph(f"RS {total_year_budgeted:,.0f} <font color='#dc3545'>({total_year_remaining:,.0f})</font>", card_val_rem),
+            Paragraph(f"RS {total_paid:,.0f}", card_val_paid)
         ]
     ]
 
     summary_table = Table(summary_data, colWidths=[180, 180, 180])
     summary_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (0, -1), colors.HexColor("#e7f1ff")), # blue shade
-        ('BACKGROUND', (1, 0), (1, -1), colors.HexColor("#e8f5e9")), # green shade
-        ('BACKGROUND', (2, 0), (2, -1), colors.HexColor("#f8d7da")), # red shade
+        ('BACKGROUND', (1, 0), (1, -1), colors.HexColor("#f8d7da")), # red shade
+        ('BACKGROUND', (2, 0), (2, -1), colors.HexColor("#e8f5e9")), # green shade
         ('BOX', (0, 0), (0, -1), 1, colors.HexColor("#b6d4fe")),
-        ('BOX', (1, 0), (1, -1), 1, colors.HexColor("#a3cfbb")),
-        ('BOX', (2, 0), (2, -1), 1, colors.HexColor("#f5c2c7")),
+        ('BOX', (1, 0), (1, -1), 1, colors.HexColor("#f5c2c7")),
+        ('BOX', (2, 0), (2, -1), 1, colors.HexColor("#a3cfbb")),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('TOPPADDING', (0, 0), (-1, -1), 8),
@@ -656,16 +684,17 @@ def export_imam_salary_pdf(request):
                     ""
                 ])
 
-            # Bottom Summary Row with Large Totals
-            rem_color = "#198754" if s.remaining_salary <= 0 else "#dc3545"
-            lbl_ts = "کل تنخواہ" if is_urdu else "Total Salary"
+            # Bottom Summary Row with Month and Year Totals
+            rem_m_color = "#198754" if s.remaining_salary <= 0 else "#dc3545"
+            rem_y_color = "#198754" if s.remaining_yearly_salary <= 0 else "#dc3545"
+            lbl_ms = "ماہانہ تنخواہ" if is_urdu else "Month Salary"
+            lbl_ys = "سالانہ تنخواہ" if is_urdu else "Year Salary"
             lbl_tp = "کل ادا شدہ" if is_urdu else "Total Paid"
-            lbl_tr = "بقایا" if is_urdu else "Remaining"
 
             summary_row = [
-                Paragraph(f"<b>{shape_ur(lbl_ts, is_urdu)}:</b><br/><font size='11' color='#212529'><b>RS {s.total_salary:,.0f}</b></font>", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_tp, is_urdu)}:</b><br/><font size='11' color='#198754'><b>RS {s.total_paid:,.0f}</b></font>", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_tr, is_urdu)}:</b><br/><font size='12' color='{rem_color}'><b>RS {s.remaining_salary:,.0f}</b></font>", card_footer_style)
+                Paragraph(f"<b>{shape_ur(lbl_ms, is_urdu)}:</b> RS {s.total_salary:,.0f}<br/><font color='{rem_m_color}'><b>بقایا: RS {s.remaining_salary:,.0f}</b></font>", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_ys, is_urdu)}:</b> RS {s.effective_yearly_salary:,.0f}<br/><font color='{rem_y_color}'><b>سالانہ بقایا: RS {s.remaining_yearly_salary:,.0f}</b></font>", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_tp, is_urdu)}:</b><br/><font size='11' color='#198754'><b>RS {s.total_paid:,.0f}</b></font>", card_footer_style)
             ]
             salary_card_data.append(summary_row)
 
@@ -1421,16 +1450,17 @@ def export_monthly_pdf(request, year=None, month=None):
                     ""
                 ])
 
-            # Bottom Summary Row with Large Totals
-            rem_color = "#198754" if s.remaining_salary <= 0 else "#dc3545"
-            lbl_ts = "کل تنخواہ" if is_urdu else "Total Salary"
+            # Bottom Summary Row with Month and Year Totals
+            rem_m_color = "#198754" if s.remaining_salary <= 0 else "#dc3545"
+            rem_y_color = "#198754" if s.remaining_yearly_salary <= 0 else "#dc3545"
+            lbl_ms = "ماہانہ تنخواہ" if is_urdu else "Month Salary"
+            lbl_ys = "سالانہ تنخواہ" if is_urdu else "Year Salary"
             lbl_tp = "کل ادا شدہ" if is_urdu else "Total Paid"
-            lbl_tr = "بقایا" if is_urdu else "Remaining"
 
             summary_row = [
-                Paragraph(f"<b>{shape_ur(lbl_ts, is_urdu)}:</b><br/><font size='11' color='#212529'><b>RS {s.total_salary:,.0f}</b></font>", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_tp, is_urdu)}:</b><br/><font size='11' color='#198754'><b>RS {s.total_paid:,.0f}</b></font>", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_tr, is_urdu)}:</b><br/><font size='12' color='{rem_color}'><b>RS {s.remaining_salary:,.0f}</b></font>", card_footer_style)
+                Paragraph(f"<b>{shape_ur(lbl_ms, is_urdu)}:</b> RS {s.total_salary:,.0f}<br/><font color='{rem_m_color}'><b>بقایا: RS {s.remaining_salary:,.0f}</b></font>", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_ys, is_urdu)}:</b> RS {s.effective_yearly_salary:,.0f}<br/><font color='{rem_y_color}'><b>سالانہ بقایا: RS {s.remaining_yearly_salary:,.0f}</b></font>", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_tp, is_urdu)}:</b><br/><font size='11' color='#198754'><b>RS {s.total_paid:,.0f}</b></font>", card_footer_style)
             ]
             salary_card_data.append(summary_row)
 
