@@ -108,17 +108,20 @@ def register_urdu_fonts():
     global _URDU_FONT_REGISTERED
     if not _URDU_FONT_REGISTERED:
         local_font_dir = os.path.join(settings.BASE_DIR, 'donation', 'fonts')
+        local_nastaliq = os.path.join(local_font_dir, 'NotoNastaliqUrdu.ttf')
         local_reg = os.path.join(local_font_dir, 'tahoma.ttf')
         local_bold = os.path.join(local_font_dir, 'tahomabd.ttf')
 
         font_paths = [
-            # 1. Bundled Local Repository Fonts (Guaranteed to exist on Vercel!)
+            # 1. Bundled Authentic Nastaliq Book Script Font
+            (local_nastaliq, local_nastaliq),
+            # 2. Bundled Local Naskh Fonts
             (local_reg, local_bold),
-            # 2. Windows System Fonts
+            # 3. Windows System Fonts
             ("C:/Windows/Fonts/tahoma.ttf", "C:/Windows/Fonts/tahomabd.ttf"),
             ("C:/Windows/Fonts/arial.ttf", "C:/Windows/Fonts/arialbd.ttf"),
             ("C:/Windows/Fonts/segoeui.ttf", "C:/Windows/Fonts/segoeuib.ttf"),
-            # 3. Linux / Vercel Serverless System Fonts
+            # 4. Linux / Vercel Serverless System Fonts
             ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
             ("/usr/share/fonts/truetype/freefont/FreeSans.ttf", "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf"),
         ]
@@ -1387,19 +1390,19 @@ def export_monthly_pdf(request, year=None, month=None):
         textColor=colors.HexColor("#000000"), alignment=1
     )
     section_style = ParagraphStyle(
-        'RepSection', parent=styles['Heading2'], fontName=font_bold, fontSize=15.5, leading=20,
+        'RepSection', parent=styles['Heading2'], fontName=font_bold, fontSize=16 if is_urdu else 15.5, leading=24 if is_urdu else 20,
         textColor=colors.HexColor("#044e3a"), spaceBefore=18, spaceAfter=9
     )
     cell_style = ParagraphStyle(
-        'RepCell', parent=styles['Normal'], fontName=font_bold, fontSize=11, leading=15,
+        'RepCell', parent=styles['Normal'], fontName=font_bold, fontSize=11 if is_urdu else 11, leading=19 if is_urdu else 15,
         textColor=colors.HexColor("#000000") # Pure solid black bold for maximum print clarity
     )
     cell_hdr_style = ParagraphStyle(
-        'RepCellHdr', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=15,
+        'RepCellHdr', parent=styles['Normal'], fontName=font_bold, fontSize=11.5 if is_urdu else 11.5, leading=19 if is_urdu else 15,
         textColor=colors.white
     )
     cell_amount_style = ParagraphStyle(
-        'RepCellAmt', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=15,
+        'RepCellAmt', parent=styles['Normal'], fontName=font_bold, fontSize=11.5 if is_urdu else 11.5, leading=19 if is_urdu else 15,
         textColor=colors.HexColor("#044e3a"), alignment=2
     )
 
@@ -1421,12 +1424,34 @@ def export_monthly_pdf(request, year=None, month=None):
         textColor=colors.HexColor("#0f172a")
     )
 
-    # Document Header
-    hdr_title = "جامع مسجد مالیاتی رپورٹ" if is_urdu else "JAMEYA MASJID FINANCIAL REPORT"
+    # Document Header Banner Box (Styled matching Bismillah aesthetics)
+    hdr_title = "جامع مسجد نور مالیاتی رپورٹ" if is_urdu else "JAMEYA MASJID NOOR FINANCIAL REPORT"
     hdr_sub = f"تفصیلی اسٹیٹمنٹ برائے {month_name}" if is_urdu else f"Detailed Statement for {month_name}"
-    story.append(Paragraph(f"<b>{shape_ur(hdr_title, is_urdu)}</b>", title_style))
-    story.append(Paragraph(shape_ur(hdr_sub, is_urdu), subtitle_style))
-    story.append(Spacer(1, 15))
+    
+    title_box_style = ParagraphStyle(
+        'RepTitleBox', parent=styles['Heading1'], fontName=font_bold, fontSize=18 if is_urdu else 19, leading=24,
+        textColor=colors.HexColor("#fef08a"), alignment=1 # Metallic Gold Title Text
+    )
+    subtitle_box_style = ParagraphStyle(
+        'RepSubtitleBox', parent=styles['Normal'], fontName=font_bold, fontSize=12, leading=16,
+        textColor=colors.white, alignment=1 # High-contrast White Subtitle Text
+    )
+
+    p_title = Paragraph(f"<b>{shape_ur(hdr_title, is_urdu)}</b>", title_box_style)
+    p_sub = Paragraph(shape_ur(hdr_sub, is_urdu), subtitle_box_style)
+
+    header_banner_table = Table([[p_title], [p_sub]], colWidths=[520])
+    header_banner_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")), # Deep Sacred Emerald Fill
+        ('BOX', (0, 0), (-1, -1), 2.2, colors.HexColor("#c59b27")), # Metallic Gold Frame
+        ('LINEBELOW', (0, 0), (-1, 0), 1.0, colors.HexColor("#c59b27")), # Golden Divider Accent Line
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    story.append(header_banner_table)
+    story.append(Spacer(1, 14))
 
     # Highlighted Hero Summary Cards (Top Section)
     card_title_style = ParagraphStyle(

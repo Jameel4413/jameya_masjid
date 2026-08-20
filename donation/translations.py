@@ -571,8 +571,37 @@ ROMAN_URDU_TO_URDU_MAP = {
     'washroom cleaning': 'بیت الخلا کی صفائی',
     'washroom repair': 'بیت الخلا کی مرمت',
 
+    # Multi-word phrases & common patterns
+    'darakh sale kiye': 'درخت فروخت کیے',
+    'darakht sale kiye': 'درخت فروخت کیے',
+    'darakh sale': 'درخت فروخت',
+    'darakht sale': 'درخت فروخت',
+    'wasool shud': 'وصول شدہ',
+    'wasool shuda': 'وصول شدہ',
+    'wasul shud': 'وصول شدہ',
+    'wasul shuda': 'وصول شدہ',
+    'pichhle mahine ki bakaya raqam': 'پچھلے مہینے کی بقایا رقم',
+    'pichle mahine ki bakaya raqam': 'پچھلے مہینے کی بقایا رقم',
+    'pichhle mahine ki': 'پچھلے مہینے کی',
+    'pichle mahine ki': 'پچھلے مہینے کی',
+    'pichhle mahine': 'پچھلے مہینے',
+    'pichle mahine': 'پچھلے مہینے',
+    'bakaya raqam': 'بقایا رقم',
+    'baqaya raqam': 'بقایا رقم',
+    'me se': 'میں سے',
+    'mein se': 'میں سے',
+    'me se wasool': 'میں سے وصول',
+    'me se wasool shud': 'میں سے وصول شدہ',
+    'me se wasool shuda': 'میں سے وصول شدہ',
+    'shah ko diye': 'شاہ کو دیے',
+    'shah ko deye': 'شاہ کو دیے',
+    'qari abbas': 'قاری عباس',
+    'qist qari abbas': 'قسط قاری عباس',
+    'deeni madrasa': 'دینی مدرسہ',
+    'dini madrasa': 'دینی مدرسہ',
+
     # Single words / fallbacks
-    'paid': 'اندازہ شدہ رقم' or 'ادا شدہ',
+    'paid': 'ادا شدہ',
     'received': 'وصول شدہ',
     'payment': 'ادائیگی',
     'payments': 'ادائیگیاں',
@@ -591,6 +620,7 @@ ROMAN_URDU_TO_URDU_MAP = {
     'ko': 'کو',
     'se': 'سے',
     'say': 'سے',
+    'me': 'میں',
     'ne': 'نے',
     'nay': 'نے',
     'mein': 'میں',
@@ -612,6 +642,8 @@ ROMAN_URDU_TO_URDU_MAP = {
     'kiya': 'کیا',
     'keya': 'کیا',
     'kia': 'کیا',
+    'kiye': 'کیے',
+    'kye': 'کیے',
     'hua': 'ہوا',
     'huwa': 'ہوا',
     'gaya': 'گیا',
@@ -627,6 +659,30 @@ ROMAN_URDU_TO_URDU_MAP = {
     'kuch': 'کچھ',
 
     # Islamic & Masjid nouns
+    'darakh': 'درخت',
+    'darakht': 'درخت',
+    'drakht': 'درخت',
+    'sale': 'فروخت',
+    'farokht': 'فروخت',
+    'wasool': 'وصول',
+    'wasul': 'وصول',
+    'shud': 'شدہ',
+    'shuda': 'شدہ',
+    'pichhle': 'پچھلے',
+    'pichle': 'پچھلے',
+    'pichli': 'پچھلی',
+    'mahine': 'مہینے',
+    'maheene': 'مہینے',
+    'mahina': 'مہینہ',
+    'maheena': 'مہینہ',
+    'bakaya': 'بقایا',
+    'baqaya': 'بقایا',
+    'raqam': 'رقم',
+    'rakam': 'رقم',
+    'suqlain': 'ثقلین',
+    'saqlain': 'ثقلین',
+    'shah': 'شاہ',
+    'abbas': 'عباس',
     'masjid': 'مسجد',
     'juma': 'جمعہ',
     'jumma': 'جمعہ',
@@ -637,10 +693,12 @@ ROMAN_URDU_TO_URDU_MAP = {
     'jumeraath': 'جمعرات',
     'jumerat': 'جمعرات',
     'chanda': 'چندہ',
+    'chande': 'چندہ',
     'gulla': 'غلہ',
     'gollah': 'غلہ',
     'gola': 'غلہ',
     'box': 'بکس',
+    'bux': 'بکس',
     'kashkol': 'کشکول',
     'barkat': 'برکت',
     'ramzan': 'رمضان',
@@ -697,6 +755,8 @@ ROMAN_URDU_TO_URDU_MAP = {
     'mahina': 'مہینہ',
     'maheena': 'مہینہ',
     'month': 'مہینہ',
+    'total': 'کل',
+    'totel': 'کل',
 
     # Technical/Expense items
     'bill': 'بل',
@@ -1008,36 +1068,56 @@ def translate_user_input_to_urdu(text):
     str_text = str(text).strip()
     if not str_text or str_text == "-":
         return "-"
-        
-    # Check if there is an exact match for the full phrase (lowercased)
-    lower_text = str_text.lower()
-    clean_lower = re.sub(r'[^\w\s]', '', lower_text).strip()
-    if clean_lower in ROMAN_URDU_TO_URDU_MAP:
-        return ROMAN_URDU_TO_URDU_MAP[clean_lower]
-        
-    # Split by spaces and translate word by word
-    words = str_text.split()
-    translated_words = []
-    has_translation = False
-    
-    for word in words:
-        # Keep punctuation but translate the core word
-        # Extract leading/trailing punctuation if any
-        match = re.match(r'^([^\w]*)(.*?)([^\w]*)$', word)
-        if match:
-            leading_punc, core_word, trailing_punc = match.groups()
-            clean_word = core_word.lower()
-            if clean_word in ROMAN_URDU_TO_URDU_MAP:
-                translated_word = ROMAN_URDU_TO_URDU_MAP[clean_word]
-                has_translation = True
-                translated_words.append(f"{leading_punc}{translated_word}{trailing_punc}")
-            else:
-                translated_words.append(word)
-        else:
-            translated_words.append(word)
+
+    # Check full phrase match
+    lower_full = str_text.lower()
+    clean_full = re.sub(r'[^\w\s]', '', lower_full).strip()
+    if clean_full in ROMAN_URDU_TO_URDU_MAP:
+        return ROMAN_URDU_TO_URDU_MAP[clean_full]
+
+    # Tokenize input while preserving word structure and punctuation
+    tokens = str_text.split()
+    n = len(tokens)
+    result_tokens = []
+    i = 0
+
+    while i < n:
+        matched = False
+        # Try multi-word phrases up to 4 words
+        for window in range(min(4, n - i), 0, -1):
+            phrase_tokens = tokens[i:i+window]
+            clean_phrase_words = []
+            for t in phrase_tokens:
+                m = re.match(r'^([^\w]*)(.*?)([^\w]*)$', t)
+                clean_phrase_words.append(m.group(2).lower() if m else t.lower())
             
-    if has_translation:
-        return ' '.join(translated_words)
+            clean_phrase = " ".join(clean_phrase_words).strip()
+            if clean_phrase in ROMAN_URDU_TO_URDU_MAP:
+                m_first = re.match(r'^([^\w]*)(.*?)([^\w]*)$', phrase_tokens[0])
+                m_last = re.match(r'^([^\w]*)(.*?)([^\w]*)$', phrase_tokens[-1])
+                lead = m_first.group(1) if m_first else ""
+                trail = m_last.group(3) if m_last else ""
+                
+                urdu_trans = ROMAN_URDU_TO_URDU_MAP[clean_phrase]
+                result_tokens.append(f"{lead}{urdu_trans}{trail}")
+                i += window
+                matched = True
+                break
         
-    return str_text
+        if not matched:
+            token = tokens[i]
+            m = re.match(r'^([^\w]*)(.*?)([^\w]*)$', token)
+            if m:
+                lead, core, trail = m.groups()
+                clean_core = core.lower()
+                if clean_core in ROMAN_URDU_TO_URDU_MAP:
+                    result_tokens.append(f"{lead}{ROMAN_URDU_TO_URDU_MAP[clean_core]}{trail}")
+                else:
+                    result_tokens.append(token)
+            else:
+                result_tokens.append(token)
+            i += 1
+
+    return " ".join(result_tokens)
+
 
