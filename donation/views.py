@@ -611,13 +611,27 @@ def export_imam_salary_pdf(request):
     story = []
     styles = getSampleStyleSheet()
 
-    # Large Prominent Bold Arabic Bismillah Header in Rich Metallic Gold (Used in BOTH English & Urdu Modes)
-    bismillah_str = shape_ur("بسم اللہ الرحمن الرحیم", is_urdu=True)
+    # High-contrast Attractive Islamic Box Badge for Bismillah with exact Arabic text
+    bismillah_exact_text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
+    bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
     bism_style = ParagraphStyle(
-        'BismHdrArabic', parent=styles['Normal'], fontName=font_bism, fontSize=24, leading=28,
-        textColor=colors.HexColor("#b8860b"), alignment=1, spaceAfter=12
+        'BismHdrArabicBox', parent=styles['Normal'], fontName=font_bism, fontSize=24, leading=29,
+        textColor=colors.HexColor("#fef08a"), alignment=1 # Bright Sharp Metallic Gold
     )
-    story.append(Paragraph(f"<b>{bismillah_str}</b>", bism_style))
+    bism_p = Paragraph(f"<b>{bismillah_str}</b>", bism_style)
+    bism_box = Table([[bism_p]], colWidths=[520])
+    bism_box.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")), # Deep Emerald Box Fill
+        ('BOX', (0, 0), (-1, -1), 2.5, colors.HexColor("#c59b27")), # 2.5pt Metallic Gold Outer Frame
+        ('LINEABOVE', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")), # Inner Gold Accent Line
+        ('LINEBELOW', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    story.append(bism_box)
+    story.append(Spacer(1, 14))
 
     # High contrast sharp text styles (Increased font sizes for high readability)
     title_style = ParagraphStyle(
@@ -1300,13 +1314,27 @@ def export_monthly_pdf(request, year=None, month=None):
     story = []
     styles = getSampleStyleSheet()
 
-    # Large Prominent Bold Arabic Bismillah Header in Rich Metallic Gold (Used in BOTH English & Urdu Modes)
-    bismillah_str = shape_ur("بسم اللہ الرحمن الرحیم", is_urdu=True)
+    # High-contrast Attractive Islamic Box Badge for Bismillah with exact Arabic text
+    bismillah_exact_text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
+    bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
     bism_style = ParagraphStyle(
-        'BismHdrArabicM', parent=styles['Normal'], fontName=font_bism, fontSize=24, leading=28,
-        textColor=colors.HexColor("#b8860b"), alignment=1, spaceAfter=12
+        'BismHdrArabicBoxM', parent=styles['Normal'], fontName=font_bism, fontSize=24, leading=29,
+        textColor=colors.HexColor("#fef08a"), alignment=1 # Bright Sharp Metallic Gold
     )
-    story.append(Paragraph(f"<b>{bismillah_str}</b>", bism_style))
+    bism_p = Paragraph(f"<b>{bismillah_str}</b>", bism_style)
+    bism_box = Table([[bism_p]], colWidths=[520])
+    bism_box.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")), # Deep Emerald Box Fill
+        ('BOX', (0, 0), (-1, -1), 2.5, colors.HexColor("#c59b27")), # 2.5pt Metallic Gold Outer Frame
+        ('LINEABOVE', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")), # Inner Gold Accent Line
+        ('LINEBELOW', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    story.append(bism_box)
+    story.append(Spacer(1, 14))
 
     # Custom unique styles
     title_style = ParagraphStyle(
