@@ -684,33 +684,41 @@ def export_imam_salary_pdf(request):
                     ""
                 ])
 
-            # Bottom Summary Row with Month and Year Totals
+            # Separate Summary Rows for Month and Year
             rem_m_color = "#198754" if s.remaining_salary <= 0 else "#dc3545"
             rem_y_color = "#198754" if s.remaining_yearly_salary <= 0 else "#dc3545"
 
             if is_urdu:
-                lbl_ms = "ماہانہ مقررہ:"
-                lbl_m_rem = "ماہانہ بقایا:"
-                lbl_ys = "سالانہ مقررہ:"
-                lbl_y_rem = "سالانہ بقایا:"
-                lbl_tp = "کل ادا شدہ:"
+                lbl_m_tot = "ماہانہ کل تنخواہ"
+                lbl_m_paid = "ماہانہ ادا شدہ"
+                lbl_m_rem = "ماہانہ بقایا"
+                
+                lbl_y_tot = "سالانہ کل تنخواہ"
+                lbl_y_paid = "کل ادا شدہ"
+                lbl_y_rem = "سالانہ بقایا"
             else:
-                lbl_ms = "Monthly Target:"
-                lbl_m_rem = "Month Balance:"
-                lbl_ys = "Annual Target:"
-                lbl_y_rem = "Year Balance:"
-                lbl_tp = "Total Paid:"
+                lbl_m_tot = "Monthly Total"
+                lbl_m_paid = "Paid (Month)"
+                lbl_m_rem = "Month Balance"
+                
+                lbl_y_tot = "Annual Total"
+                lbl_y_paid = "Total Paid (Year)"
+                lbl_y_rem = "Annual Balance"
 
-            col1_text = f"<b>{shape_ur(lbl_ms, is_urdu)}</b> RS {s.total_salary:,.0f}<br/><font color='{rem_m_color}'><b>{shape_ur(lbl_m_rem, is_urdu)} RS {s.remaining_salary:,.0f}</b></font>"
-            col2_text = f"<b>{shape_ur(lbl_ys, is_urdu)}</b> RS {s.effective_yearly_salary:,.0f}<br/><font color='{rem_y_color}'><b>{shape_ur(lbl_y_rem, is_urdu)} RS {s.remaining_yearly_salary:,.0f}</b></font>"
-            col3_text = f"<b>{shape_ur(lbl_tp, is_urdu)}</b><br/><font size='10' color='#198754'><b>RS {s.total_paid:,.0f}</b></font>"
-
-            summary_row = [
-                Paragraph(col1_text, card_footer_style),
-                Paragraph(col2_text, card_footer_style),
-                Paragraph(col3_text, card_footer_style)
+            row_month = [
+                Paragraph(f"<b>{shape_ur(lbl_m_tot, is_urdu)}:</b><br/>RS {s.total_salary:,.0f}", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_m_paid, is_urdu)}:</b><br/><font color='#198754'><b>RS {s.total_paid:,.0f}</b></font>", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_m_rem, is_urdu)}:</b><br/><font color='{rem_m_color}'><b>RS {s.remaining_salary:,.0f}</b></font>", card_footer_style),
             ]
-            salary_card_data.append(summary_row)
+
+            row_year = [
+                Paragraph(f"<b>{shape_ur(lbl_y_tot, is_urdu)}:</b><br/>RS {s.effective_yearly_salary:,.0f}", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_y_paid, is_urdu)}:</b><br/><font color='#198754'><b>RS {s.total_paid:,.0f}</b></font>", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_y_rem, is_urdu)}:</b><br/><font color='{rem_y_color}'><b>RS {s.remaining_yearly_salary:,.0f}</b></font>", card_footer_style),
+            ]
+
+            salary_card_data.append(row_month)
+            salary_card_data.append(row_year)
 
             salary_card_table = Table(salary_card_data, colWidths=[180, 180, 180])
             
@@ -720,8 +728,10 @@ def export_imam_salary_pdf(request):
                 ('BACKGROUND', (0, 0), (-1, 1), colors.HexColor("#e7f1ff")), # Light blue header block
                 ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor("#f8f9fa")),
                 ('LINEBELOW', (0, 2), (-1, 2), 1, colors.HexColor("#dee2e6")),
-                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#f8f9fa")),
-                ('LINEABOVE', (0, -1), (-1, -1), 1.5, colors.HexColor("#0d6efd")), # Blue line above summary
+                ('BACKGROUND', (0, -2), (-1, -2), colors.HexColor("#eef4ff")), # Month summary blue tint
+                ('LINEABOVE', (0, -2), (-1, -2), 1.5, colors.HexColor("#0d6efd")), # Blue line above month summary
+                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#fff9e6")), # Year summary amber tint
+                ('LINEABOVE', (0, -1), (-1, -1), 1, colors.HexColor("#ffc107")), # Amber line above year summary
                 ('BOX', (0, 0), (-1, -1), 1.5, colors.HexColor("#b6d4fe")), # Outer blue border
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('TOPPADDING', (0, 0), (-1, -1), 6),
@@ -1464,33 +1474,41 @@ def export_monthly_pdf(request, year=None, month=None):
                     ""
                 ])
 
-            # Bottom Summary Row with Month and Year Totals
+            # Separate Summary Rows for Month and Year
             rem_m_color = "#198754" if s.remaining_salary <= 0 else "#dc3545"
             rem_y_color = "#198754" if s.remaining_yearly_salary <= 0 else "#dc3545"
 
             if is_urdu:
-                lbl_ms = "ماہانہ مقررہ:"
-                lbl_m_rem = "ماہانہ بقایا:"
-                lbl_ys = "سالانہ مقررہ:"
-                lbl_y_rem = "سالانہ بقایا:"
-                lbl_tp = "کل ادا شدہ:"
+                lbl_m_tot = "ماہانہ کل تنخواہ"
+                lbl_m_paid = "ماہانہ ادا شدہ"
+                lbl_m_rem = "ماہانہ بقایا"
+                
+                lbl_y_tot = "سالانہ کل تنخواہ"
+                lbl_y_paid = "کل ادا شدہ"
+                lbl_y_rem = "سالانہ بقایا"
             else:
-                lbl_ms = "Monthly Target:"
-                lbl_m_rem = "Month Balance:"
-                lbl_ys = "Annual Target:"
-                lbl_y_rem = "Year Balance:"
-                lbl_tp = "Total Paid:"
+                lbl_m_tot = "Monthly Total"
+                lbl_m_paid = "Paid (Month)"
+                lbl_m_rem = "Month Balance"
+                
+                lbl_y_tot = "Annual Total"
+                lbl_y_paid = "Total Paid (Year)"
+                lbl_y_rem = "Annual Balance"
 
-            col1_text = f"<b>{shape_ur(lbl_ms, is_urdu)}</b> RS {s.total_salary:,.0f}<br/><font color='{rem_m_color}'><b>{shape_ur(lbl_m_rem, is_urdu)} RS {s.remaining_salary:,.0f}</b></font>"
-            col2_text = f"<b>{shape_ur(lbl_ys, is_urdu)}</b> RS {s.effective_yearly_salary:,.0f}<br/><font color='{rem_y_color}'><b>{shape_ur(lbl_y_rem, is_urdu)} RS {s.remaining_yearly_salary:,.0f}</b></font>"
-            col3_text = f"<b>{shape_ur(lbl_tp, is_urdu)}</b><br/><font size='10' color='#198754'><b>RS {s.total_paid:,.0f}</b></font>"
-
-            summary_row = [
-                Paragraph(col1_text, card_footer_style),
-                Paragraph(col2_text, card_footer_style),
-                Paragraph(col3_text, card_footer_style)
+            row_month = [
+                Paragraph(f"<b>{shape_ur(lbl_m_tot, is_urdu)}:</b><br/>RS {s.total_salary:,.0f}", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_m_paid, is_urdu)}:</b><br/><font color='#198754'><b>RS {s.total_paid:,.0f}</b></font>", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_m_rem, is_urdu)}:</b><br/><font color='{rem_m_color}'><b>RS {s.remaining_salary:,.0f}</b></font>", card_footer_style),
             ]
-            salary_card_data.append(summary_row)
+
+            row_year = [
+                Paragraph(f"<b>{shape_ur(lbl_y_tot, is_urdu)}:</b><br/>RS {s.effective_yearly_salary:,.0f}", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_y_paid, is_urdu)}:</b><br/><font color='#198754'><b>RS {s.total_paid:,.0f}</b></font>", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_y_rem, is_urdu)}:</b><br/><font color='{rem_y_color}'><b>RS {s.remaining_yearly_salary:,.0f}</b></font>", card_footer_style),
+            ]
+
+            salary_card_data.append(row_month)
+            salary_card_data.append(row_year)
 
             salary_card_table = Table(salary_card_data, colWidths=[180, 180, 180])
             
@@ -1500,8 +1518,10 @@ def export_monthly_pdf(request, year=None, month=None):
                 ('BACKGROUND', (0, 0), (-1, 1), colors.HexColor("#e7f1ff")), # Light blue header block
                 ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor("#f8f9fa")),
                 ('LINEBELOW', (0, 2), (-1, 2), 1, colors.HexColor("#dee2e6")),
-                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#f8f9fa")),
-                ('LINEABOVE', (0, -1), (-1, -1), 1.5, colors.HexColor("#0d6efd")), # Blue line above summary
+                ('BACKGROUND', (0, -2), (-1, -2), colors.HexColor("#eef4ff")), # Month summary blue tint
+                ('LINEABOVE', (0, -2), (-1, -2), 1.5, colors.HexColor("#0d6efd")), # Blue line above month summary
+                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#fff9e6")), # Year summary amber tint
+                ('LINEABOVE', (0, -1), (-1, -1), 1, colors.HexColor("#ffc107")), # Amber line above year summary
                 ('BOX', (0, 0), (-1, -1), 1.5, colors.HexColor("#b6d4fe")), # Outer blue border
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('TOPPADDING', (0, 0), (-1, -1), 6),
@@ -1510,7 +1530,7 @@ def export_monthly_pdf(request, year=None, month=None):
             if not s.installments.exists():
                 table_styles.append(('SPAN', (0, 3), (-1, 3)))
             else:
-                table_styles.append(('GRID', (0, 2), (-1, -2), 0.5, colors.HexColor("#dee2e6")))
+                table_styles.append(('GRID', (0, 2), (-1, -3), 0.5, colors.HexColor("#dee2e6")))
                 
             salary_card_table.setStyle(TableStyle(table_styles))
             story.append(salary_card_table)
