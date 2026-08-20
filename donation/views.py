@@ -347,7 +347,7 @@ def add_imam_salary_view(request):
             if yearly_sal_raw and float(yearly_sal_raw) > 0:
                 yearly_sal_val = float(yearly_sal_raw)
             else:
-                yearly_sal_val = tot_sal_float * 12
+                yearly_sal_val = tot_sal_float * 10
 
             salary_obj = ImamSalary.objects.create(
                 imam_name=imam_name,
@@ -449,7 +449,7 @@ def update_imam_salary_view(request, pk):
         if yearly_sal_raw and float(yearly_sal_raw) > 0:
             salary.yearly_salary = float(yearly_sal_raw)
         else:
-            salary.yearly_salary = tot_sal * 12
+            salary.yearly_salary = tot_sal * 10
         month_year_str = request.POST.get('month_year')
         if month_year_str:
             salary.month_year = datetime.strptime(month_year_str, '%Y-%m').date()

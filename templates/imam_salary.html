@@ -506,7 +506,7 @@ function autoCalcYearly(inputElem, targetId) {
     var val = parseFloat(inputElem.value);
     var target = document.getElementById(targetId);
     if (target && !isNaN(val) && val > 0) {
-        target.value = val * 12;
+        target.value = val * 10;
     }
 }
 </script>

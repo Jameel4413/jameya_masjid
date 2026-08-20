@@ -56,7 +56,7 @@ class ImamSalary(models.Model):
     def effective_yearly_salary(self):
         if self.yearly_salary and float(self.yearly_salary) > 0:
             return float(self.yearly_salary)
-        return float(self.total_salary) * 12
+        return float(self.total_salary) * 10
 
     @property
     def total_paid(self):
