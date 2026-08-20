@@ -54,23 +54,39 @@ class ImamSalary(models.Model):
 
     @property
     def effective_yearly_salary(self):
-        if self.yearly_salary and float(self.yearly_salary) > 0:
-            return float(self.yearly_salary)
-        return float(self.total_salary) * 10
+        try:
+            yearly = getattr(self, 'yearly_salary', 0)
+            if yearly and float(yearly) > 0:
+                return float(yearly)
+        except Exception:
+            pass
+        try:
+            return float(self.total_salary) * 10
+        except Exception:
+            return 0.0
 
     @property
     def total_paid(self):
         # Calculate total installments paid so far
-        paid = self.installments.aggregate(total=Sum('amount_paid'))['total']
-        return float(paid) if paid else 0.0
+        try:
+            paid = self.installments.aggregate(total=Sum('amount_paid'))['total']
+            return float(paid) if paid else 0.0
+        except Exception:
+            return 0.0
 
     @property
     def remaining_salary(self):
-        return float(self.total_salary) - self.total_paid
+        try:
+            return float(self.total_salary) - self.total_paid
+        except Exception:
+            return 0.0
 
     @property
     def remaining_yearly_salary(self):
-        return self.effective_yearly_salary - self.total_paid
+        try:
+            return self.effective_yearly_salary - self.total_paid
+        except Exception:
+            return 0.0
 
     @property
     def is_fully_paid(self):
