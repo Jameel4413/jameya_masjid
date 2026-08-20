@@ -107,16 +107,26 @@ def register_urdu_fonts():
     global _URDU_FONT_REGISTERED
     if not _URDU_FONT_REGISTERED:
         font_paths = [
+            # Windows System Fonts
             ("C:/Windows/Fonts/arial.ttf", "C:/Windows/Fonts/arialbd.ttf"),
             ("C:/Windows/Fonts/tahoma.ttf", "C:/Windows/Fonts/tahomabd.ttf"),
             ("C:/Windows/Fonts/segoeui.ttf", "C:/Windows/Fonts/segoeuib.ttf"),
+            # Linux / Vercel Serverless Fonts
+            ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
+            ("/usr/share/fonts/truetype/freefont/FreeSans.ttf", "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf"),
+            ("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"),
+            ("/usr/share/fonts/dejavu/DejaVuSans.ttf", "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf"),
         ]
         for regular, bold in font_paths:
             if os.path.exists(regular) and os.path.exists(bold):
-                pdfmetrics.registerFont(TTFont('UrduFont', regular))
-                pdfmetrics.registerFont(TTFont('UrduFont-Bold', bold))
-                _URDU_FONT_REGISTERED = True
-                break
+                try:
+                    pdfmetrics.registerFont(TTFont('UrduFont', regular))
+                    pdfmetrics.registerFont(TTFont('UrduFont-Bold', bold))
+                    _URDU_FONT_REGISTERED = True
+                    break
+                except Exception:
+                    pass
+        _URDU_FONT_REGISTERED = True
 
 def shape_ur(text, is_urdu=False):
     if text is None:
@@ -544,13 +554,16 @@ def draw_islamic_pdf_background(canvas, doc):
 def export_imam_salary_pdf(request):
     """Dedicated PDF - ONLY the Imam Salary status (per-month + year total). Supports English and Urdu."""
     register_urdu_fonts()
+    registered_fonts = pdfmetrics.getRegisteredFontNames()
+
     year = request.GET.get('year')
     month = request.GET.get('month')
     pdf_lang = request.GET.get('lang') or request.GET.get('pdf_lang') or (request.session.get('lang', 'en') if hasattr(request, 'session') and request.session is not None else 'en')
     is_urdu = (pdf_lang == 'ur')
 
-    font_normal = 'UrduFont' if is_urdu else 'Helvetica'
-    font_bold = 'UrduFont-Bold' if is_urdu else 'Helvetica-Bold'
+    font_normal = 'UrduFont' if (is_urdu and 'UrduFont' in registered_fonts) else 'Helvetica'
+    font_bold = 'UrduFont-Bold' if (is_urdu and 'UrduFont-Bold' in registered_fonts) else 'Helvetica-Bold'
+    font_bism = 'UrduFont-Bold' if ('UrduFont-Bold' in registered_fonts) else 'Helvetica-Bold'
 
     now = timezone.now()
     selected_year = int(year) if (year and year.isdigit()) else now.year
@@ -593,10 +606,14 @@ def export_imam_salary_pdf(request):
     story = []
     styles = getSampleStyleSheet()
 
-    # Large Prominent Bold Arabic Bismillah in Rich Gold Color (Used for BOTH English & Urdu Modes)
-    bismillah_str = shape_ur("بسم اللہ الرحمن الرحیم", is_urdu=True)
+    # Large Prominent Bold Bismillah Header in Rich Gold Color
+    if 'UrduFont-Bold' in registered_fonts:
+        bismillah_str = shape_ur("بسم اللہ الرحمن الرحیم", is_urdu=True)
+    else:
+        bismillah_str = "Bismillah ir-Rahman ir-Rahim"
+
     bism_style = ParagraphStyle(
-        'BismHdrArabic', parent=styles['Normal'], fontName='UrduFont-Bold', fontSize=22, leading=26,
+        'BismHdrArabic', parent=styles['Normal'], fontName=font_bism, fontSize=22 if 'UrduFont-Bold' in registered_fonts else 16, leading=26,
         textColor=colors.HexColor("#b8860b"), alignment=1, spaceAfter=10
     )
     story.append(Paragraph(f"<b>{bismillah_str}</b>", bism_style))
@@ -1143,6 +1160,7 @@ def delete_lease_payment_view(request, pk):
 @login_required(login_url='/admin/login/')
 def export_monthly_pdf(request, year=None, month=None):
     register_urdu_fonts()
+    registered_fonts = pdfmetrics.getRegisteredFontNames()
     import calendar
     now = timezone.now()
 
@@ -1152,8 +1170,9 @@ def export_monthly_pdf(request, year=None, month=None):
     pdf_lang = request.GET.get('lang') or request.GET.get('pdf_lang') or (request.session.get('lang', 'en') if hasattr(request, 'session') and request.session is not None else 'en')
     is_urdu = (pdf_lang == 'ur')
 
-    font_normal = 'UrduFont' if is_urdu else 'Helvetica'
-    font_bold = 'UrduFont-Bold' if is_urdu else 'Helvetica-Bold'
+    font_normal = 'UrduFont' if (is_urdu and 'UrduFont' in registered_fonts) else 'Helvetica'
+    font_bold = 'UrduFont-Bold' if (is_urdu and 'UrduFont-Bold' in registered_fonts) else 'Helvetica-Bold'
+    font_bism = 'UrduFont-Bold' if ('UrduFont-Bold' in registered_fonts) else 'Helvetica-Bold'
 
     selected_year = year or (int(get_year) if get_year and get_year.isdigit() else None) or now.year
     raw_month = month or get_month
@@ -1276,10 +1295,14 @@ def export_monthly_pdf(request, year=None, month=None):
     story = []
     styles = getSampleStyleSheet()
 
-    # Large Prominent Bold Arabic Bismillah in Rich Gold Color (Used for BOTH English & Urdu Modes)
-    bismillah_str = shape_ur("بسم اللہ الرحمن الرحیم", is_urdu=True)
+    # Large Prominent Bold Bismillah Header in Rich Gold Color
+    if 'UrduFont-Bold' in registered_fonts:
+        bismillah_str = shape_ur("بسم اللہ الرحمن الرحیم", is_urdu=True)
+    else:
+        bismillah_str = "Bismillah ir-Rahman ir-Rahim"
+
     bism_style = ParagraphStyle(
-        'BismHdrArabicM', parent=styles['Normal'], fontName='UrduFont-Bold', fontSize=22, leading=26,
+        'BismHdrArabicM', parent=styles['Normal'], fontName=font_bism, fontSize=22 if 'UrduFont-Bold' in registered_fonts else 16, leading=26,
         textColor=colors.HexColor("#b8860b"), alignment=1, spaceAfter=10
     )
     story.append(Paragraph(f"<b>{bismillah_str}</b>", bism_style))
