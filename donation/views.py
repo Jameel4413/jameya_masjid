@@ -469,95 +469,73 @@ def delete_imam_salary_view(request, pk):
 
 def draw_islamic_pdf_background(canvas, doc):
     """
-    Renders an executive-level Islamic Architectural Theme background
-    using ReportLab in-memory vector graphics (0% database memory overhead!).
-    Includes:
-    - Soft Parchment canvas fill (#fafcfb)
-    - Deep Royal Emerald Green Header Banner (#064e3b) with Gold Ribbon accent (#d97706)
-    - Thin Gold outer border frame with corner geometric motifs
-    - Ultra-subtle watermark centered on page (2.5% opacity)
-    - Executive footer with timestamp & page numbers
+    Renders an Executive Islamic Theme background with 0% DB overhead:
+    - Soft Greenish Islamic Canvas Tint (#edf5f1)
+    - Full Golden & Emerald Double Border (#d4af37 & #044e3a)
+    - Corner Geometric Diamond Ornaments in Gold & Emerald
+    - Subtle Center Watermark
+    - Executive Footer line
     """
     canvas.saveState()
     width, height = doc.pagesize
 
-    # 1. Canvas Fill: Ultra-soft Parchment Tint
-    canvas.setFillColor(colors.HexColor('#fafcfb'))
+    # 1. Canvas Fill: Soft Greenish Islamic Tint (#edf5f1)
+    canvas.setFillColor(colors.HexColor('#edf5f1'))
     canvas.rect(0, 0, width, height, fill=1, stroke=0)
 
-    # 2. Header Banner: Deep Emerald (#064e3b)
-    banner_height = 26
-    canvas.setFillColor(colors.HexColor('#064e3b'))
-    canvas.rect(0, height - banner_height, width, banner_height, fill=1, stroke=0)
+    # 2. Outer Golden Islamic Border Frame (#d4af37 - Rich Gold)
+    margin = 20
+    canvas.setStrokeColor(colors.HexColor('#d4af37'))
+    canvas.setLineWidth(2.2)
+    canvas.rect(margin, margin, width - (2 * margin), height - (2 * margin))
 
-    # Gold Ribbon Line underneath Emerald Header
-    canvas.setStrokeColor(colors.HexColor('#d97706')) # Gold accent
-    canvas.setLineWidth(2.5)
-    canvas.line(0, height - banner_height, width, height - banner_height)
+    # Inner Emerald Accent Line (#044e3a)
+    canvas.setStrokeColor(colors.HexColor('#044e3a'))
+    canvas.setLineWidth(0.8)
+    canvas.rect(margin + 4, margin + 4, width - (2 * margin) - 8, height - (2 * margin) - 8)
 
-    # Secondary Accent Line in Gold
-    canvas.setStrokeColor(colors.HexColor('#f59e0b'))
-    canvas.setLineWidth(0.75)
-    canvas.line(0, height - banner_height - 3, width, height - banner_height - 3)
+    # Corner Geometric Diamond Ornaments (Golden & Emerald)
+    canvas.setStrokeColor(colors.HexColor('#d4af37'))
+    canvas.setFillColor(colors.HexColor('#044e3a')) # Deep Emerald
+    canvas.setLineWidth(1)
+    c_off = margin + 4
 
-    # Header Bar Text
-    canvas.setFillColor(colors.white)
-    canvas.setFont('Helvetica-Bold', 9)
-    canvas.drawString(36, height - 18, "JAMEYA MASJID FINANCIAL MANAGEMENT SYSTEM")
+    corners = [
+        (c_off, height - c_off),        # Top-Left
+        (width - c_off, height - c_off), # Top-Right
+        (c_off, c_off),                 # Bottom-Left
+        (width - c_off, c_off)          # Bottom-Right
+    ]
+    for x_c, y_c in corners:
+        p = canvas.beginPath()
+        p.moveTo(x_c - 7, y_c)
+        p.lineTo(x_c, y_c + 7)
+        p.lineTo(x_c + 7, y_c)
+        p.lineTo(x_c, y_c - 7)
+        p.close()
+        canvas.drawPath(p, fill=1, stroke=1)
 
-    # 3. Outer Decorative Frame (Emerald & Gold Corner Geometry)
-    margin = 24
-    top_margin_adjust = 12
-    frame_top = height - margin - top_margin_adjust
-    frame_bottom = margin
-    frame_left = margin
-    frame_right = width - margin
-
-    canvas.setStrokeColor(colors.HexColor('#a7f3d0')) # Soft emerald line
-    canvas.setLineWidth(0.75)
-    canvas.rect(frame_left, frame_bottom, frame_right - frame_left, frame_top - frame_bottom)
-
-    # Gold Corner Architectural Accents
-    canvas.setStrokeColor(colors.HexColor('#d97706'))
-    canvas.setLineWidth(1.5)
-    c_len = 14
-
-    # Top-Left Corner
-    canvas.line(frame_left, frame_top - c_len, frame_left, frame_top)
-    canvas.line(frame_left, frame_top, frame_left + c_len, frame_top)
-    # Top-Right Corner
-    canvas.line(frame_right - c_len, frame_top, frame_right, frame_top)
-    canvas.line(frame_right, frame_top, frame_right, frame_top - c_len)
-    # Bottom-Left Corner
-    canvas.line(frame_left, frame_bottom + c_len, frame_left, frame_bottom)
-    canvas.line(frame_left, frame_bottom, frame_left + c_len, frame_bottom)
-    # Bottom-Right Corner
-    canvas.line(frame_right - c_len, frame_bottom, frame_right, frame_bottom)
-    canvas.line(frame_right, frame_bottom, frame_right, frame_bottom + c_len)
-
-    # 4. Faint Background Watermark (Center Page)
+    # 3. Subtle Center Watermark
     canvas.saveState()
-    canvas.setFillColor(colors.HexColor('#064e3b'))
-    canvas.setStrokeColor(colors.HexColor('#d97706'))
-    canvas.setFillAlpha(0.025)
-    canvas.setStrokeAlpha(0.04)
-    canvas.setFont('Helvetica-Bold', 40)
-    canvas.drawCentredString(width / 2.0, height / 2.0 + 15, "JAMEYA MASJID")
-    canvas.setFont('Helvetica', 20)
-    canvas.drawCentredString(width / 2.0, height / 2.0 - 20, "OFFICIAL FINANCIAL REPORT")
+    canvas.setFillColor(colors.HexColor('#044e3a'))
+    canvas.setFillAlpha(0.035)
+    canvas.setFont('Helvetica-Bold', 36)
+    canvas.drawCentredString(width / 2.0, height / 2.0 + 10, "JAMEYA MASJID")
+    canvas.setFont('Helvetica-Bold', 15)
+    canvas.drawCentredString(width / 2.0, height / 2.0 - 25, "FINANCIAL MANAGEMENT SYSTEM")
     canvas.restoreState()
 
-    # 5. Executive Footer
-    footer_y = 28
-    canvas.setStrokeColor(colors.HexColor('#064e3b'))
+    # 4. Executive Footer Line
+    footer_y = 26
+    canvas.setStrokeColor(colors.HexColor('#d4af37'))
     canvas.setLineWidth(1)
-    canvas.line(margin, footer_y + 10, width - margin, footer_y + 10)
+    canvas.line(margin + 6, footer_y + 8, width - margin - 6, footer_y + 8)
 
-    canvas.setFillColor(colors.HexColor('#475569'))
-    canvas.setFont('Helvetica', 8)
+    canvas.setFillColor(colors.HexColor('#044e3a'))
+    canvas.setFont('Helvetica-Bold', 8)
     now_str = datetime.now().strftime("%d-%b-%Y %I:%M %p")
-    canvas.drawString(margin + 5, footer_y - 2, f"Report Generated: {now_str}")
-    canvas.drawRightString(width - margin - 5, footer_y - 2, f"Page {doc.page} | Official Record")
+    canvas.drawString(margin + 10, footer_y - 4, f"Generated: {now_str}")
+    canvas.drawRightString(width - margin - 10, footer_y - 4, f"Page {doc.page}  |  JAMEYA MASJID OFFICIAL RECORD")
 
     canvas.restoreState()
 
@@ -614,45 +592,57 @@ def export_imam_salary_pdf(request):
     story = []
     styles = getSampleStyleSheet()
 
+    # Large Prominent Bismillah Header at the Top
+    if is_urdu:
+        bismillah_str = shape_ur("بسم اللہ الرحمن الرحیم", is_urdu=True)
+    else:
+        bismillah_str = "Bismillah ir-Rahman ir-Rahim"
+
+    bism_style = ParagraphStyle(
+        'BismHdr', parent=styles['Normal'], fontName=font_bold, fontSize=20 if is_urdu else 16, leading=24,
+        textColor=colors.HexColor("#856404"), alignment=1, spaceAfter=8
+    )
+    story.append(Paragraph(f"<b>{bismillah_str}</b>", bism_style))
+
     # Custom unique styles
     title_style = ParagraphStyle(
-        'RepTitle', parent=styles['Heading1'], fontName=font_bold, fontSize=20 if is_urdu else 22, leading=26,
-        textColor=colors.HexColor("#064e3b"), alignment=1
+        'RepTitle', parent=styles['Heading1'], fontName=font_bold, fontSize=18 if is_urdu else 20, leading=24,
+        textColor=colors.HexColor("#044e3a"), alignment=1
     )
     subtitle_style = ParagraphStyle(
-        'RepSubtitle', parent=styles['Normal'], fontName=font_normal, fontSize=12, leading=16,
-        textColor=colors.HexColor("#495057"), alignment=1
+        'RepSubtitle', parent=styles['Normal'], fontName=font_normal, fontSize=11, leading=15,
+        textColor=colors.HexColor("#1f2937"), alignment=1
     )
     section_style = ParagraphStyle(
         'RepSection', parent=styles['Heading2'], fontName=font_bold, fontSize=13, leading=16,
-        textColor=colors.HexColor("#212529"), spaceBefore=15, spaceAfter=8
+        textColor=colors.HexColor("#044e3a"), spaceBefore=15, spaceAfter=8
     )
     cell_style = ParagraphStyle(
         'RepCell', parent=styles['Normal'], fontName=font_normal, fontSize=9, leading=12,
-        textColor=colors.HexColor("#212529")
+        textColor=colors.HexColor("#111827")
     )
     cell_amount_style = ParagraphStyle(
         'RepCellAmt', parent=styles['Normal'], fontName=font_bold, fontSize=9, leading=12,
-        textColor=colors.HexColor("#212529"), alignment=2
+        textColor=colors.HexColor("#044e3a"), alignment=2
     )
 
     # Custom styles for Imam Cards
     imam_name_style = ParagraphStyle(
-        'ImamName', parent=styles['Normal'], fontName=font_bold, fontSize=14, leading=18,
-        textColor=colors.HexColor("#0d6efd")
+        'ImamName', parent=styles['Normal'], fontName=font_bold, fontSize=13, leading=17,
+        textColor=colors.HexColor("#044e3a")
     )
     card_info_style = ParagraphStyle(
         'CardInfo', parent=styles['Normal'], fontName=font_normal, fontSize=9, leading=12,
-        textColor=colors.HexColor("#495057")
+        textColor=colors.HexColor("#374151")
     )
     card_footer_style = ParagraphStyle(
         'CardF', parent=styles['Normal'], fontName=font_normal, fontSize=8.5, leading=12,
-        textColor=colors.HexColor("#212529")
+        textColor=colors.HexColor("#111827")
     )
 
     # Document Header
     main_title = "جامع مسجد امام کی تنخواہ رپورٹ" if is_urdu else "JAMEYA MASJID IMAM SALARY REPORT"
-    story.append(Paragraph(shape_ur(main_title, is_urdu), title_style))
+    story.append(Paragraph(f"<b>{shape_ur(main_title, is_urdu)}</b>", title_style))
 
     if is_annual:
         period_text = f"سالانہ رپورٹ - سال {selected_year}" if is_urdu else f"Annual Report - Year {selected_year}"
@@ -1288,50 +1278,62 @@ def export_monthly_pdf(request, year=None, month=None):
     story = []
     styles = getSampleStyleSheet()
 
+    # Large Prominent Bismillah Header at the Top
+    if is_urdu:
+        bismillah_str = shape_ur("بسم اللہ الرحمن الرحیم", is_urdu=True)
+    else:
+        bismillah_str = "Bismillah ir-Rahman ir-Rahim"
+
+    bism_style = ParagraphStyle(
+        'BismHdrM', parent=styles['Normal'], fontName=font_bold, fontSize=20 if is_urdu else 16, leading=24,
+        textColor=colors.HexColor("#856404"), alignment=1, spaceAfter=8
+    )
+    story.append(Paragraph(f"<b>{bismillah_str}</b>", bism_style))
+
     # Custom unique styles
     title_style = ParagraphStyle(
-        'RepTitle', parent=styles['Heading1'], fontName=font_bold, fontSize=20 if is_urdu else 22, leading=26,
-        textColor=colors.HexColor("#064e3b"), alignment=1
+        'RepTitle', parent=styles['Heading1'], fontName=font_bold, fontSize=18 if is_urdu else 20, leading=24,
+        textColor=colors.HexColor("#044e3a"), alignment=1
     )
     subtitle_style = ParagraphStyle(
-        'RepSubtitle', parent=styles['Normal'], fontName=font_normal, fontSize=12, leading=16,
-        textColor=colors.HexColor("#495057"), alignment=1
+        'RepSubtitle', parent=styles['Normal'], fontName=font_normal, fontSize=11, leading=15,
+        textColor=colors.HexColor("#1f2937"), alignment=1
     )
     section_style = ParagraphStyle(
         'RepSection', parent=styles['Heading2'], fontName=font_bold, fontSize=13, leading=16,
-        textColor=colors.HexColor("#212529"), spaceBefore=15, spaceAfter=8
+        textColor=colors.HexColor("#044e3a"), spaceBefore=15, spaceAfter=8
     )
     cell_style = ParagraphStyle(
         'RepCell', parent=styles['Normal'], fontName=font_normal, fontSize=9, leading=12,
-        textColor=colors.HexColor("#212529")
+        textColor=colors.HexColor("#111827")
     )
     cell_amount_style = ParagraphStyle(
         'RepCellAmt', parent=styles['Normal'], fontName=font_bold, fontSize=9, leading=12,
-        textColor=colors.HexColor("#212529"), alignment=2
+        textColor=colors.HexColor("#044e3a"), alignment=2
     )
 
     # Custom styles for Imam & Thekedar Cards
     imam_name_style = ParagraphStyle(
-        'ImamName', parent=styles['Normal'], fontName=font_bold, fontSize=14, leading=18,
-        textColor=colors.HexColor("#0d6efd")
+        'ImamName', parent=styles['Normal'], fontName=font_bold, fontSize=13, leading=17,
+        textColor=colors.HexColor("#044e3a")
     )
     thekedar_name_style = ParagraphStyle(
-        'ThekedarName', parent=styles['Normal'], fontName=font_bold, fontSize=14, leading=18,
+        'ThekedarName', parent=styles['Normal'], fontName=font_bold, fontSize=13, leading=17,
         textColor=colors.HexColor("#856404")
     )
     card_info_style = ParagraphStyle(
         'CardInfo', parent=styles['Normal'], fontName=font_normal, fontSize=9, leading=12,
-        textColor=colors.HexColor("#495057")
+        textColor=colors.HexColor("#374151")
     )
     card_footer_style = ParagraphStyle(
         'CardF', parent=styles['Normal'], fontName=font_normal, fontSize=9, leading=14,
-        textColor=colors.HexColor("#212529")
+        textColor=colors.HexColor("#111827")
     )
 
     # Document Header
     hdr_title = "جامع مسجد مالیاتی رپورٹ" if is_urdu else "JAMEYA MASJID FINANCIAL REPORT"
     hdr_sub = f"تفصیلی اسٹیٹمنٹ برائے {month_name}" if is_urdu else f"Detailed Statement for {month_name}"
-    story.append(Paragraph(shape_ur(hdr_title, is_urdu), title_style))
+    story.append(Paragraph(f"<b>{shape_ur(hdr_title, is_urdu)}</b>", title_style))
     story.append(Paragraph(shape_ur(hdr_sub, is_urdu), subtitle_style))
     story.append(Spacer(1, 15))
 
