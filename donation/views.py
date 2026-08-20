@@ -1354,7 +1354,7 @@ def export_monthly_pdf(request, year=None, month=None):
     rasool_str = shape_ur("یا رسول اللہ", is_urdu=True)
 
     bism_center_style = ParagraphStyle(
-        'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=21.5, leading=26,
+        'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=16.5, leading=20,
         textColor=colors.HexColor("#fef08a"), alignment=1
     )
     bism_right_style = ParagraphStyle(
@@ -1370,7 +1370,7 @@ def export_monthly_pdf(request, year=None, month=None):
     p_center = Paragraph(f"<b>{bismillah_str}</b>", bism_center_style)
     p_right = Paragraph(f"<b>{allah_str}</b>", bism_right_style)
 
-    bism_box = Table([[p_left, p_center, p_right]], colWidths=[120, 280, 120])
+    bism_box = Table([[p_left, p_center, p_right]], colWidths=[95, 330, 95])
     bism_box.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")), # Deep Sacred Emerald Fill
         ('BOX', (0, 0), (-1, -1), 2.5, colors.HexColor("#c59b27")), # Outer Metallic Gold Frame
@@ -1886,4 +1886,4 @@ def export_monthly_pdf(request, year=None, month=None):
     filename = f"Masjid_Detailed_Report_{selected_year}_{selected_month or 'annual'}_{pdf_lang}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
-
+
