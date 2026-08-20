@@ -543,6 +543,7 @@ def draw_islamic_pdf_background(canvas, doc):
 @login_required(login_url='/admin/login/')
 def export_imam_salary_pdf(request):
     """Dedicated PDF - ONLY the Imam Salary status (per-month + year total). Supports English and Urdu."""
+    register_urdu_fonts()
     year = request.GET.get('year')
     month = request.GET.get('month')
     pdf_lang = request.GET.get('lang') or request.GET.get('pdf_lang') or (request.session.get('lang', 'en') if hasattr(request, 'session') and request.session is not None else 'en')
@@ -592,15 +593,11 @@ def export_imam_salary_pdf(request):
     story = []
     styles = getSampleStyleSheet()
 
-    # Large Prominent Bismillah Header at the Top
-    if is_urdu:
-        bismillah_str = shape_ur("بسم اللہ الرحمن الرحیم", is_urdu=True)
-    else:
-        bismillah_str = "Bismillah ir-Rahman ir-Rahim"
-
+    # Large Prominent Bold Arabic Bismillah in Rich Gold Color (Used for BOTH English & Urdu Modes)
+    bismillah_str = shape_ur("بسم اللہ الرحمن الرحیم", is_urdu=True)
     bism_style = ParagraphStyle(
-        'BismHdr', parent=styles['Normal'], fontName=font_bold, fontSize=20 if is_urdu else 16, leading=24,
-        textColor=colors.HexColor("#856404"), alignment=1, spaceAfter=8
+        'BismHdrArabic', parent=styles['Normal'], fontName='UrduFont-Bold', fontSize=22, leading=26,
+        textColor=colors.HexColor("#b8860b"), alignment=1, spaceAfter=10
     )
     story.append(Paragraph(f"<b>{bismillah_str}</b>", bism_style))
 
@@ -1145,6 +1142,7 @@ def delete_lease_payment_view(request, pk):
 
 @login_required(login_url='/admin/login/')
 def export_monthly_pdf(request, year=None, month=None):
+    register_urdu_fonts()
     import calendar
     now = timezone.now()
 
@@ -1278,15 +1276,11 @@ def export_monthly_pdf(request, year=None, month=None):
     story = []
     styles = getSampleStyleSheet()
 
-    # Large Prominent Bismillah Header at the Top
-    if is_urdu:
-        bismillah_str = shape_ur("بسم اللہ الرحمن الرحیم", is_urdu=True)
-    else:
-        bismillah_str = "Bismillah ir-Rahman ir-Rahim"
-
+    # Large Prominent Bold Arabic Bismillah in Rich Gold Color (Used for BOTH English & Urdu Modes)
+    bismillah_str = shape_ur("بسم اللہ الرحمن الرحیم", is_urdu=True)
     bism_style = ParagraphStyle(
-        'BismHdrM', parent=styles['Normal'], fontName=font_bold, fontSize=20 if is_urdu else 16, leading=24,
-        textColor=colors.HexColor("#856404"), alignment=1, spaceAfter=8
+        'BismHdrArabicM', parent=styles['Normal'], fontName='UrduFont-Bold', fontSize=22, leading=26,
+        textColor=colors.HexColor("#b8860b"), alignment=1, spaceAfter=10
     )
     story.append(Paragraph(f"<b>{bismillah_str}</b>", bism_style))
 
