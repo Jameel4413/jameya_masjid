@@ -621,26 +621,20 @@ def export_imam_salary_pdf(request):
     bismillah_exact_text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
     bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
     bism_center_style = ParagraphStyle(
-        'BismCenterS', parent=styles['Normal'], fontName=font_bism, fontSize=23, leading=28,
+        'BismCenterS', parent=styles['Normal'], fontName=font_bism, fontSize=25, leading=30,
         textColor=colors.HexColor("#fef08a"), alignment=1
     )
-    bism_star_style = ParagraphStyle(
-        'BismStarS', parent=styles['Normal'], fontName=font_bism, fontSize=16, leading=20,
-        textColor=colors.HexColor("#c59b27"), alignment=1
-    )
-    star_l = Paragraph("<b>۞</b>", bism_star_style)
-    star_r = Paragraph("<b>۞</b>", bism_star_style)
-    center_p = Paragraph(f"<b>{bismillah_str}</b>", bism_center_style)
-    bism_box = Table([[star_l, center_p, star_r]], colWidths=[35, 450, 35])
+    bism_p = Paragraph(f"<b>{bismillah_str}</b>", bism_center_style)
+    bism_box = Table([[bism_p]], colWidths=[520])
     bism_box.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")), # Deep Sacred Emerald Fill
-        ('BOX', (0, 0), (-1, -1), 2.2, colors.HexColor("#c59b27")), # Outer Metallic Gold Frame
-        ('LINEABOVE', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")), # Inner Gold Accent Line
-        ('LINEBELOW', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")),
+        ('BOX', (0, 0), (-1, -1), 2.5, colors.HexColor("#c59b27")), # Outer Metallic Gold Frame
+        ('LINEABOVE', (0, 0), (-1, -1), 1.2, colors.HexColor("#fef08a")), # Inner Gold Line Accent
+        ('LINEBELOW', (0, 0), (-1, -1), 1.2, colors.HexColor("#fef08a")),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 7),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
     ]))
     story.append(bism_box)
     story.append(Spacer(1, 14))
@@ -1330,26 +1324,20 @@ def export_monthly_pdf(request, year=None, month=None):
     bismillah_exact_text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
     bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
     bism_center_style = ParagraphStyle(
-        'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=23, leading=28,
+        'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=25, leading=30,
         textColor=colors.HexColor("#fef08a"), alignment=1
     )
-    bism_star_style = ParagraphStyle(
-        'BismStarM', parent=styles['Normal'], fontName=font_bism, fontSize=16, leading=20,
-        textColor=colors.HexColor("#c59b27"), alignment=1
-    )
-    star_l = Paragraph("<b>۞</b>", bism_star_style)
-    star_r = Paragraph("<b>۞</b>", bism_star_style)
-    center_p = Paragraph(f"<b>{bismillah_str}</b>", bism_center_style)
-    bism_box = Table([[star_l, center_p, star_r]], colWidths=[35, 450, 35])
+    bism_p = Paragraph(f"<b>{bismillah_str}</b>", bism_center_style)
+    bism_box = Table([[bism_p]], colWidths=[520])
     bism_box.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")), # Deep Sacred Emerald Fill
-        ('BOX', (0, 0), (-1, -1), 2.2, colors.HexColor("#c59b27")), # Outer Metallic Gold Frame
-        ('LINEABOVE', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")), # Inner Gold Accent Line
-        ('LINEBELOW', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")),
+        ('BOX', (0, 0), (-1, -1), 2.5, colors.HexColor("#c59b27")), # Outer Metallic Gold Frame
+        ('LINEABOVE', (0, 0), (-1, -1), 1.2, colors.HexColor("#fef08a")), # Inner Gold Line Accent
+        ('LINEBELOW', (0, 0), (-1, -1), 1.2, colors.HexColor("#fef08a")),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 7),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
     ]))
     story.append(bism_box)
     story.append(Spacer(1, 14))
