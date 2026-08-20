@@ -687,14 +687,28 @@ def export_imam_salary_pdf(request):
             # Bottom Summary Row with Month and Year Totals
             rem_m_color = "#198754" if s.remaining_salary <= 0 else "#dc3545"
             rem_y_color = "#198754" if s.remaining_yearly_salary <= 0 else "#dc3545"
-            lbl_ms = "ماہانہ تنخواہ" if is_urdu else "Month Salary"
-            lbl_ys = "سالانہ تنخواہ" if is_urdu else "Year Salary"
-            lbl_tp = "کل ادا شدہ" if is_urdu else "Total Paid"
+
+            if is_urdu:
+                lbl_ms = "ماہانہ مقررہ:"
+                lbl_m_rem = "ماہانہ بقایا:"
+                lbl_ys = "سالانہ مقررہ:"
+                lbl_y_rem = "سالانہ بقایا:"
+                lbl_tp = "کل ادا شدہ:"
+            else:
+                lbl_ms = "Monthly Target:"
+                lbl_m_rem = "Month Balance:"
+                lbl_ys = "Annual Target:"
+                lbl_y_rem = "Year Balance:"
+                lbl_tp = "Total Paid:"
+
+            col1_text = f"<b>{shape_ur(lbl_ms, is_urdu)}</b> RS {s.total_salary:,.0f}<br/><font color='{rem_m_color}'><b>{shape_ur(lbl_m_rem, is_urdu)} RS {s.remaining_salary:,.0f}</b></font>"
+            col2_text = f"<b>{shape_ur(lbl_ys, is_urdu)}</b> RS {s.effective_yearly_salary:,.0f}<br/><font color='{rem_y_color}'><b>{shape_ur(lbl_y_rem, is_urdu)} RS {s.remaining_yearly_salary:,.0f}</b></font>"
+            col3_text = f"<b>{shape_ur(lbl_tp, is_urdu)}</b><br/><font size='10' color='#198754'><b>RS {s.total_paid:,.0f}</b></font>"
 
             summary_row = [
-                Paragraph(f"<b>{shape_ur(lbl_ms, is_urdu)}:</b> RS {s.total_salary:,.0f}<br/><font color='{rem_m_color}'><b>بقایا: RS {s.remaining_salary:,.0f}</b></font>", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_ys, is_urdu)}:</b> RS {s.effective_yearly_salary:,.0f}<br/><font color='{rem_y_color}'><b>سالانہ بقایا: RS {s.remaining_yearly_salary:,.0f}</b></font>", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_tp, is_urdu)}:</b><br/><font size='11' color='#198754'><b>RS {s.total_paid:,.0f}</b></font>", card_footer_style)
+                Paragraph(col1_text, card_footer_style),
+                Paragraph(col2_text, card_footer_style),
+                Paragraph(col3_text, card_footer_style)
             ]
             salary_card_data.append(summary_row)
 
@@ -1453,14 +1467,28 @@ def export_monthly_pdf(request, year=None, month=None):
             # Bottom Summary Row with Month and Year Totals
             rem_m_color = "#198754" if s.remaining_salary <= 0 else "#dc3545"
             rem_y_color = "#198754" if s.remaining_yearly_salary <= 0 else "#dc3545"
-            lbl_ms = "ماہانہ تنخواہ" if is_urdu else "Month Salary"
-            lbl_ys = "سالانہ تنخواہ" if is_urdu else "Year Salary"
-            lbl_tp = "کل ادا شدہ" if is_urdu else "Total Paid"
+
+            if is_urdu:
+                lbl_ms = "ماہانہ مقررہ:"
+                lbl_m_rem = "ماہانہ بقایا:"
+                lbl_ys = "سالانہ مقررہ:"
+                lbl_y_rem = "سالانہ بقایا:"
+                lbl_tp = "کل ادا شدہ:"
+            else:
+                lbl_ms = "Monthly Target:"
+                lbl_m_rem = "Month Balance:"
+                lbl_ys = "Annual Target:"
+                lbl_y_rem = "Year Balance:"
+                lbl_tp = "Total Paid:"
+
+            col1_text = f"<b>{shape_ur(lbl_ms, is_urdu)}</b> RS {s.total_salary:,.0f}<br/><font color='{rem_m_color}'><b>{shape_ur(lbl_m_rem, is_urdu)} RS {s.remaining_salary:,.0f}</b></font>"
+            col2_text = f"<b>{shape_ur(lbl_ys, is_urdu)}</b> RS {s.effective_yearly_salary:,.0f}<br/><font color='{rem_y_color}'><b>{shape_ur(lbl_y_rem, is_urdu)} RS {s.remaining_yearly_salary:,.0f}</b></font>"
+            col3_text = f"<b>{shape_ur(lbl_tp, is_urdu)}</b><br/><font size='10' color='#198754'><b>RS {s.total_paid:,.0f}</b></font>"
 
             summary_row = [
-                Paragraph(f"<b>{shape_ur(lbl_ms, is_urdu)}:</b> RS {s.total_salary:,.0f}<br/><font color='{rem_m_color}'><b>بقایا: RS {s.remaining_salary:,.0f}</b></font>", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_ys, is_urdu)}:</b> RS {s.effective_yearly_salary:,.0f}<br/><font color='{rem_y_color}'><b>سالانہ بقایا: RS {s.remaining_yearly_salary:,.0f}</b></font>", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_tp, is_urdu)}:</b><br/><font size='11' color='#198754'><b>RS {s.total_paid:,.0f}</b></font>", card_footer_style)
+                Paragraph(col1_text, card_footer_style),
+                Paragraph(col2_text, card_footer_style),
+                Paragraph(col3_text, card_footer_style)
             ]
             salary_card_data.append(summary_row)
 
