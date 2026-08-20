@@ -467,6 +467,101 @@ def delete_imam_salary_view(request, pk):
     return redirect('imam_salary')
 
 
+def draw_islamic_pdf_background(canvas, doc):
+    """
+    Renders an executive-level Islamic Architectural Theme background
+    using ReportLab in-memory vector graphics (0% database memory overhead!).
+    Includes:
+    - Soft Parchment canvas fill (#fafcfb)
+    - Deep Royal Emerald Green Header Banner (#064e3b) with Gold Ribbon accent (#d97706)
+    - Thin Gold outer border frame with corner geometric motifs
+    - Ultra-subtle watermark centered on page (2.5% opacity)
+    - Executive footer with timestamp & page numbers
+    """
+    canvas.saveState()
+    width, height = doc.pagesize
+
+    # 1. Canvas Fill: Ultra-soft Parchment Tint
+    canvas.setFillColor(colors.HexColor('#fafcfb'))
+    canvas.rect(0, 0, width, height, fill=1, stroke=0)
+
+    # 2. Header Banner: Deep Emerald (#064e3b)
+    banner_height = 26
+    canvas.setFillColor(colors.HexColor('#064e3b'))
+    canvas.rect(0, height - banner_height, width, banner_height, fill=1, stroke=0)
+
+    # Gold Ribbon Line underneath Emerald Header
+    canvas.setStrokeColor(colors.HexColor('#d97706')) # Gold accent
+    canvas.setLineWidth(2.5)
+    canvas.line(0, height - banner_height, width, height - banner_height)
+
+    # Secondary Accent Line in Gold
+    canvas.setStrokeColor(colors.HexColor('#f59e0b'))
+    canvas.setLineWidth(0.75)
+    canvas.line(0, height - banner_height - 3, width, height - banner_height - 3)
+
+    # Header Bar Text
+    canvas.setFillColor(colors.white)
+    canvas.setFont('Helvetica-Bold', 9)
+    canvas.drawString(36, height - 18, "JAMEYA MASJID FINANCIAL MANAGEMENT SYSTEM")
+
+    # 3. Outer Decorative Frame (Emerald & Gold Corner Geometry)
+    margin = 24
+    top_margin_adjust = 12
+    frame_top = height - margin - top_margin_adjust
+    frame_bottom = margin
+    frame_left = margin
+    frame_right = width - margin
+
+    canvas.setStrokeColor(colors.HexColor('#a7f3d0')) # Soft emerald line
+    canvas.setLineWidth(0.75)
+    canvas.rect(frame_left, frame_bottom, frame_right - frame_left, frame_top - frame_bottom)
+
+    # Gold Corner Architectural Accents
+    canvas.setStrokeColor(colors.HexColor('#d97706'))
+    canvas.setLineWidth(1.5)
+    c_len = 14
+
+    # Top-Left Corner
+    canvas.line(frame_left, frame_top - c_len, frame_left, frame_top)
+    canvas.line(frame_left, frame_top, frame_left + c_len, frame_top)
+    # Top-Right Corner
+    canvas.line(frame_right - c_len, frame_top, frame_right, frame_top)
+    canvas.line(frame_right, frame_top, frame_right, frame_top - c_len)
+    # Bottom-Left Corner
+    canvas.line(frame_left, frame_bottom + c_len, frame_left, frame_bottom)
+    canvas.line(frame_left, frame_bottom, frame_left + c_len, frame_bottom)
+    # Bottom-Right Corner
+    canvas.line(frame_right - c_len, frame_bottom, frame_right, frame_bottom)
+    canvas.line(frame_right, frame_bottom, frame_right, frame_bottom + c_len)
+
+    # 4. Faint Background Watermark (Center Page)
+    canvas.saveState()
+    canvas.setFillColor(colors.HexColor('#064e3b'))
+    canvas.setStrokeColor(colors.HexColor('#d97706'))
+    canvas.setFillAlpha(0.025)
+    canvas.setStrokeAlpha(0.04)
+    canvas.setFont('Helvetica-Bold', 40)
+    canvas.drawCentredString(width / 2.0, height / 2.0 + 15, "JAMEYA MASJID")
+    canvas.setFont('Helvetica', 20)
+    canvas.drawCentredString(width / 2.0, height / 2.0 - 20, "OFFICIAL FINANCIAL REPORT")
+    canvas.restoreState()
+
+    # 5. Executive Footer
+    footer_y = 28
+    canvas.setStrokeColor(colors.HexColor('#064e3b'))
+    canvas.setLineWidth(1)
+    canvas.line(margin, footer_y + 10, width - margin, footer_y + 10)
+
+    canvas.setFillColor(colors.HexColor('#475569'))
+    canvas.setFont('Helvetica', 8)
+    now_str = datetime.now().strftime("%d-%b-%Y %I:%M %p")
+    canvas.drawString(margin + 5, footer_y - 2, f"Report Generated: {now_str}")
+    canvas.drawRightString(width - margin - 5, footer_y - 2, f"Page {doc.page} | Official Record")
+
+    canvas.restoreState()
+
+
 @login_required(login_url='/admin/login/')
 def export_imam_salary_pdf(request):
     """Dedicated PDF - ONLY the Imam Salary status (per-month + year total). Supports English and Urdu."""
@@ -522,7 +617,7 @@ def export_imam_salary_pdf(request):
     # Custom unique styles
     title_style = ParagraphStyle(
         'RepTitle', parent=styles['Heading1'], fontName=font_bold, fontSize=20 if is_urdu else 22, leading=26,
-        textColor=colors.HexColor("#0d6efd"), alignment=1
+        textColor=colors.HexColor("#064e3b"), alignment=1
     )
     subtitle_style = ParagraphStyle(
         'RepSubtitle', parent=styles['Normal'], fontName=font_normal, fontSize=12, leading=16,
@@ -746,7 +841,7 @@ def export_imam_salary_pdf(request):
             story.append(salary_card_table)
             story.append(Spacer(1, 15))
 
-    doc.build(story)
+    doc.build(story, onFirstPage=draw_islamic_pdf_background, onLaterPages=draw_islamic_pdf_background)
     buffer.seek(0)
 
     response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
@@ -1196,7 +1291,7 @@ def export_monthly_pdf(request, year=None, month=None):
     # Custom unique styles
     title_style = ParagraphStyle(
         'RepTitle', parent=styles['Heading1'], fontName=font_bold, fontSize=20 if is_urdu else 22, leading=26,
-        textColor=colors.HexColor("#198754"), alignment=1
+        textColor=colors.HexColor("#064e3b"), alignment=1
     )
     subtitle_style = ParagraphStyle(
         'RepSubtitle', parent=styles['Normal'], fontName=font_normal, fontSize=12, leading=16,
@@ -1641,7 +1736,7 @@ def export_monthly_pdf(request, year=None, month=None):
             story.append(lease_card_table)
             story.append(Spacer(1, 15))
 
-    doc.build(story)
+    doc.build(story, onFirstPage=draw_islamic_pdf_background, onLaterPages=draw_islamic_pdf_background)
     buffer.seek(0)
 
     response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
