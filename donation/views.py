@@ -133,6 +133,12 @@ def register_urdu_fonts():
                     pass
         _URDU_FONT_REGISTERED = True
 
+_ARABIC_RESHAPER_PRESERVE_HARAKAT = arabic_reshaper.ArabicReshaper({
+    'delete_harakat': False,
+    'support_ligatures': True,
+    'delete_tatweel': False,
+})
+
 def shape_ur(text, is_urdu=False):
     if text is None:
         return ""
@@ -142,7 +148,7 @@ def shape_ur(text, is_urdu=False):
     
     str_text = translate_user_input_to_urdu(str_text)
     register_urdu_fonts()
-    reshaped = arabic_reshaper.reshape(str_text)
+    reshaped = _ARABIC_RESHAPER_PRESERVE_HARAKAT.reshape(str_text)
     return get_display(reshaped)
 
 def set_language(request):
@@ -611,24 +617,30 @@ def export_imam_salary_pdf(request):
     story = []
     styles = getSampleStyleSheet()
 
-    # High-contrast Attractive Islamic Box Badge for Bismillah with exact Arabic text
+    # Authentic Islamic Crest Banner for Bismillah with exact Arabic diacritics
     bismillah_exact_text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
     bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
-    bism_style = ParagraphStyle(
-        'BismHdrArabicBox', parent=styles['Normal'], fontName=font_bism, fontSize=24, leading=29,
-        textColor=colors.HexColor("#fef08a"), alignment=1 # Bright Sharp Metallic Gold
+    bism_center_style = ParagraphStyle(
+        'BismCenterS', parent=styles['Normal'], fontName=font_bism, fontSize=23, leading=28,
+        textColor=colors.HexColor("#fef08a"), alignment=1
     )
-    bism_p = Paragraph(f"<b>{bismillah_str}</b>", bism_style)
-    bism_box = Table([[bism_p]], colWidths=[520])
+    bism_star_style = ParagraphStyle(
+        'BismStarS', parent=styles['Normal'], fontName=font_bism, fontSize=16, leading=20,
+        textColor=colors.HexColor("#c59b27"), alignment=1
+    )
+    star_l = Paragraph("<b>۞</b>", bism_star_style)
+    star_r = Paragraph("<b>۞</b>", bism_star_style)
+    center_p = Paragraph(f"<b>{bismillah_str}</b>", bism_center_style)
+    bism_box = Table([[star_l, center_p, star_r]], colWidths=[35, 450, 35])
     bism_box.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")), # Deep Emerald Box Fill
-        ('BOX', (0, 0), (-1, -1), 2.5, colors.HexColor("#c59b27")), # 2.5pt Metallic Gold Outer Frame
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")), # Deep Sacred Emerald Fill
+        ('BOX', (0, 0), (-1, -1), 2.2, colors.HexColor("#c59b27")), # Outer Metallic Gold Frame
         ('LINEABOVE', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")), # Inner Gold Accent Line
         ('LINEBELOW', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 7),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
     ]))
     story.append(bism_box)
     story.append(Spacer(1, 14))
@@ -1314,24 +1326,30 @@ def export_monthly_pdf(request, year=None, month=None):
     story = []
     styles = getSampleStyleSheet()
 
-    # High-contrast Attractive Islamic Box Badge for Bismillah with exact Arabic text
+    # Authentic Islamic Crest Banner for Bismillah with exact Arabic diacritics
     bismillah_exact_text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
     bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
-    bism_style = ParagraphStyle(
-        'BismHdrArabicBoxM', parent=styles['Normal'], fontName=font_bism, fontSize=24, leading=29,
-        textColor=colors.HexColor("#fef08a"), alignment=1 # Bright Sharp Metallic Gold
+    bism_center_style = ParagraphStyle(
+        'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=23, leading=28,
+        textColor=colors.HexColor("#fef08a"), alignment=1
     )
-    bism_p = Paragraph(f"<b>{bismillah_str}</b>", bism_style)
-    bism_box = Table([[bism_p]], colWidths=[520])
+    bism_star_style = ParagraphStyle(
+        'BismStarM', parent=styles['Normal'], fontName=font_bism, fontSize=16, leading=20,
+        textColor=colors.HexColor("#c59b27"), alignment=1
+    )
+    star_l = Paragraph("<b>۞</b>", bism_star_style)
+    star_r = Paragraph("<b>۞</b>", bism_star_style)
+    center_p = Paragraph(f"<b>{bismillah_str}</b>", bism_center_style)
+    bism_box = Table([[star_l, center_p, star_r]], colWidths=[35, 450, 35])
     bism_box.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")), # Deep Emerald Box Fill
-        ('BOX', (0, 0), (-1, -1), 2.5, colors.HexColor("#c59b27")), # 2.5pt Metallic Gold Outer Frame
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")), # Deep Sacred Emerald Fill
+        ('BOX', (0, 0), (-1, -1), 2.2, colors.HexColor("#c59b27")), # Outer Metallic Gold Frame
         ('LINEABOVE', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")), # Inner Gold Accent Line
         ('LINEBELOW', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 7),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
     ]))
     story.append(bism_box)
     story.append(Spacer(1, 14))
@@ -1472,7 +1490,7 @@ def export_monthly_pdf(request, year=None, month=None):
         no_inc_msg = "اس عرصے کے لیے کوئی آمدنی کا ریکارڈ نہیں ہے۔" if is_urdu else "No income recorded for this period."
         inc_rows.append([Paragraph(shape_ur(no_inc_msg, is_urdu), cell_style), "", "", ""])
     else:
-        tot_inc_lbl = "کل آمدنی (TOTAL INCOME)" if not is_urdu else "کل آمدنی"
+        tot_inc_lbl = "کل آمدنی" if is_urdu else "TOTAL INCOME"
         total_inc_lbl_style = ParagraphStyle(
             'TotIncLbl', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=15,
             textColor=colors.white
@@ -1540,7 +1558,7 @@ def export_monthly_pdf(request, year=None, month=None):
         no_exp_msg = "اس عرصے کے لیے کوئی خرچہ ریکارڈ نہیں ہے۔" if is_urdu else "No expenses recorded for this period."
         exp_rows.append([Paragraph(shape_ur(no_exp_msg, is_urdu), cell_style), "", "", ""])
     else:
-        tot_exp_lbl = "کل اخراجات (TOTAL EXPENSE)" if not is_urdu else "کل اخراجات"
+        tot_exp_lbl = "کل اخراجات" if is_urdu else "TOTAL EXPENSE"
         total_exp_lbl_style = ParagraphStyle(
             'TotExpLbl', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=15,
             textColor=colors.white
