@@ -621,42 +621,42 @@ def export_imam_salary_pdf(request):
 
     # High contrast sharp text styles (Increased font sizes for high readability)
     title_style = ParagraphStyle(
-        'RepTitle', parent=styles['Heading1'], fontName=font_bold, fontSize=18 if is_urdu else 20, leading=24,
+        'RepTitle', parent=styles['Heading1'], fontName=font_bold, fontSize=19 if is_urdu else 22, leading=25,
         textColor=colors.HexColor("#044e3a"), alignment=1
     )
     subtitle_style = ParagraphStyle(
-        'RepSubtitle', parent=styles['Normal'], fontName=font_normal, fontSize=11, leading=15,
-        textColor=colors.HexColor("#1f2937"), alignment=1
+        'RepSubtitle', parent=styles['Normal'], fontName=font_bold, fontSize=12, leading=16,
+        textColor=colors.HexColor("#0f172a"), alignment=1
     )
     section_style = ParagraphStyle(
-        'RepSection', parent=styles['Heading2'], fontName=font_bold, fontSize=14, leading=18,
-        textColor=colors.HexColor("#044e3a"), spaceBefore=16, spaceAfter=8
+        'RepSection', parent=styles['Heading2'], fontName=font_bold, fontSize=15, leading=19,
+        textColor=colors.HexColor("#044e3a"), spaceBefore=18, spaceAfter=9
     )
     cell_style = ParagraphStyle(
-        'RepCell', parent=styles['Normal'], fontName=font_normal, fontSize=10, leading=13,
-        textColor=colors.HexColor("#111827")
+        'RepCell', parent=styles['Normal'], fontName=font_normal, fontSize=10.5, leading=14,
+        textColor=colors.HexColor("#0f172a") # Pure deep slate black for sharp reading
     )
     cell_hdr_style = ParagraphStyle(
-        'RepCellHdr', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=13,
+        'RepCellHdr', parent=styles['Normal'], fontName=font_bold, fontSize=11, leading=14,
         textColor=colors.white
     )
     cell_amount_style = ParagraphStyle(
-        'RepCellAmt', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=13,
+        'RepCellAmt', parent=styles['Normal'], fontName=font_bold, fontSize=11, leading=14,
         textColor=colors.HexColor("#044e3a"), alignment=2
     )
 
     # Custom styles for Imam Cards
     imam_name_style = ParagraphStyle(
-        'ImamName', parent=styles['Normal'], fontName=font_bold, fontSize=13, leading=17,
+        'ImamName', parent=styles['Normal'], fontName=font_bold, fontSize=13.5, leading=17,
         textColor=colors.white
     )
     card_info_style = ParagraphStyle(
-        'CardInfo', parent=styles['Normal'], fontName=font_normal, fontSize=9.5, leading=13,
-        textColor=colors.HexColor("#1f2937")
+        'CardInfo', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=14,
+        textColor=colors.HexColor("#0f172a")
     )
     card_footer_style = ParagraphStyle(
-        'CardF', parent=styles['Normal'], fontName=font_normal, fontSize=9.5, leading=14,
-        textColor=colors.HexColor("#111827")
+        'CardF', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=15,
+        textColor=colors.HexColor("#0f172a")
     )
 
     # Document Header
@@ -674,19 +674,19 @@ def export_imam_salary_pdf(request):
 
     # Summary Cards Table
     card_title_style = ParagraphStyle(
-        'CardT', parent=styles['Normal'], fontName=font_bold, fontSize=9.5, leading=12,
-        textColor=colors.HexColor("#1f2937"), alignment=1
+        'CardT', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=13,
+        textColor=colors.HexColor("#0f172a"), alignment=1
     )
     card_val_inc = ParagraphStyle(
-        'CardValInc', parent=styles['Normal'], fontName=font_bold, fontSize=12, leading=15,
+        'CardValInc', parent=styles['Normal'], fontName=font_bold, fontSize=13.5, leading=17,
         textColor=colors.HexColor("#044e3a"), alignment=1
     )
     card_val_paid = ParagraphStyle(
-        'CardValPaid', parent=styles['Normal'], fontName=font_bold, fontSize=12, leading=15,
+        'CardValPaid', parent=styles['Normal'], fontName=font_bold, fontSize=13.5, leading=17,
         textColor=colors.HexColor("#1b5e20"), alignment=1
     )
     card_val_rem = ParagraphStyle(
-        'CardValRem', parent=styles['Normal'], fontName=font_bold, fontSize=12, leading=15,
+        'CardValRem', parent=styles['Normal'], fontName=font_bold, fontSize=13.5, leading=17,
         textColor=colors.HexColor("#b71c1c"), alignment=1
     )
 
@@ -1310,46 +1310,46 @@ def export_monthly_pdf(request, year=None, month=None):
 
     # Custom unique styles
     title_style = ParagraphStyle(
-        'RepTitle', parent=styles['Heading1'], fontName=font_bold, fontSize=18 if is_urdu else 20, leading=24,
+        'RepTitle', parent=styles['Heading1'], fontName=font_bold, fontSize=19 if is_urdu else 22, leading=25,
         textColor=colors.HexColor("#044e3a"), alignment=1
     )
     subtitle_style = ParagraphStyle(
-        'RepSubtitle', parent=styles['Normal'], fontName=font_normal, fontSize=11, leading=15,
-        textColor=colors.HexColor("#1f2937"), alignment=1
+        'RepSubtitle', parent=styles['Normal'], fontName=font_bold, fontSize=12, leading=16,
+        textColor=colors.HexColor("#0f172a"), alignment=1
     )
     section_style = ParagraphStyle(
-        'RepSection', parent=styles['Heading2'], fontName=font_bold, fontSize=14, leading=18,
-        textColor=colors.HexColor("#044e3a"), spaceBefore=16, spaceAfter=8
+        'RepSection', parent=styles['Heading2'], fontName=font_bold, fontSize=15, leading=19,
+        textColor=colors.HexColor("#044e3a"), spaceBefore=18, spaceAfter=9
     )
     cell_style = ParagraphStyle(
-        'RepCell', parent=styles['Normal'], fontName=font_normal, fontSize=10, leading=13,
-        textColor=colors.HexColor("#111827")
+        'RepCell', parent=styles['Normal'], fontName=font_normal, fontSize=10.5, leading=14,
+        textColor=colors.HexColor("#0f172a") # Pure deep slate black for sharp reading
     )
     cell_hdr_style = ParagraphStyle(
-        'RepCellHdr', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=13,
+        'RepCellHdr', parent=styles['Normal'], fontName=font_bold, fontSize=11, leading=14,
         textColor=colors.white
     )
     cell_amount_style = ParagraphStyle(
-        'RepCellAmt', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=13,
+        'RepCellAmt', parent=styles['Normal'], fontName=font_bold, fontSize=11, leading=14,
         textColor=colors.HexColor("#044e3a"), alignment=2
     )
 
     # Custom styles for Imam & Thekedar Cards
     imam_name_style = ParagraphStyle(
-        'ImamName', parent=styles['Normal'], fontName=font_bold, fontSize=13, leading=17,
+        'ImamName', parent=styles['Normal'], fontName=font_bold, fontSize=13.5, leading=17,
         textColor=colors.white
     )
     thekedar_name_style = ParagraphStyle(
-        'ThekedarName', parent=styles['Normal'], fontName=font_bold, fontSize=13, leading=17,
+        'ThekedarName', parent=styles['Normal'], fontName=font_bold, fontSize=13.5, leading=17,
         textColor=colors.white
     )
     card_info_style = ParagraphStyle(
-        'CardInfo', parent=styles['Normal'], fontName=font_normal, fontSize=9.5, leading=13,
-        textColor=colors.HexColor("#1f2937")
+        'CardInfo', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=14,
+        textColor=colors.HexColor("#0f172a")
     )
     card_footer_style = ParagraphStyle(
-        'CardF', parent=styles['Normal'], fontName=font_normal, fontSize=9.5, leading=14,
-        textColor=colors.HexColor("#111827")
+        'CardF', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=15,
+        textColor=colors.HexColor("#0f172a")
     )
 
     # Document Header
@@ -1361,19 +1361,19 @@ def export_monthly_pdf(request, year=None, month=None):
 
     # Summary Cards
     card_title_style = ParagraphStyle(
-        'CardT', parent=styles['Normal'], fontName=font_bold, fontSize=9.5, leading=12,
-        textColor=colors.HexColor("#1f2937"), alignment=1
+        'CardT', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=13,
+        textColor=colors.HexColor("#0f172a"), alignment=1
     )
     card_val_inc = ParagraphStyle(
-        'CardValInc', parent=styles['Normal'], fontName=font_bold, fontSize=13, leading=16,
+        'CardValInc', parent=styles['Normal'], fontName=font_bold, fontSize=13.5, leading=17,
         textColor=colors.HexColor("#1b5e20"), alignment=1
     )
     card_val_exp = ParagraphStyle(
-        'CardValExp', parent=styles['Normal'], fontName=font_bold, fontSize=13, leading=16,
+        'CardValExp', parent=styles['Normal'], fontName=font_bold, fontSize=13.5, leading=17,
         textColor=colors.HexColor("#b71c1c"), alignment=1
     )
     card_val_net = ParagraphStyle(
-        'CardValNet', parent=styles['Normal'], fontName=font_bold, fontSize=13, leading=16,
+        'CardValNet', parent=styles['Normal'], fontName=font_bold, fontSize=13.5, leading=17,
         textColor=colors.HexColor("#0369a1") if net_monthly_balance >= 0 else colors.HexColor("#b71c1c"), alignment=1
     )
 
@@ -1400,11 +1400,11 @@ def export_monthly_pdf(request, year=None, month=None):
         ('BACKGROUND', (2, 0), (2, 1), colors.HexColor("#e0f2fe") if net_monthly_balance >= 0 else colors.HexColor("#ffe4e6")),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('BOX', (0, 0), (0, -1), 1.5, colors.HexColor("#044e3a")),
-        ('BOX', (1, 0), (1, -1), 1.5, colors.HexColor("#b71c1c")),
-        ('BOX', (2, 0), (2, -1), 1.5, colors.HexColor("#0369a1")),
-        ('TOPPADDING', (0, 0), (-1, -1), 9),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 9),
+        ('BOX', (0, 0), (0, -1), 1.8, colors.HexColor("#044e3a")),
+        ('BOX', (1, 0), (1, -1), 1.8, colors.HexColor("#b71c1c")),
+        ('BOX', (2, 0), (2, -1), 1.8, colors.HexColor("#0369a1")),
+        ('TOPPADDING', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
     ]))
     story.append(summary_table)
     story.append(Spacer(1, 15))
@@ -1413,10 +1413,10 @@ def export_monthly_pdf(request, year=None, month=None):
     sec_inc_title = "آمدنی کی تفصیل" if is_urdu else "Income Breakdown (Aamdan Tafseel)"
     story.append(Paragraph(f"<b>{shape_ur(sec_inc_title, is_urdu)}</b>", section_style))
     inc_header_style = ParagraphStyle(
-        'IncH', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=13, textColor=colors.white
+        'IncH', parent=styles['Normal'], fontName=font_bold, fontSize=10.5, leading=14, textColor=colors.white
     )
     inc_amount_style = ParagraphStyle(
-        'IncAmt', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=13,
+        'IncAmt', parent=styles['Normal'], fontName=font_bold, fontSize=10.5, leading=14,
         textColor=colors.HexColor("#1b5e20"), alignment=2
     )
 
@@ -1444,11 +1444,19 @@ def export_monthly_pdf(request, year=None, month=None):
         no_inc_msg = "اس عرصے کے لیے کوئی آمدنی کا ریکارڈ نہیں ہے۔" if is_urdu else "No income recorded for this period."
         inc_rows.append([Paragraph(shape_ur(no_inc_msg, is_urdu), cell_style), "", "", ""])
     else:
-        tot_inc_lbl = "کل آمدنی" if is_urdu else "Total Income"
+        tot_inc_lbl = "کل آمدنی (TOTAL INCOME)" if not is_urdu else "کل آمدنی"
+        total_inc_lbl_style = ParagraphStyle(
+            'TotIncLbl', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=15,
+            textColor=colors.white
+        )
+        total_inc_val_style = ParagraphStyle(
+            'TotIncVal', parent=styles['Normal'], fontName=font_bold, fontSize=12, leading=15,
+            textColor=colors.HexColor("#fef08a"), alignment=2 # High-contrast bright gold total
+        )
         inc_rows.append([
-            Paragraph(f"<b>{shape_ur(tot_inc_lbl, is_urdu)}</b>", cell_style),
+            Paragraph(f"<b>{shape_ur(tot_inc_lbl, is_urdu)}</b>", total_inc_lbl_style),
             "", "",
-            Paragraph(f"RS {month_total_income:,.0f}", inc_amount_style)
+            Paragraph(f"RS {month_total_income:,.0f}", total_inc_val_style)
         ])
 
     inc_table = Table(inc_rows, colWidths=[85, 135, 200, 120])
@@ -1457,14 +1465,15 @@ def export_monthly_pdf(request, year=None, month=None):
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('GRID', (0, 0), (-1, -1), 1.0, colors.HexColor("#044e3a")), # 1.0pt Solid Emerald Grid Lines
         ('BOX', (0, 0), (-1, -1), 1.8, colors.HexColor("#044e3a")), # Solid Emerald Frame
-        ('TOPPADDING', (0, 0), (-1, -1), 7),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
+        ('TOPPADDING', (0, 0), (-1, -1), 7.5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 7.5),
     ]
     if not income_items:
         inc_table_style.append(('SPAN', (0, 1), (-1, 1)))
     else:
         inc_table_style.append(('SPAN', (0, -1), (2, -1)))
-        inc_table_style.append(('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#d8ede2")))
+        inc_table_style.append(('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#044e3a"))) # HIGHLIGHTED Total Income Cell!
+        inc_table_style.append(('LINEABOVE', (0, -1), (-1, -1), 2.0, colors.HexColor("#c59b27"))) # Gold accent line above total
 
     inc_table.setStyle(TableStyle(inc_table_style))
     story.append(inc_table)
@@ -1474,10 +1483,10 @@ def export_monthly_pdf(request, year=None, month=None):
     sec_exp_title = "اخراجات کی تفصیل" if is_urdu else "Expense Breakdown (Kharajaat Tafseel)"
     story.append(Paragraph(f"<b>{shape_ur(sec_exp_title, is_urdu)}</b>", section_style))
     exp_header_style = ParagraphStyle(
-        'ExpH', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=13, textColor=colors.white
+        'ExpH', parent=styles['Normal'], fontName=font_bold, fontSize=10.5, leading=14, textColor=colors.white
     )
     exp_amount_style = ParagraphStyle(
-        'ExpAmt', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=13,
+        'ExpAmt', parent=styles['Normal'], fontName=font_bold, fontSize=10.5, leading=14,
         textColor=colors.HexColor("#b71c1c"), alignment=2
     )
 
@@ -1503,11 +1512,19 @@ def export_monthly_pdf(request, year=None, month=None):
         no_exp_msg = "اس عرصے کے لیے کوئی خرچہ ریکارڈ نہیں ہے۔" if is_urdu else "No expenses recorded for this period."
         exp_rows.append([Paragraph(shape_ur(no_exp_msg, is_urdu), cell_style), "", "", ""])
     else:
-        tot_exp_lbl = "کل اخراجات" if is_urdu else "Total Expense"
+        tot_exp_lbl = "کل اخراجات (TOTAL EXPENSE)" if not is_urdu else "کل اخراجات"
+        total_exp_lbl_style = ParagraphStyle(
+            'TotExpLbl', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=15,
+            textColor=colors.white
+        )
+        total_exp_val_style = ParagraphStyle(
+            'TotExpVal', parent=styles['Normal'], fontName=font_bold, fontSize=12, leading=15,
+            textColor=colors.HexColor("#fee2e2"), alignment=2 # High-contrast bright rose total
+        )
         exp_rows.append([
-            Paragraph(f"<b>{shape_ur(tot_exp_lbl, is_urdu)}</b>", cell_style),
+            Paragraph(f"<b>{shape_ur(tot_exp_lbl, is_urdu)}</b>", total_exp_lbl_style),
             "", "",
-            Paragraph(f"RS {month_total_expense:,.0f}", exp_amount_style)
+            Paragraph(f"RS {month_total_expense:,.0f}", total_exp_val_style)
         ])
 
     exp_table = Table(exp_rows, colWidths=[85, 115, 220, 120])
@@ -1516,14 +1533,15 @@ def export_monthly_pdf(request, year=None, month=None):
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('GRID', (0, 0), (-1, -1), 1.0, colors.HexColor("#991b1b")), # 1.0pt Solid Crimson Grid Lines
         ('BOX', (0, 0), (-1, -1), 1.8, colors.HexColor("#991b1b")), # Solid Crimson Frame
-        ('TOPPADDING', (0, 0), (-1, -1), 7),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
+        ('TOPPADDING', (0, 0), (-1, -1), 7.5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 7.5),
     ]
     if not expense_items:
         exp_table_style.append(('SPAN', (0, 1), (-1, 1)))
     else:
         exp_table_style.append(('SPAN', (0, -1), (2, -1)))
-        exp_table_style.append(('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#ffe4e6")))
+        exp_table_style.append(('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#991b1b"))) # HIGHLIGHTED Total Expense Cell!
+        exp_table_style.append(('LINEABOVE', (0, -1), (-1, -1), 2.0, colors.HexColor("#c59b27"))) # Gold accent line above total
 
     exp_table.setStyle(TableStyle(exp_table_style))
     story.append(exp_table)
@@ -1544,7 +1562,7 @@ def export_monthly_pdf(request, year=None, month=None):
                 status_text = "FULLY PAID" if s.is_fully_paid else "PENDING"
             status_color = "#a7f3d0" if s.is_fully_paid else "#fecaca"
             status_badge_style = ParagraphStyle(
-                'ImamStatus', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=12,
+                'ImamStatus', parent=styles['Normal'], fontName=font_bold, fontSize=10.5, leading=13,
                 textColor=colors.HexColor(status_color), alignment=2
             )
 
@@ -1643,8 +1661,8 @@ def export_monthly_pdf(request, year=None, month=None):
                 ('LINEABOVE', (0, -1), (-1, -1), 1.5, colors.HexColor("#c59b27")),
                 ('BOX', (0, 0), (-1, -1), 1.8, colors.HexColor("#044e3a")), # Solid Deep Emerald Frame
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('TOPPADDING', (0, 0), (-1, -1), 7),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
+                ('TOPPADDING', (0, 0), (-1, -1), 7.5),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 7.5),
             ]
             if not s.installments.exists():
                 table_styles.append(('SPAN', (0, 3), (-1, 3)))
@@ -1670,7 +1688,7 @@ def export_monthly_pdf(request, year=None, month=None):
                 status_text = "FULLY PAID" if l.remaining_lease_amount <= 0 else "ACTIVE"
             status_color = "#a7f3d0" if l.remaining_lease_amount <= 0 else "#fef08a"
             status_badge_style = ParagraphStyle(
-                'LeaseStatus', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=12,
+                'LeaseStatus', parent=styles['Normal'], fontName=font_bold, fontSize=10.5, leading=13,
                 textColor=colors.HexColor(status_color), alignment=2
             )
 
@@ -1730,9 +1748,9 @@ def export_monthly_pdf(request, year=None, month=None):
             lbl_rem_l = "بقایا" if is_urdu else "Remaining"
 
             summary_row = [
-                Paragraph(f"<b>{shape_ur(lbl_ta, is_urdu)}:</b><br/><font size='11' color='#111827'><b>RS {l.total_agreed_amount:,.0f}</b></font>", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_tr_l, is_urdu)}:</b><br/><font size='11' color='#1b5e20'><b>RS {l.total_received:,.0f}</b></font>", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_rem_l, is_urdu)}:</b><br/><font size='11' color='{rem_color}'><b>RS {l.remaining_lease_amount:,.0f}</b></font>", card_footer_style)
+                Paragraph(f"<b>{shape_ur(lbl_ta, is_urdu)}:</b><br/><font size='11.5' color='#0f172a'><b>RS {l.total_agreed_amount:,.0f}</b></font>", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_tr_l, is_urdu)}:</b><br/><font size='11.5' color='#1b5e20'><b>RS {l.total_received:,.0f}</b></font>", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_rem_l, is_urdu)}:</b><br/><font size='11.5' color='{rem_color}'><b>RS {l.remaining_lease_amount:,.0f}</b></font>", card_footer_style)
             ]
             lease_card_data.append(summary_row)
 
@@ -1748,8 +1766,8 @@ def export_monthly_pdf(request, year=None, month=None):
                 ('LINEABOVE', (0, -1), (-1, -1), 1.5, colors.HexColor("#c59b27")),
                 ('BOX', (0, 0), (-1, -1), 1.8, colors.HexColor("#c59b27")), # Solid Gold Frame
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('TOPPADDING', (0, 0), (-1, -1), 7),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
+                ('TOPPADDING', (0, 0), (-1, -1), 7.5),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 7.5),
             ]
             if not l.payments.exists():
                 lease_table_styles.append(('SPAN', (0, 3), (-1, 3)))
