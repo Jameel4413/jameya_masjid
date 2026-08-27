@@ -684,31 +684,48 @@ def export_imam_salary_pdf(request):
     kaaba_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'kaaba.png')
     gumbad_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'gumbad.png')
 
-    img_kaaba = RLImage(kaaba_img_path, width=42, height=42) if os.path.exists(kaaba_img_path) else ""
-    img_gumbad = RLImage(gumbad_img_path, width=42, height=42) if os.path.exists(gumbad_img_path) else ""
+    img_kaaba = RLImage(kaaba_img_path, width=54, height=54) if os.path.exists(kaaba_img_path) else ""
+    img_gumbad = RLImage(gumbad_img_path, width=54, height=54) if os.path.exists(gumbad_img_path) else ""
 
-    bism_center_style = ParagraphStyle(
-        'BismCenterS', parent=styles['Normal'], fontName=font_bism, fontSize=20, leading=24,
+    p_side_style = ParagraphStyle(
+        'BismSideS', parent=styles['Normal'], fontName=font_bism, fontSize=14.5, leading=18,
         textColor=colors.HexColor("#fef08a"), alignment=1
     )
-    bism_right_style = ParagraphStyle(
-        'BismRightS', parent=styles['Normal'], fontName=font_bism, fontSize=15, leading=19,
-        textColor=colors.HexColor("#fef08a"), alignment=2
-    )
-    bism_left_style = ParagraphStyle(
-        'BismLeftS', parent=styles['Normal'], fontName=font_bism, fontSize=15, leading=19,
-        textColor=colors.HexColor("#fef08a"), alignment=0
+    bism_center_style = ParagraphStyle(
+        'BismCenterS', parent=styles['Normal'], fontName=font_bism, fontSize=24, leading=29,
+        textColor=colors.HexColor("#fde047"), alignment=1
     )
 
-    p_rasool = Paragraph(f"<b>{rasool_str}</b>", bism_left_style)
-    p_center = Paragraph(f"<b>{bismillah_str}</b>", bism_center_style)
-    p_allah = Paragraph(f"<b>{allah_str}</b>", bism_right_style)
+    # Combined Left Card: Sabz Gumbad + Ya Rasool Allah
+    cell_left_data = [[img_gumbad], [Paragraph(rasool_str, p_side_style)]]
+    cell_left = Table(cell_left_data, colWidths=[110])
+    cell_left.setStyle(TableStyle([
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 1),
+        ('TOPPADDING', (0,0), (-1,-1), 1),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
 
-    # Right side: Ya Allah + Kaaba | Left side: Ya Rasool Allah + Sabz Gumbad
-    bism_box = Table([[img_gumbad, p_rasool, p_center, p_allah, img_kaaba]], colWidths=[45, 85, 280, 85, 45])
+    # Combined Right Card: Kaaba + Ya Allah
+    cell_right_data = [[img_kaaba], [Paragraph(allah_str, p_side_style)]]
+    cell_right = Table(cell_right_data, colWidths=[110])
+    cell_right.setStyle(TableStyle([
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 1),
+        ('TOPPADDING', (0,0), (-1,-1), 1),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    p_center = Paragraph(bismillah_str, bism_center_style)
+
+    bism_box = Table([[cell_left, p_center, cell_right]], colWidths=[120, 300, 120])
     bism_box.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")), # Deep Sacred Emerald Fill
-        ('BOX', (0, 0), (-1, -1), 2.5, colors.HexColor("#c59b27")), # Outer Metallic Gold Frame
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#022c22")), # Deep Sacred Velvet Emerald
+        ('BOX', (0, 0), (-1, -1), 2.5, colors.HexColor("#c59b27")), # Royal Metallic Gold Frame
         ('LINEABOVE', (0, 0), (-1, -1), 1.2, colors.HexColor("#fef08a")), # Inner Gold Line Accent
         ('LINEBELOW', (0, 0), (-1, -1), 1.2, colors.HexColor("#fef08a")),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -1426,31 +1443,48 @@ def export_monthly_pdf(request, year=None, month=None):
     kaaba_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'kaaba.png')
     gumbad_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'gumbad.png')
 
-    img_kaaba = RLImage(kaaba_img_path, width=42, height=42) if os.path.exists(kaaba_img_path) else ""
-    img_gumbad = RLImage(gumbad_img_path, width=42, height=42) if os.path.exists(gumbad_img_path) else ""
+    img_kaaba = RLImage(kaaba_img_path, width=54, height=54) if os.path.exists(kaaba_img_path) else ""
+    img_gumbad = RLImage(gumbad_img_path, width=54, height=54) if os.path.exists(gumbad_img_path) else ""
 
-    bism_center_style = ParagraphStyle(
-        'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=16, leading=20,
+    p_side_style = ParagraphStyle(
+        'BismSideM', parent=styles['Normal'], fontName=font_bism, fontSize=14.5, leading=18,
         textColor=colors.HexColor("#fef08a"), alignment=1
     )
-    bism_right_style = ParagraphStyle(
-        'BismRightM', parent=styles['Normal'], fontName=font_bism, fontSize=15, leading=19,
-        textColor=colors.HexColor("#fef08a"), alignment=2
-    )
-    bism_left_style = ParagraphStyle(
-        'BismLeftM', parent=styles['Normal'], fontName=font_bism, fontSize=15, leading=19,
-        textColor=colors.HexColor("#fef08a"), alignment=0
+    bism_center_style = ParagraphStyle(
+        'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=24, leading=29,
+        textColor=colors.HexColor("#fde047"), alignment=1
     )
 
-    p_rasool = Paragraph(f"<b>{rasool_str}</b>", bism_left_style)
-    p_center = Paragraph(f"<b>{bismillah_str}</b>", bism_center_style)
-    p_allah = Paragraph(f"<b>{allah_str}</b>", bism_right_style)
+    # Combined Left Card: Sabz Gumbad + Ya Rasool Allah
+    cell_left_data = [[img_gumbad], [Paragraph(rasool_str, p_side_style)]]
+    cell_left = Table(cell_left_data, colWidths=[110])
+    cell_left.setStyle(TableStyle([
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 1),
+        ('TOPPADDING', (0,0), (-1,-1), 1),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
 
-    # Right side: Ya Allah + Kaaba | Left side: Ya Rasool Allah + Sabz Gumbad
-    bism_box = Table([[img_gumbad, p_rasool, p_center, p_allah, img_kaaba]], colWidths=[45, 85, 280, 85, 45])
+    # Combined Right Card: Kaaba + Ya Allah
+    cell_right_data = [[img_kaaba], [Paragraph(allah_str, p_side_style)]]
+    cell_right = Table(cell_right_data, colWidths=[110])
+    cell_right.setStyle(TableStyle([
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 1),
+        ('TOPPADDING', (0,0), (-1,-1), 1),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
+
+    p_center = Paragraph(bismillah_str, bism_center_style)
+
+    bism_box = Table([[cell_left, p_center, cell_right]], colWidths=[120, 300, 120])
     bism_box.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")), # Deep Sacred Emerald Fill
-        ('BOX', (0, 0), (-1, -1), 2.5, colors.HexColor("#c59b27")), # Outer Metallic Gold Frame
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#022c22")), # Deep Sacred Velvet Emerald
+        ('BOX', (0, 0), (-1, -1), 2.5, colors.HexColor("#c59b27")), # Royal Metallic Gold Frame
         ('LINEABOVE', (0, 0), (-1, -1), 1.2, colors.HexColor("#fef08a")), # Inner Gold Line Accent
         ('LINEBELOW', (0, 0), (-1, -1), 1.2, colors.HexColor("#fef08a")),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
