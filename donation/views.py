@@ -42,7 +42,7 @@ from bidi.algorithm import get_display
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -681,16 +681,22 @@ def export_imam_salary_pdf(request):
     allah_str = shape_ur("یا اللہ", is_urdu=True)
     rasool_str = shape_ur("یا رسول اللہ", is_urdu=True)
 
+    kaaba_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'kaaba.png')
+    gumbad_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'gumbad.png')
+
+    img_kaaba = RLImage(kaaba_img_path, width=26, height=26) if os.path.exists(kaaba_img_path) else ""
+    img_gumbad = RLImage(gumbad_img_path, width=26, height=26) if os.path.exists(gumbad_img_path) else ""
+
     bism_center_style = ParagraphStyle(
-        'BismCenterS', parent=styles['Normal'], fontName=font_bism, fontSize=21.5, leading=26,
+        'BismCenterS', parent=styles['Normal'], fontName=font_bism, fontSize=20, leading=24,
         textColor=colors.HexColor("#fef08a"), alignment=1
     )
     bism_right_style = ParagraphStyle(
-        'BismRightS', parent=styles['Normal'], fontName=font_bism, fontSize=14, leading=18,
+        'BismRightS', parent=styles['Normal'], fontName=font_bism, fontSize=13.5, leading=17,
         textColor=colors.HexColor("#fef08a"), alignment=2
     )
     bism_left_style = ParagraphStyle(
-        'BismLeftS', parent=styles['Normal'], fontName=font_bism, fontSize=14, leading=18,
+        'BismLeftS', parent=styles['Normal'], fontName=font_bism, fontSize=13.5, leading=17,
         textColor=colors.HexColor("#fef08a"), alignment=0
     )
 
@@ -698,7 +704,7 @@ def export_imam_salary_pdf(request):
     p_center = Paragraph(f"<b>{bismillah_str}</b>", bism_center_style)
     p_right = Paragraph(f"<b>{allah_str}</b>", bism_right_style)
 
-    bism_box = Table([[p_left, p_center, p_right]], colWidths=[120, 280, 120])
+    bism_box = Table([[img_kaaba, p_right, p_center, p_left, img_gumbad]], colWidths=[30, 75, 330, 75, 30])
     bism_box.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")), # Deep Sacred Emerald Fill
         ('BOX', (0, 0), (-1, -1), 2.5, colors.HexColor("#c59b27")), # Outer Metallic Gold Frame
@@ -706,10 +712,10 @@ def export_imam_salary_pdf(request):
         ('LINEBELOW', (0, 0), (-1, -1), 1.2, colors.HexColor("#fef08a")),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ('LEFTPADDING', (0, 0), (-1, -1), 6),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
     ]))
     story.append(bism_box)
     story.append(Spacer(1, 14))
@@ -1410,22 +1416,28 @@ def export_monthly_pdf(request, year=None, month=None):
     story = []
     styles = getSampleStyleSheet()
 
-    # Authentic Islamic Crest Banner for Bismillah with exact Arabic diacritics & side titles
+    # Authentic Islamic Crest Banner for Bismillah with Kaaba & Gumbad icons & side titles
     bismillah_exact_text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
     bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
     allah_str = shape_ur("یا اللہ", is_urdu=True)
     rasool_str = shape_ur("یا رسول اللہ", is_urdu=True)
 
+    kaaba_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'kaaba.png')
+    gumbad_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'gumbad.png')
+
+    img_kaaba = RLImage(kaaba_img_path, width=26, height=26) if os.path.exists(kaaba_img_path) else ""
+    img_gumbad = RLImage(gumbad_img_path, width=26, height=26) if os.path.exists(gumbad_img_path) else ""
+
     bism_center_style = ParagraphStyle(
-        'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=14.5, leading=18,
+        'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=15.5, leading=19,
         textColor=colors.HexColor("#fef08a"), alignment=1
     )
     bism_right_style = ParagraphStyle(
-        'BismRightM', parent=styles['Normal'], fontName=font_bism, fontSize=14, leading=18,
+        'BismRightM', parent=styles['Normal'], fontName=font_bism, fontSize=13.5, leading=17,
         textColor=colors.HexColor("#fef08a"), alignment=2
     )
     bism_left_style = ParagraphStyle(
-        'BismLeftM', parent=styles['Normal'], fontName=font_bism, fontSize=14, leading=18,
+        'BismLeftM', parent=styles['Normal'], fontName=font_bism, fontSize=13.5, leading=17,
         textColor=colors.HexColor("#fef08a"), alignment=0
     )
 
@@ -1433,7 +1445,7 @@ def export_monthly_pdf(request, year=None, month=None):
     p_center = Paragraph(f"<b>{bismillah_str}</b>", bism_center_style)
     p_right = Paragraph(f"<b>{allah_str}</b>", bism_right_style)
 
-    bism_box = Table([[p_left, p_center, p_right]], colWidths=[95, 350, 95])
+    bism_box = Table([[img_kaaba, p_right, p_center, p_left, img_gumbad]], colWidths=[30, 75, 330, 75, 30])
     bism_box.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")), # Deep Sacred Emerald Fill
         ('BOX', (0, 0), (-1, -1), 2.5, colors.HexColor("#c59b27")), # Outer Metallic Gold Frame
@@ -1441,10 +1453,10 @@ def export_monthly_pdf(request, year=None, month=None):
         ('LINEBELOW', (0, 0), (-1, -1), 1.2, colors.HexColor("#fef08a")),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ('LEFTPADDING', (0, 0), (-1, -1), 6),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
     ]))
     story.append(bism_box)
     story.append(Spacer(1, 14))
