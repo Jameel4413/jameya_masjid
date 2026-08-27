@@ -891,19 +891,19 @@ def export_imam_salary_pdf(request):
             if is_urdu:
                 lbl_m_tot = "ماہانہ کل تنخواہ"
                 lbl_m_paid = "ماہانہ ادا شدہ"
-                lbl_m_rem = "ماہانہ بقایا"
+                lbl_m_rem = "ماہانہ بقایا تنخواہ"
                 
                 lbl_y_tot = "سالانہ کل تنخواہ"
                 lbl_y_paid = "کل ادا شدہ"
-                lbl_y_rem = "سالانہ بقایا"
+                lbl_y_rem = "سالانہ بقایا تنخواہ"
             else:
                 lbl_m_tot = "Monthly Total"
                 lbl_m_paid = "Paid (Month)"
-                lbl_m_rem = "Month Balance"
+                lbl_m_rem = "Month Remaining Salary"
                 
                 lbl_y_tot = "Annual Total"
                 lbl_y_paid = "Total Paid (Year)"
-                lbl_y_rem = "Annual Balance"
+                lbl_y_rem = "Year Remaining Salary"
 
             row_month = [
                 Paragraph(f"<b>{shape_ur(lbl_m_tot, is_urdu)}:</b><br/>RS {s.total_salary:,.0f}", card_footer_style),
@@ -1782,19 +1782,19 @@ def export_monthly_pdf(request, year=None, month=None):
             if is_urdu:
                 lbl_m_tot = "ماہانہ کل تنخواہ"
                 lbl_m_paid = "ماہانہ ادا شدہ"
-                lbl_m_rem = "ماہانہ بقایا"
+                lbl_m_rem = "ماہانہ بقایا تنخواہ"
                 
                 lbl_y_tot = "سالانہ کل تنخواہ"
                 lbl_y_paid = "کل ادا شدہ"
-                lbl_y_rem = "سالانہ بقایا"
+                lbl_y_rem = "سالانہ بقایا تنخواہ"
             else:
                 lbl_m_tot = "Monthly Total"
                 lbl_m_paid = "Paid (Month)"
-                lbl_m_rem = "Month Balance"
+                lbl_m_rem = "Month Remaining Salary"
                 
                 lbl_y_tot = "Annual Total"
                 lbl_y_paid = "Total Paid (Year)"
-                lbl_y_rem = "Annual Balance"
+                lbl_y_rem = "Year Remaining Salary"
 
             row_month = [
                 Paragraph(f"<b>{shape_ur(lbl_m_tot, is_urdu)}:</b><br/>RS {s.total_salary:,.0f}", card_footer_style),
@@ -1888,9 +1888,61 @@ def export_monthly_pdf(request, year=None, month=None):
             col3_l = "تفصیل / نوٹس" if is_urdu else "Notes / Details"
 
             thekedar_header_html = f"<b>{shape_ur(lbl_thekedar + ': ', is_urdu)}{shape_ur(tenant_name_ur, is_urdu)}</b><br/><font size='10' color='#fef08a'><b>📞 {shape_ur(lbl_phone + ': ', is_urdu)}</b>{tenant_phone}</font>"
-            area_html = f"<b>{shape_ur(lbl_area, is_urdu)}:</b><br/><font size='11.5' color='#7c2d12'><b>{shape_ur(area_ur, is_urdu)}</b></font>"
-            duration_html = f"<b>{shape_ur(lbl_duration, is_urdu)}:</b><br/><font size='11.5' color='#7c2d12'><b>{l.duration_years} {shape_ur(lbl_years, is_urdu)}</b></font>"
-            period_html = f"<b>{shape_ur(lbl_period, is_urdu)}:</b><br/><font size='10.5' color='#0f172a'><b>{shape_ur(period_str, is_urdu)}</b></font>"
+
+            # Create 3 distinct highlighted Stat Boxes for Area, Duration, and Period
+            spec_box_hdr_style = ParagraphStyle('SpecHdr', parent=styles['Normal'], fontName=font_bold, fontSize=9, leading=12, alignment=1)
+            spec_box_val_style = ParagraphStyle('SpecVal', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=15, alignment=1)
+            spec_box_per_style = ParagraphStyle('SpecPer', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=13, alignment=1)
+
+            # Box 1: Land Area (Warm Amber Gold Box)
+            p_b1_lbl = Paragraph(f"<b>{shape_ur(lbl_area, is_urdu)}</b>", ParagraphStyle('B1L', parent=spec_box_hdr_style, textColor=colors.HexColor("#92400e")))
+            p_b1_val = Paragraph(f"<b>{shape_ur(area_ur, is_urdu)}</b>", ParagraphStyle('B1V', parent=spec_box_val_style, textColor=colors.HexColor("#78350f")))
+            box1_table = Table([[p_b1_lbl], [p_b1_val]], colWidths=[166])
+            box1_table.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#fef3c7")),
+                ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor("#d97706")),
+                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                ('TOPPADDING', (0,0), (-1,-1), 4),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+            ]))
+
+            # Box 2: Lease Duration (Soft Sky Blue Box)
+            p_b2_lbl = Paragraph(f"<b>{shape_ur(lbl_duration, is_urdu)}</b>", ParagraphStyle('B2L', parent=spec_box_hdr_style, textColor=colors.HexColor("#075985")))
+            p_b2_val = Paragraph(f"<b>{l.duration_years} {shape_ur(lbl_years, is_urdu)}</b>", ParagraphStyle('B2V', parent=spec_box_val_style, textColor=colors.HexColor("#0369a1")))
+            box2_table = Table([[p_b2_lbl], [p_b2_val]], colWidths=[166])
+            box2_table.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#e0f2fe")),
+                ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor("#0284c7")),
+                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                ('TOPPADDING', (0,0), (-1,-1), 4),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+            ]))
+
+            # Box 3: Lease Period (Fresh Mint Green Box)
+            p_b3_lbl = Paragraph(f"<b>{shape_ur(lbl_period, is_urdu)}</b>", ParagraphStyle('B3L', parent=spec_box_hdr_style, textColor=colors.HexColor("#166534")))
+            p_b3_val = Paragraph(f"<b>{shape_ur(period_str, is_urdu)}</b>", ParagraphStyle('B3V', parent=spec_box_per_style, textColor=colors.HexColor("#15803d")))
+            box3_table = Table([[p_b3_lbl], [p_b3_val]], colWidths=[174])
+            box3_table.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#f0fdf4")),
+                ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor("#16a34a")),
+                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                ('TOPPADDING', (0,0), (-1,-1), 4),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+            ]))
+
+            # Container row holding all 3 highlighted boxes side-by-side
+            spec_boxes_container = Table([[box1_table, box2_table, box3_table]], colWidths=[173, 173, 180])
+            spec_boxes_container.setStyle(TableStyle([
+                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                ('TOPPADDING', (0,0), (-1,-1), 3),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+                ('LEFTPADDING', (0,0), (-1,-1), 0),
+                ('RIGHTPADDING', (0,0), (-1,-1), 0),
+            ]))
 
             lease_card_data = [
                 # Row 0: Tenant Name & Phone Number (Col 0-1) + Status Badge (Col 2)
@@ -1899,11 +1951,11 @@ def export_monthly_pdf(request, year=None, month=None):
                     "",
                     Paragraph(f"<b>{shape_ur(st_prefix + status_text, is_urdu)}</b>", status_badge_style)
                 ],
-                # Row 1: Highlighted 3-Column Spec Row (Area, Duration, Period)
+                # Row 1: Container Row with 3 Highlighted Boxes
                 [
-                    Paragraph(area_html, card_info_style),
-                    Paragraph(duration_html, card_info_style),
-                    Paragraph(period_html, card_info_style)
+                    spec_boxes_container,
+                    "",
+                    ""
                 ],
                 # Row 2: Table Header
                 [
@@ -1945,9 +1997,9 @@ def export_monthly_pdf(request, year=None, month=None):
             
             lease_table_styles = [
                 ('SPAN', (0, 0), (1, 0)),
+                ('SPAN', (0, 1), (-1, 1)),
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#856404")), # Metallic Gold Header Block
-                ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor("#fff8e7")), # Light Gold Spec Highlight Block
-                ('LINEBELOW', (0, 1), (-1, 1), 1.2, colors.HexColor("#c59b27")),
+                ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor("#fffdf5")), # Soft neutral background behind boxes
                 ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor("#1f2937")), # Dark Charcoal Table Header
                 ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#fff8e7")), # Gold Summary Block
                 ('LINEABOVE', (0, -1), (-1, -1), 1.5, colors.HexColor("#c59b27")),
