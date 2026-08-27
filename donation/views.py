@@ -675,9 +675,8 @@ def export_imam_salary_pdf(request):
     story = []
     styles = getSampleStyleSheet()
 
-    # Authentic Islamic Crest Banner for Bismillah with exact Arabic diacritics & side titles
-    bismillah_exact_text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
-    bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
+    # Authentic Calligraphic Arabic Bismillah Emblem (U+FDFD ﷽)
+    bismillah_str = "\ufdfd"
     allah_str = shape_ur("یا اللہ", is_urdu=True)
     rasool_str = shape_ur("یا رسول اللہ", is_urdu=True)
 
@@ -694,7 +693,7 @@ def export_imam_salary_pdf(request):
     img_kaaba = RLImage(kaaba_img_path, width=79, height=88) if os.path.exists(kaaba_img_path) else dummy_p
 
     bism_center_style = ParagraphStyle(
-        'BismCenterS', parent=styles['Normal'], fontName=font_bism, fontSize=26, leading=32,
+        'BismCenterS', parent=styles['Normal'], fontName=font_bism, fontSize=34, leading=38,
         textColor=colors.HexColor("#fde047"), alignment=1
     )
 
@@ -1415,9 +1414,8 @@ def export_monthly_pdf(request, year=None, month=None):
     story = []
     styles = getSampleStyleSheet()
 
-    # Authentic Islamic Crest Banner for Bismillah with Kaaba & Gumbad icons & side titles
-    bismillah_exact_text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
-    bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
+    # Authentic Calligraphic Arabic Bismillah Emblem (U+FDFD ﷽)
+    bismillah_str = "\ufdfd"
     allah_str = shape_ur("یا اللہ", is_urdu=True)
     rasool_str = shape_ur("یا رسول اللہ", is_urdu=True)
 
@@ -1434,7 +1432,7 @@ def export_monthly_pdf(request, year=None, month=None):
     img_kaaba = RLImage(kaaba_img_path, width=79, height=88) if os.path.exists(kaaba_img_path) else dummy_p
 
     bism_center_style = ParagraphStyle(
-        'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=26, leading=32,
+        'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=34, leading=38,
         textColor=colors.HexColor("#fde047"), alignment=1
     )
 
