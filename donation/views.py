@@ -1861,26 +1861,49 @@ def export_monthly_pdf(request, year=None, month=None):
             if is_urdu:
                 st_m = URDU_MONTH_NAMES.get(l.start_date.month, '')
                 en_m = URDU_MONTH_NAMES.get(l.end_date.month, '')
-                l_info_text = f"رقبہ: {translate_user_input_to_urdu(l.land_area)}  |  مدت: {l.duration_years} سال  |  عرصہ: {st_m} {l.start_date.year} - {en_m} {l.end_date.year}"
+                period_str = f"{st_m} {l.start_date.year} - {en_m} {l.end_date.year}"
+                lbl_thekedar = "ٹھیکیدار"
+                lbl_phone = "فون / رابطہ"
+                lbl_area = "زمین کا رقبہ"
+                lbl_duration = "ٹھیکہ کی مدت"
+                lbl_period = "تاریخ کی مدت"
+                lbl_years = "سال"
+                tenant_name_ur = translate_user_input_to_urdu(l.tenant_name)
+                area_ur = translate_user_input_to_urdu(l.land_area)
             else:
-                l_info_text = f"Area: {l.land_area}  |  Duration: {l.duration_years} Years  |  Period: {l.start_date.strftime('%b %Y')} - {l.end_date.strftime('%b %Y')}"
+                period_str = f"{l.start_date.strftime('%b %Y')} - {l.end_date.strftime('%b %Y')}"
+                lbl_thekedar = "Tenant"
+                lbl_phone = "Phone / Contact"
+                lbl_area = "Land Area"
+                lbl_duration = "Lease Duration"
+                lbl_period = "Lease Period"
+                lbl_years = "Years"
+                tenant_name_ur = l.tenant_name
+                area_ur = l.land_area
+
+            tenant_phone = l.tenant_contact if l.tenant_contact else ("نہیں دیا گیا" if is_urdu else "N/A")
 
             col1_l = "ادائیگی کی تاریخ" if is_urdu else "Payment Date"
             col2_l = "وصول شدہ رقم" if is_urdu else "Amount Received"
             col3_l = "تفصیل / نوٹس" if is_urdu else "Notes / Details"
 
+            thekedar_header_html = f"<b>{shape_ur(lbl_thekedar + ': ', is_urdu)}{shape_ur(tenant_name_ur, is_urdu)}</b><br/><font size='10' color='#fef08a'><b>📞 {shape_ur(lbl_phone + ': ', is_urdu)}</b>{tenant_phone}</font>"
+            area_html = f"<b>{shape_ur(lbl_area, is_urdu)}:</b><br/><font size='11.5' color='#7c2d12'><b>{shape_ur(area_ur, is_urdu)}</b></font>"
+            duration_html = f"<b>{shape_ur(lbl_duration, is_urdu)}:</b><br/><font size='11.5' color='#7c2d12'><b>{l.duration_years} {shape_ur(lbl_years, is_urdu)}</b></font>"
+            period_html = f"<b>{shape_ur(lbl_period, is_urdu)}:</b><br/><font size='10.5' color='#0f172a'><b>{shape_ur(period_str, is_urdu)}</b></font>"
+
             lease_card_data = [
-                # Row 0: Tenant Name & Status Badge
+                # Row 0: Tenant Name & Phone Number (Col 0-1) + Status Badge (Col 2)
                 [
-                    Paragraph(f"<b>{shape_ur(l.tenant_name, is_urdu)}</b>", thekedar_name_style),
+                    Paragraph(thekedar_header_html, thekedar_name_style),
                     "",
                     Paragraph(f"<b>{shape_ur(st_prefix + status_text, is_urdu)}</b>", status_badge_style)
                 ],
-                # Row 1: Subtitle details
+                # Row 1: Highlighted 3-Column Spec Row (Area, Duration, Period)
                 [
-                    Paragraph(shape_ur(l_info_text, is_urdu), card_info_style),
-                    "",
-                    ""
+                    Paragraph(area_html, card_info_style),
+                    Paragraph(duration_html, card_info_style),
+                    Paragraph(period_html, card_info_style)
                 ],
                 # Row 2: Table Header
                 [
@@ -1922,9 +1945,9 @@ def export_monthly_pdf(request, year=None, month=None):
             
             lease_table_styles = [
                 ('SPAN', (0, 0), (1, 0)),
-                ('SPAN', (0, 1), (-1, 1)),
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#856404")), # Metallic Gold Header Block
-                ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor("#fff8e7")), # Light Gold Subheader
+                ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor("#fff8e7")), # Light Gold Spec Highlight Block
+                ('LINEBELOW', (0, 1), (-1, 1), 1.2, colors.HexColor("#c59b27")),
                 ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor("#1f2937")), # Dark Charcoal Table Header
                 ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#fff8e7")), # Gold Summary Block
                 ('LINEABOVE', (0, -1), (-1, -1), 1.5, colors.HexColor("#c59b27")),
