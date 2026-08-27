@@ -178,13 +178,11 @@ def get_all_time_totals():
     """
     Calculates the TRUE running balance since the system started.
     This NEVER resets on a weekly/monthly basis - it is the sum of
-    everything that has ever come in, minus everything that has ever
-    gone out. This fixes the bug where the dashboard balance was being
-    reset every week and old expenses appeared to "cut" from new income.
+    everything that has ever come in (WeeklyIncome only, LandLease excluded),
+    minus everything that has ever gone out (Expenses + Imam Salary paid).
     """
     total_weekly_income = WeeklyIncome.objects.aggregate(t=Sum('amount'))['t'] or 0
-    total_lease_income = LandLeasePayment.objects.aggregate(t=Sum('amount_received'))['t'] or 0
-    grand_total_income = total_weekly_income + total_lease_income
+    grand_total_income = total_weekly_income  # Land Lease payments excluded from total income
 
     total_expenses = Expense.objects.aggregate(t=Sum('amount'))['t'] or 0
     total_salary_paid = ImamSalaryInstallment.objects.aggregate(t=Sum('amount_paid'))['t'] or 0
@@ -208,18 +206,41 @@ def dashboard_view(request):
     year = request.GET.get('year')
     month = request.GET.get('month')
 
+    is_all_months = (month == '')
+
     curr_year = int(year) if (year and year.isdigit()) else now.year
     curr_month = int(month) if (month and month.isdigit()) else now.month
 
-    weekly_qs = WeeklyIncome.objects.filter(date__year=curr_year, date__month=curr_month)
-    lease_qs = LandLeasePayment.objects.filter(payment_date__year=curr_year, payment_date__month=curr_month)
-    expense_qs = Expense.objects.filter(date__year=curr_year, date__month=curr_month)
-    salary_qs = ImamSalaryInstallment.objects.filter(payment_date__year=curr_year, payment_date__month=curr_month)
+    prev_months_remaining = 0
+    if not is_all_months:
+        start_date_of_month = datetime(curr_year, curr_month, 1).date()
+        prev_income = WeeklyIncome.objects.filter(date__lt=start_date_of_month).aggregate(t=Sum('amount'))['t'] or 0
+        prev_expense = (Expense.objects.filter(date__lt=start_date_of_month).aggregate(t=Sum('amount'))['t'] or 0) + \
+                       (ImamSalaryInstallment.objects.filter(payment_date__lt=start_date_of_month).aggregate(t=Sum('amount_paid'))['t'] or 0)
+        prev_months_remaining = prev_income - prev_expense
 
-    period_income = (weekly_qs.aggregate(t=Sum('amount'))['t'] or 0) + \
-                     (lease_qs.aggregate(t=Sum('amount_received'))['t'] or 0)
-    period_expense = (expense_qs.aggregate(t=Sum('amount'))['t'] or 0) + \
-                      (salary_qs.aggregate(t=Sum('amount_paid'))['t'] or 0)
+        weekly_qs = WeeklyIncome.objects.filter(date__year=curr_year, date__month=curr_month)
+        expense_qs = Expense.objects.filter(date__year=curr_year, date__month=curr_month)
+        salary_qs = ImamSalaryInstallment.objects.filter(payment_date__year=curr_year, payment_date__month=curr_month)
+
+        curr_month_weekly_income = weekly_qs.aggregate(t=Sum('amount'))['t'] or 0
+        period_income = prev_months_remaining + curr_month_weekly_income
+        period_expense = (expense_qs.aggregate(t=Sum('amount'))['t'] or 0) + \
+                          (salary_qs.aggregate(t=Sum('amount_paid'))['t'] or 0)
+    else:
+        weekly_qs = WeeklyIncome.objects.all()
+        if year and year.isdigit():
+            weekly_qs = weekly_qs.filter(date__year=int(year))
+            expense_qs = Expense.objects.filter(date__year=int(year))
+            salary_qs = ImamSalaryInstallment.objects.filter(payment_date__year=int(year))
+        else:
+            expense_qs = Expense.objects.all()
+            salary_qs = ImamSalaryInstallment.objects.all()
+
+        period_income = weekly_qs.aggregate(t=Sum('amount'))['t'] or 0
+        period_expense = (expense_qs.aggregate(t=Sum('amount'))['t'] or 0) + \
+                          (salary_qs.aggregate(t=Sum('amount_paid'))['t'] or 0)
+
     period_net = period_income - period_expense
 
     recent_incomes = WeeklyIncome.objects.all().order_by('-date')[:5]
@@ -230,11 +251,12 @@ def dashboard_view(request):
         'grand_total_income': period_income,
         'grand_total_expense': period_expense,
         'period_net': period_net,
+        'prev_months_remaining': prev_months_remaining,
         'recent_incomes': recent_incomes,
         'recent_expenses': recent_expenses,
         'selected_year': request.GET.get('year', str(curr_year)),
-        'selected_month': request.GET.get('month', str(curr_month)),
-        'period_label': datetime(curr_year, curr_month, 1).strftime('%B %Y'),
+        'selected_month': request.GET.get('month', '' if is_all_months else str(curr_month)),
+        'period_label': 'Tamam Mahine' if is_all_months else datetime(curr_year, curr_month, 1).strftime('%B %Y'),
     }
 
     return render(request, 'dashboard.html', context)
@@ -246,17 +268,49 @@ def dashboard_view(request):
 
 @login_required(login_url='/admin/login/')
 def weekly_income_view(request):
-    """Thursday & Friday Collections View with Month/Year Filter"""
-    incomes = WeeklyIncome.objects.all().order_by('-date')
-    incomes = filter_by_month_year(incomes, 'date', request)
+    """Thursday & Friday Collections View with Month/Year Filter & Previous Month Carryover Balance"""
+    now = timezone.now()
+    year = request.GET.get('year')
+    month = request.GET.get('month')
 
-    total_collected = incomes.aggregate(total=Sum('amount'))['total'] or 0
+    # If no month parameter was supplied in request.GET, default to current month & year
+    has_month_param = 'month' in request.GET
+    is_all_months = has_month_param and (month == '')
+
+    if is_all_months:
+        curr_year = int(year) if (year and year.isdigit()) else None
+        curr_month = None
+    else:
+        curr_year = int(year) if (year and year.isdigit()) else now.year
+        curr_month = int(month) if (month and month.isdigit()) else now.month
+
+    incomes = WeeklyIncome.objects.all().order_by('-date')
+    prev_months_remaining = 0
+    carryover_date = None
+
+    if curr_month and curr_year:
+        incomes = incomes.filter(date__year=curr_year, date__month=curr_month)
+        start_date_of_month = datetime(curr_year, curr_month, 1).date()
+        carryover_date = start_date_of_month
+
+        prev_income = WeeklyIncome.objects.filter(date__lt=start_date_of_month).aggregate(t=Sum('amount'))['t'] or 0
+        prev_expense = (Expense.objects.filter(date__lt=start_date_of_month).aggregate(t=Sum('amount'))['t'] or 0) + \
+                       (ImamSalaryInstallment.objects.filter(payment_date__lt=start_date_of_month).aggregate(t=Sum('amount_paid'))['t'] or 0)
+        prev_months_remaining = prev_income - prev_expense
+    elif curr_year:
+        incomes = incomes.filter(date__year=curr_year)
+
+    current_collections = incomes.aggregate(total=Sum('amount'))['total'] or 0
+    total_collected = prev_months_remaining + current_collections
 
     context = {
         'incomes': incomes,
         'total_collected': total_collected,
-        'selected_year': request.GET.get('year', ''),
-        'selected_month': request.GET.get('month', ''),
+        'current_collections': current_collections,
+        'prev_months_remaining': prev_months_remaining,
+        'carryover_date': carryover_date,
+        'selected_year': str(curr_year) if curr_year else '',
+        'selected_month': '' if is_all_months else (str(curr_month) if curr_month else ''),
     }
     return render(request, 'weekly_income.html', context)
 
@@ -1277,10 +1331,18 @@ def export_monthly_pdf(request, year=None, month=None):
             end_date__gte=first_date
         ).order_by('start_date')
 
-    # Calculate Totals
+    # Calculate Totals & Carried-Forward Balance
     total_weekly = weekly_incomes.aggregate(total=Sum('amount'))['total'] or 0
-    total_lease = lease_payments.aggregate(total=Sum('amount_received'))['total'] or 0
-    month_total_income = total_weekly + total_lease
+    prev_months_remaining = 0
+
+    if not is_annual:
+        start_date_of_month = datetime(selected_year, selected_month, 1).date()
+        prev_inc = WeeklyIncome.objects.filter(date__lt=start_date_of_month).aggregate(t=Sum('amount'))['t'] or 0
+        prev_exp = (Expense.objects.filter(date__lt=start_date_of_month).aggregate(t=Sum('amount'))['t'] or 0) + \
+                   (ImamSalaryInstallment.objects.filter(payment_date__lt=start_date_of_month).aggregate(t=Sum('amount_paid'))['t'] or 0)
+        prev_months_remaining = prev_inc - prev_exp
+
+    month_total_income = (prev_months_remaining if not is_annual else 0) + total_weekly
 
     total_gen_expense = expenses.aggregate(total=Sum('amount'))['total'] or 0
     total_salary_paid = salary_payments.aggregate(total=Sum('amount_paid'))['total'] or 0
@@ -1288,8 +1350,18 @@ def export_monthly_pdf(request, year=None, month=None):
 
     net_monthly_balance = month_total_income - month_total_expense
 
-    # Combine Income Items
+    # Combine Income Items (Excludes Land Lease, includes Opening Balance if month filter)
     income_items = []
+    if not is_annual and prev_months_remaining != 0:
+        opening_source = "سابقہ مہینے کا بقایا" if is_urdu else "Previous Month Balance"
+        opening_note = "پچھلے مہینے کا بقایا (سابقہ کیری فارورڈ)" if is_urdu else "Carried balance from previous months"
+        income_items.append({
+            'date': datetime(selected_year, selected_month, 1).date(),
+            'source': opening_source,
+            'notes': opening_note,
+            'amount': prev_months_remaining,
+        })
+
     for inc in weekly_incomes:
         source_disp = DAY_TYPE_URDU.get(inc.get_day_type_display(), inc.get_day_type_display()) if is_urdu else inc.get_day_type_display()
         income_items.append({
@@ -1297,15 +1369,6 @@ def export_monthly_pdf(request, year=None, month=None):
             'source': source_disp,
             'notes': inc.notes or "-",
             'amount': inc.amount,
-        })
-    for lse in lease_payments:
-        source_disp = f"زمین کا ٹھیکہ: {translate_user_input_to_urdu(lse.lease.tenant_name)}" if is_urdu else f"Land Lease: {lse.lease.tenant_name}"
-        note_disp = lse.notes or ("ٹھیکہ قسط" if is_urdu else "Lease Payment")
-        income_items.append({
-            'date': lse.payment_date,
-            'source': source_disp,
-            'notes': note_disp,
-            'amount': lse.amount_received,
         })
     income_items.sort(key=lambda x: x['date'])
 
@@ -1354,7 +1417,7 @@ def export_monthly_pdf(request, year=None, month=None):
     rasool_str = shape_ur("یا رسول اللہ", is_urdu=True)
 
     bism_center_style = ParagraphStyle(
-        'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=16.5, leading=20,
+        'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=14.5, leading=18,
         textColor=colors.HexColor("#fef08a"), alignment=1
     )
     bism_right_style = ParagraphStyle(
@@ -1370,7 +1433,7 @@ def export_monthly_pdf(request, year=None, month=None):
     p_center = Paragraph(f"<b>{bismillah_str}</b>", bism_center_style)
     p_right = Paragraph(f"<b>{allah_str}</b>", bism_right_style)
 
-    bism_box = Table([[p_left, p_center, p_right]], colWidths=[95, 330, 95])
+    bism_box = Table([[p_left, p_center, p_right]], colWidths=[95, 350, 95])
     bism_box.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")), # Deep Sacred Emerald Fill
         ('BOX', (0, 0), (-1, -1), 2.5, colors.HexColor("#c59b27")), # Outer Metallic Gold Frame

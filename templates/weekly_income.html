@@ -19,6 +19,46 @@
 
 {% include 'includes/filter_bar.html' with show_year=True show_month=True selected_year=selected_year selected_month=selected_month %}
 
+<!-- Monthly Total Collected & Carryover Summary Bar -->
+<div class="row g-3 mb-3 fade-in">
+    <div class="col-12 col-md-6">
+        <div class="card-pro p-3 d-flex align-items-center justify-content-between bg-success-subtle border-success-subtle">
+            <div>
+                <small class="text-muted d-block fw-semibold" style="font-size: 0.8rem;">{{ T.total_collected }} {% if selected_month %}(Is Mahine Ka Total Income){% endif %}</small>
+                <h3 class="mb-0 text-success fw-bold" style="font-size: 1.5rem;">
+                    RS {{ total_collected|floatformat:0 }}
+                </h3>
+                {% if prev_months_remaining != 0 %}
+                <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
+                    (Naya Chanda: <strong>RS {{ current_collections|floatformat:0 }}</strong> + Sabiqa Baqi: <strong>RS {{ prev_months_remaining|floatformat:0 }}</strong>)
+                </small>
+                {% endif %}
+            </div>
+            <div class="rounded-circle bg-success text-white p-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                <i class="fa-solid fa-coins fs-4"></i>
+            </div>
+        </div>
+    </div>
+    {% if prev_months_remaining != 0 %}
+    <div class="col-12 col-md-6">
+        <div class="card-pro p-3 d-flex align-items-center justify-content-between bg-info-subtle border-info-subtle">
+            <div>
+                <small class="text-muted d-block fw-semibold" style="font-size: 0.8rem;"><i class="fa-solid fa-clock-rotate-left me-1"></i> {{ T.previous_month_balance }}</small>
+                <h3 class="mb-0 text-info-emphasis fw-bold" style="font-size: 1.5rem;">
+                    RS {{ prev_months_remaining|floatformat:0 }}
+                </h3>
+                <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
+                    {{ T.carried_forward_note }}
+                </small>
+            </div>
+            <div class="rounded-circle bg-info text-white p-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                <i class="fa-solid fa-vault fs-4"></i>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
 <div class="card-pro fade-in">
     <div class="card-pro-body-flush">
         <div class="table-responsive">
@@ -33,6 +73,26 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% if carryover_date %}
+                    <!-- Carried-Forward Opening Balance Row -->
+                    <tr class="table-primary-subtle bg-light border-bottom border-primary-subtle">
+                        <td data-label="{{ T.date }}"><strong>{{ carryover_date|date:"01 M, Y" }}</strong></td>
+                        <td data-label="{{ T.chanda_type }}">
+                            <span class="badge-pro badge-pro-info" style="font-size: 0.82rem;">
+                                <i class="fa-solid fa-clock-rotate-left"></i> {{ T.previous_month_balance }}
+                            </span>
+                        </td>
+                        <td data-label="{{ T.details_note }}" class="text-muted small">
+                            <em>{{ T.carried_forward_note }}</em>
+                        </td>
+                        <td data-label="{{ T.amount }}" class="text-end fw-bold {% if prev_months_remaining >= 0 %}text-success-pro{% else %}text-danger-pro{% endif %}">
+                            {% if prev_months_remaining >= 0 %}+ RS {{ prev_months_remaining|floatformat:0 }}{% else %}- RS {{ prev_months_remaining|floatformat:0|cut:"-" }}{% endif %}
+                        </td>
+                        <td data-label="{{ T.actions }}" class="text-center">
+                            <span class="badge bg-secondary-subtle text-secondary px-2 py-1" style="font-size: 0.72rem;"><i class="fa-solid fa-lock me-1"></i> Carryover</span>
+                        </td>
+                    </tr>
+                    {% endif %}
                     {% for income in incomes %}
                     <tr>
                         <td data-label="{{ T.date }}"><strong>{{ income.date|date:"d M, Y" }}</strong></td>

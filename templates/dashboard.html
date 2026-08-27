@@ -57,6 +57,11 @@
                     <p class="stat-card-value text-success-pro mb-0 fw-bold" style="font-size: clamp(1.1rem, 4vw, 1.5rem);">
                         + RS {{ grand_total_income|floatformat:0 }}
                     </p>
+                    {% if prev_months_remaining != 0 %}
+                    <small class="d-block text-muted mt-1" style="font-size: 0.72rem;">
+                        <i class="fa-solid fa-circle-info text-info me-1"></i>({{ T.previous_balance_short }}: RS {{ prev_months_remaining|floatformat:0 }})
+                    </small>
+                    {% endif %}
                 </div>
             </div>
             <div class="col-6">
