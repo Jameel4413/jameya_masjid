@@ -686,7 +686,7 @@ def export_imam_salary_pdf(request):
 
     # Border-touching proportional height pictures (88pt height, perfectly level and aligned)
     img_gumbad = RLImage(gumbad_img_path, width=61, height=88) if os.path.exists(gumbad_img_path) else ""
-    img_kaaba = RLImage(kaaba_img_path, width=99, height=88) if os.path.exists(kaaba_img_path) else ""
+    img_kaaba = RLImage(kaaba_img_path, width=79, height=88) if os.path.exists(kaaba_img_path) else ""
 
     bism_center_style = ParagraphStyle(
         'BismCenterS', parent=styles['Normal'], fontName=font_bism, fontSize=26, leading=32,
@@ -1421,7 +1421,7 @@ def export_monthly_pdf(request, year=None, month=None):
 
     # Border-touching proportional height pictures (88pt height, perfectly level and aligned)
     img_gumbad = RLImage(gumbad_img_path, width=61, height=88) if os.path.exists(gumbad_img_path) else ""
-    img_kaaba = RLImage(kaaba_img_path, width=99, height=88) if os.path.exists(kaaba_img_path) else ""
+    img_kaaba = RLImage(kaaba_img_path, width=79, height=88) if os.path.exists(kaaba_img_path) else ""
 
     bism_center_style = ParagraphStyle(
         'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=26, leading=32,
