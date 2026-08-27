@@ -6,7 +6,12 @@ def ui_context(request):
     current_year = datetime.now().year
     year_range = list(range(current_year + 1, current_year - 6, -1))
     
-    lang = request.session.get('lang', 'en')
+    lang = 'en'
+    try:
+        if hasattr(request, 'session') and request.session is not None:
+            lang = request.session.get('lang', 'en')
+    except Exception:
+        lang = 'en'
     t_dict = URDU_TRANSLATIONS if lang == 'ur' else ENGLISH_TRANSLATIONS
 
     months = [
