@@ -682,11 +682,16 @@ def export_imam_salary_pdf(request):
     rasool_str = shape_ur("یا رسول اللہ", is_urdu=True)
 
     kaaba_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'kaaba.png')
-    gumbad_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'gumbad.png')
+    if not os.path.exists(kaaba_img_path):
+        kaaba_img_path = os.path.join(settings.STATIC_ROOT, 'images', 'kaaba.png')
 
-    # Border-touching proportional height pictures (88pt height, perfectly level and aligned)
-    img_gumbad = RLImage(gumbad_img_path, width=61, height=88) if os.path.exists(gumbad_img_path) else ""
-    img_kaaba = RLImage(kaaba_img_path, width=79, height=88) if os.path.exists(kaaba_img_path) else ""
+    gumbad_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'gumbad.png')
+    if not os.path.exists(gumbad_img_path):
+        gumbad_img_path = os.path.join(settings.STATIC_ROOT, 'images', 'gumbad.png')
+
+    dummy_p = Paragraph("", styles['Normal'])
+    img_gumbad = RLImage(gumbad_img_path, width=61, height=88) if os.path.exists(gumbad_img_path) else dummy_p
+    img_kaaba = RLImage(kaaba_img_path, width=79, height=88) if os.path.exists(kaaba_img_path) else dummy_p
 
     bism_center_style = ParagraphStyle(
         'BismCenterS', parent=styles['Normal'], fontName=font_bism, fontSize=26, leading=32,
@@ -1417,11 +1422,16 @@ def export_monthly_pdf(request, year=None, month=None):
     rasool_str = shape_ur("یا رسول اللہ", is_urdu=True)
 
     kaaba_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'kaaba.png')
-    gumbad_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'gumbad.png')
+    if not os.path.exists(kaaba_img_path):
+        kaaba_img_path = os.path.join(settings.STATIC_ROOT, 'images', 'kaaba.png')
 
-    # Border-touching proportional height pictures (88pt height, perfectly level and aligned)
-    img_gumbad = RLImage(gumbad_img_path, width=61, height=88) if os.path.exists(gumbad_img_path) else ""
-    img_kaaba = RLImage(kaaba_img_path, width=79, height=88) if os.path.exists(kaaba_img_path) else ""
+    gumbad_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'gumbad.png')
+    if not os.path.exists(gumbad_img_path):
+        gumbad_img_path = os.path.join(settings.STATIC_ROOT, 'images', 'gumbad.png')
+
+    dummy_p = Paragraph("", styles['Normal'])
+    img_gumbad = RLImage(gumbad_img_path, width=61, height=88) if os.path.exists(gumbad_img_path) else dummy_p
+    img_kaaba = RLImage(kaaba_img_path, width=79, height=88) if os.path.exists(kaaba_img_path) else dummy_p
 
     bism_center_style = ParagraphStyle(
         'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=26, leading=32,
