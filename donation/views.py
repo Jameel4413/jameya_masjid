@@ -684,9 +684,9 @@ def export_imam_salary_pdf(request):
     kaaba_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'kaaba.png')
     gumbad_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'gumbad.png')
 
-    # Huge prominent 82x82 pictures
-    img_kaaba = RLImage(kaaba_img_path, width=82, height=82) if os.path.exists(kaaba_img_path) else ""
-    img_gumbad = RLImage(gumbad_img_path, width=82, height=82) if os.path.exists(gumbad_img_path) else ""
+    # Border-touching proportional height pictures (88pt height, perfectly level and aligned)
+    img_gumbad = RLImage(gumbad_img_path, width=61, height=88) if os.path.exists(gumbad_img_path) else ""
+    img_kaaba = RLImage(kaaba_img_path, width=99, height=88) if os.path.exists(kaaba_img_path) else ""
 
     bism_center_style = ParagraphStyle(
         'BismCenterS', parent=styles['Normal'], fontName=font_bism, fontSize=26, leading=32,
@@ -695,19 +695,21 @@ def export_imam_salary_pdf(request):
 
     p_center = Paragraph(bismillah_str, bism_center_style)
 
-    # 3-Column Header: [Sabz Gumbad 82x82] | [Bismillah 26pt] | [Kaaba Sharif 82x82]
-    bism_box = Table([[img_gumbad, p_center, img_kaaba]], colWidths=[95, 350, 95])
+    # 3-Column Header: [Sabz Gumbad] | [Bismillah] | [Kaaba Sharif]
+    bism_box = Table([[img_gumbad, p_center, img_kaaba]], colWidths=[100, 340, 100])
     bism_box.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#022c22")), # Deep Sacred Velvet Emerald
         ('BOX', (0, 0), (-1, -1), 2.5, colors.HexColor("#c59b27")), # Royal Metallic Gold Frame
         ('LINEABOVE', (0, 0), (-1, -1), 1.2, colors.HexColor("#fef08a")), # Inner Gold Line Accent
         ('LINEBELOW', (0, 0), (-1, -1), 1.2, colors.HexColor("#fef08a")),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+        ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('LEFTPADDING', (0, 0), (-1, -1), 4),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 0), # Zero top padding to touch gold border
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0), # Zero bottom padding to touch gold border
+        ('LEFTPADDING', (0, 0), (0, 0), 2),
+        ('RIGHTPADDING', (2, 0), (2, 0), 2),
     ]))
     story.append(bism_box)
     story.append(Spacer(1, 14))
@@ -1417,9 +1419,9 @@ def export_monthly_pdf(request, year=None, month=None):
     kaaba_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'kaaba.png')
     gumbad_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'gumbad.png')
 
-    # Huge prominent 82x82 pictures
-    img_kaaba = RLImage(kaaba_img_path, width=82, height=82) if os.path.exists(kaaba_img_path) else ""
-    img_gumbad = RLImage(gumbad_img_path, width=82, height=82) if os.path.exists(gumbad_img_path) else ""
+    # Border-touching proportional height pictures (88pt height, perfectly level and aligned)
+    img_gumbad = RLImage(gumbad_img_path, width=61, height=88) if os.path.exists(gumbad_img_path) else ""
+    img_kaaba = RLImage(kaaba_img_path, width=99, height=88) if os.path.exists(kaaba_img_path) else ""
 
     bism_center_style = ParagraphStyle(
         'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=26, leading=32,
@@ -1428,19 +1430,21 @@ def export_monthly_pdf(request, year=None, month=None):
 
     p_center = Paragraph(bismillah_str, bism_center_style)
 
-    # 3-Column Header: [Sabz Gumbad 82x82] | [Bismillah 26pt] | [Kaaba Sharif 82x82]
-    bism_box = Table([[img_gumbad, p_center, img_kaaba]], colWidths=[95, 350, 95])
+    # 3-Column Header: [Sabz Gumbad] | [Bismillah] | [Kaaba Sharif]
+    bism_box = Table([[img_gumbad, p_center, img_kaaba]], colWidths=[100, 340, 100])
     bism_box.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#022c22")), # Deep Sacred Velvet Emerald
         ('BOX', (0, 0), (-1, -1), 2.5, colors.HexColor("#c59b27")), # Royal Metallic Gold Frame
         ('LINEABOVE', (0, 0), (-1, -1), 1.2, colors.HexColor("#fef08a")), # Inner Gold Line Accent
         ('LINEBELOW', (0, 0), (-1, -1), 1.2, colors.HexColor("#fef08a")),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+        ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('LEFTPADDING', (0, 0), (-1, -1), 4),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 0), # Zero top padding to touch gold border
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0), # Zero bottom padding to touch gold border
+        ('LEFTPADDING', (0, 0), (0, 0), 2),
+        ('RIGHTPADDING', (2, 0), (2, 0), 2),
     ]))
     story.append(bism_box)
     story.append(Spacer(1, 14))
