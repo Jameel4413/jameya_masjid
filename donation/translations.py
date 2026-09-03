@@ -1068,6 +1068,82 @@ ROMAN_URDU_TO_URDU_MAP = {
     'allah': 'اللہ',
 }
 
+# Phonetic Rules for Digrams & Clusters (Ordered by longest match first)
+PHONETIC_DIGRAMS = [
+    ('kh', 'خ'),
+    ('gh', 'غ'),
+    ('sh', 'ش'),
+    ('ch', 'چ'),
+    ('bh', 'بھ'),
+    ('dh', 'دھ'),
+    ('jh', 'جھ'),
+    ('th', 'ت'),
+    ('ph', 'ف'),
+    ('rh', 'ڑ'),
+    ('zh', 'ژ'),
+    ('aa', 'آ'),
+    ('ee', 'ی'),
+    ('oo', 'و'),
+    ('ou', 'و'),
+    ('au', 'و'),
+    ('ai', 'ے'),
+    ('ay', 'ے'),
+]
+
+PHONETIC_SINGLES = {
+    'a': 'ا', 'b': 'ب', 'c': 'ک', 'd': 'د', 'e': 'ے',
+    'f': 'ف', 'g': 'گ', 'h': 'ح', 'i': 'ی', 'j': 'ج',
+    'k': 'ک', 'l': 'ل', 'm': 'م', 'n': 'ن', 'o': 'و',
+    'p': 'پ', 'q': 'ق', 'r': 'ر', 's': 'س', 't': 'ت',
+    'u': 'و', 'v': 'و', 'w': 'و', 'x': 'کس', 'y': 'ی', 'z': 'ز'
+}
+
+def roman_to_urdu_phonetic(word):
+    """
+    Fallback Phonetic Transliteration Engine:
+    Converts any Roman Urdu word into Urdu Script when not present in dictionary.
+    """
+    if not word or not isinstance(word, str):
+        return ""
+    
+    # If word is numbers or already Urdu/Arabic script, return as is
+    if not re.search(r'[a-zA-Z]', word):
+        return word
+        
+    lower = word.lower()
+    res = []
+    idx = 0
+    w_len = len(lower)
+
+    # Word-initial vowel handling
+    if lower.startswith('aa'):
+        res.append('آ')
+        idx += 2
+    elif lower.startswith('a') or lower.startswith('o') or lower.startswith('i') or lower.startswith('u'):
+        res.append('ا')
+        idx += 1
+
+    while idx < w_len:
+        matched = False
+        if idx + 1 < w_len:
+            pair = lower[idx:idx+2]
+            for dig, urdu_char in PHONETIC_DIGRAMS:
+                if pair == dig:
+                    res.append(urdu_char)
+                    idx += 2
+                    matched = True
+                    break
+        if not matched:
+            ch = lower[idx]
+            if ch in PHONETIC_SINGLES:
+                res.append(PHONETIC_SINGLES[ch])
+            else:
+                res.append(ch)
+            idx += 1
+
+    return "".join(res)
+
+
 def translate_user_input_to_urdu(text):
     if not text:
         return ""
@@ -1118,6 +1194,10 @@ def translate_user_input_to_urdu(text):
                 clean_core = core.lower()
                 if clean_core in ROMAN_URDU_TO_URDU_MAP:
                     result_tokens.append(f"{lead}{ROMAN_URDU_TO_URDU_MAP[clean_core]}{trail}")
+                elif re.search(r'[a-zA-Z]', core):
+                    # HYBRID PHONETIC FALLBACK: Transliterate unknown Roman Urdu word into Urdu Script
+                    phonetic_urdu = roman_to_urdu_phonetic(core)
+                    result_tokens.append(f"{lead}{phonetic_urdu}{trail}")
                 else:
                     result_tokens.append(token)
             else:
