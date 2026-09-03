@@ -108,18 +108,21 @@ def register_urdu_fonts():
     global _URDU_FONT_REGISTERED
     if not _URDU_FONT_REGISTERED:
         local_font_dir = os.path.join(settings.BASE_DIR, 'donation', 'fonts')
+        local_jameel = os.path.join(local_font_dir, 'JameelNooriNastaleeq.ttf')
         local_nastaliq = os.path.join(local_font_dir, 'NotoNastaliqUrdu.ttf')
         local_reg = os.path.join(local_font_dir, 'tahoma.ttf')
         local_bold = os.path.join(local_font_dir, 'tahomabd.ttf')
 
         registered = False
-        if os.path.exists(local_nastaliq):
+        # 1. Prioritize authentic Jameel Noori Nastaleeq font
+        font_to_use = local_jameel if os.path.exists(local_jameel) else (local_nastaliq if os.path.exists(local_nastaliq) else None)
+        if font_to_use:
             try:
-                pdfmetrics.registerFont(TTFont('UrduNastaliq', local_nastaliq))
-                pdfmetrics.registerFont(TTFont('UrduNaskh', local_nastaliq))
-                pdfmetrics.registerFont(TTFont('UrduNaskh-Bold', local_nastaliq))
-                pdfmetrics.registerFont(TTFont('UrduFont', local_nastaliq))
-                pdfmetrics.registerFont(TTFont('UrduFont-Bold', local_nastaliq))
+                pdfmetrics.registerFont(TTFont('UrduNastaliq', font_to_use))
+                pdfmetrics.registerFont(TTFont('UrduNaskh', font_to_use))
+                pdfmetrics.registerFont(TTFont('UrduNaskh-Bold', font_to_use))
+                pdfmetrics.registerFont(TTFont('UrduFont', font_to_use))
+                pdfmetrics.registerFont(TTFont('UrduFont-Bold', font_to_use))
                 _URDU_FONT_REGISTERED = True
                 registered = True
             except Exception:
