@@ -1905,7 +1905,7 @@ def export_monthly_pdf(request, year=None, month=None):
         ])
     lease_table.setStyle(TableStyle(lease_table_style))
 
-    row3_container = Table([[imam_table, "", lease_table]], colWidths=[271, 10, 271])
+    row3_container = Table([[imam_table, "", lease_table]], colWidths=[352, 10, 190])
     row3_container.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('LEFTPADDING', (0, 0), (-1, -1), 0),
