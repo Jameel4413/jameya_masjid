@@ -1509,62 +1509,53 @@ def export_monthly_pdf(request, year=None, month=None):
     story.append(header_banner_table)
     story.append(Spacer(1, 4))
 
-    # 3. EXECUTIVE SUMMARY 4-STAT STRIP (Width = 552pt)
+    # 3. EXECUTIVE SUMMARY 3-STAT STRIP (Width = 552pt, 184pt per cell, Previous Balance REMOVED)
     card_title_style = ParagraphStyle(
-        'CardT3', parent=styles['Normal'], fontName=font_bold, fontSize=8.5, leading=11,
+        'CardT3', parent=styles['Normal'], fontName=font_bold, fontSize=9.0, leading=11,
         textColor=colors.white, alignment=1
     )
-    card_val_prev = ParagraphStyle(
-        'CardValPrev3', parent=styles['Normal'], fontName=font_bold, fontSize=11, leading=13.5,
-        textColor=colors.HexColor("#e0f2fe"), alignment=1
-    )
     card_val_inc = ParagraphStyle(
-        'CardValInc3', parent=styles['Normal'], fontName=font_bold, fontSize=11, leading=13.5,
+        'CardValInc3', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=14,
         textColor=colors.HexColor("#fef08a"), alignment=1
     )
     card_val_exp = ParagraphStyle(
-        'CardValExp3', parent=styles['Normal'], fontName=font_bold, fontSize=11, leading=13.5,
+        'CardValExp3', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=14,
         textColor=colors.HexColor("#fee2e2"), alignment=1
     )
     card_val_net = ParagraphStyle(
-        'CardValNet3', parent=styles['Normal'], fontName=font_bold, fontSize=11, leading=13.5,
+        'CardValNet3', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=14,
         textColor=colors.HexColor("#e0f2fe") if net_monthly_balance >= 0 else colors.HexColor("#fee2e2"), alignment=1
     )
 
-    lbl_prev_bal = "سابقہ بقایا" if is_urdu else "PREV BAL"
     lbl_tot_inc = "کل آمدنی" if is_urdu else "TOTAL INCOME"
     lbl_tot_exp = "کل اخراجات" if is_urdu else "TOTAL EXPENSE"
     lbl_net_bal = "خالص بیلنس" if is_urdu else "NET BALANCE"
 
     summary_data = [
         [
-            Paragraph(shape_ur(lbl_prev_bal, is_urdu), card_title_style),
             Paragraph(shape_ur(lbl_tot_inc, is_urdu), card_title_style),
             Paragraph(shape_ur(lbl_tot_exp, is_urdu), card_title_style),
             Paragraph(shape_ur(lbl_net_bal, is_urdu), card_title_style)
         ],
         [
-            Paragraph(f"RS {prev_months_remaining:,.0f}", card_val_prev),
             Paragraph(f"RS {month_total_income:,.0f}", card_val_inc),
             Paragraph(f"RS {month_total_expense:,.0f}", card_val_exp),
             Paragraph(f"RS {net_monthly_balance:,.0f}", card_val_net)
         ]
     ]
-    summary_table = Table(summary_data, colWidths=[138, 138, 138, 138])
+    summary_table = Table(summary_data, colWidths=[184, 184, 184])
     summary_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, 1), colors.HexColor("#1e3a8a")),
-        ('BACKGROUND', (1, 0), (1, 1), colors.HexColor("#044e3a")),
-        ('BACKGROUND', (2, 0), (2, 1), colors.HexColor("#991b1b")),
-        ('BACKGROUND', (3, 0), (3, 1), colors.HexColor("#0369a1") if net_monthly_balance >= 0 else colors.HexColor("#991b1b")),
+        ('BACKGROUND', (0, 0), (0, 1), colors.HexColor("#044e3a")),
+        ('BACKGROUND', (1, 0), (1, 1), colors.HexColor("#991b1b")),
+        ('BACKGROUND', (2, 0), (2, 1), colors.HexColor("#0369a1") if net_monthly_balance >= 0 else colors.HexColor("#991b1b")),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('BOX', (0, 0), (0, -1), 1.2, colors.HexColor("#3b82f6")),
-        ('BOX', (1, 0), (1, -1), 1.2, colors.HexColor("#c59b27")),
-        ('BOX', (2, 0), (2, -1), 1.2, colors.HexColor("#b71c1c")),
-        ('BOX', (3, 0), (3, -1), 1.2, colors.HexColor("#0284c7")),
+        ('BOX', (0, 0), (0, -1), 1.2, colors.HexColor("#c59b27")),
+        ('BOX', (1, 0), (1, -1), 1.2, colors.HexColor("#b71c1c")),
+        ('BOX', (2, 0), (2, -1), 1.2, colors.HexColor("#0284c7")),
         ('LINEBELOW', (0, 0), (-1, 0), 0.8, colors.HexColor("#fef08a")),
-        ('TOPPADDING', (0, 0), (-1, -1), 2.5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 2.5),
+        ('TOPPADDING', (0, 0), (-1, -1), 3.0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3.0),
     ]))
     story.append(summary_table)
     story.append(Spacer(1, 4))
@@ -1731,11 +1722,12 @@ def export_monthly_pdf(request, year=None, month=None):
     story.append(Spacer(1, 4))
 
     # =========================================================================
-    # 6. ROW 3: IMAM SALARY CARD (Left, 271pt) & LAND LEASE CARD (Right, 271pt)
+    # 6. ROW 3: EXPANDED IMAM SALARY CARD (Left, 352pt) & COMPACT LAND LEASE CARD (Right, 190pt)
+    # Total combined width = 352 + 10 (gap) + 190 = 552pt!
     # =========================================================================
 
-    # 6A. Left: Imam Salary Card (271pt)
-    imam_sec_title = "امام کی تنخواہ کا ریکارڈ (IMAM SALARY)" if is_urdu else "IMAM SALARY RECORD"
+    # 6A. Left: Expanded Imam Salary Table (352pt Width)
+    imam_sec_title = "امام کی تنخواہ کا ریکارڈ (IMAM SALARY RECORD)" if is_urdu else "IMAM SALARY RECORD"
     imam_card_rows = [
         [Paragraph(f"<b>{shape_ur(imam_sec_title, is_urdu)}</b>", sec_title_style), "", ""]
     ]
@@ -1752,7 +1744,7 @@ def export_monthly_pdf(request, year=None, month=None):
                 textColor=colors.HexColor(status_color), alignment=2
             )
             imam_header_name_style = ParagraphStyle(
-                'ImamHdrNameS4', parent=styles['Normal'], fontName=font_bold, fontSize=tbl_hdr_font, leading=tbl_hdr_leading,
+                'ImamHdrNameS4', parent=styles['Normal'], fontName=font_bold, fontSize=tbl_hdr_font + 0.5, leading=tbl_hdr_leading + 0.5,
                 textColor=colors.white
             )
 
@@ -1763,8 +1755,8 @@ def export_monthly_pdf(request, year=None, month=None):
             ])
 
             col1 = "تاریخ" if is_urdu else "Date"
-            col2 = "اقساط / تفاصیل" if is_urdu else "Details"
-            col3 = "ادائیگی" if is_urdu else "Paid"
+            col2 = "اقساط / تفاصیل" if is_urdu else "Installment / Details"
+            col3 = "ادائیگی (PKR)" if is_urdu else "Paid (PKR)"
             imam_card_rows.append([
                 Paragraph(f"<b>{shape_ur(col1, is_urdu)}</b>", cell_hdr_style),
                 Paragraph(f"<b>{shape_ur(col2, is_urdu)}</b>", cell_hdr_style),
@@ -1774,7 +1766,7 @@ def export_monthly_pdf(request, year=None, month=None):
             for p in s.installments.all().order_by('payment_date'):
                 note_str = p.notes or ("قسط کی ادائیگی" if is_urdu else "Installment")
                 imam_card_rows.append([
-                    Paragraph(p.payment_date.strftime('%d-%b'), cell_style),
+                    Paragraph(p.payment_date.strftime('%d-%b-%Y'), cell_style),
                     Paragraph(shape_ur(note_str, is_urdu), cell_style),
                     Paragraph(f"{p.amount_paid:,.0f}", amt_inc_style)
                 ])
@@ -1784,8 +1776,8 @@ def export_monthly_pdf(request, year=None, month=None):
                 imam_card_rows.append([Paragraph(shape_ur(no_p_str, is_urdu), cell_style), "", ""])
 
             rem_m_color = "#1b5e20" if s.remaining_salary <= 0 else "#b71c1c"
-            lbl_m_tot = "تنخواہ" if is_urdu else "Salary"
-            lbl_m_paid = "ادا" if is_urdu else "Paid"
+            lbl_m_tot = "کل تنخواہ" if is_urdu else "Salary"
+            lbl_m_paid = "کل ادا" if is_urdu else "Paid"
             lbl_m_rem = "بقایا" if is_urdu else "Rem"
             card_footer_style = ParagraphStyle(
                 'CardFS5', parent=styles['Normal'], fontName=font_bold, fontSize=tbl_font_size, leading=tbl_leading, textColor=colors.HexColor("#0f172a")
@@ -1797,7 +1789,7 @@ def export_monthly_pdf(request, year=None, month=None):
                 Paragraph(f"<b>{shape_ur(lbl_m_rem, is_urdu)}:</b> <font color='{rem_m_color}'>RS {s.remaining_salary:,.0f}</font>", card_footer_style),
             ])
 
-    imam_table = Table(imam_card_rows, colWidths=[45, 146, 80])
+    imam_table = Table(imam_card_rows, colWidths=[50, 202, 100])
     imam_table_style = [
         ('SPAN', (0, 0), (-1, 0)),
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#044e3a")),
@@ -1806,8 +1798,8 @@ def export_monthly_pdf(request, year=None, month=None):
         ('BOX', (0, 0), (-1, -1), 1.2, colors.HexColor("#044e3a")),
         ('TOPPADDING', (0, 0), (-1, -1), tbl_pad_v),
         ('BOTTOMPADDING', (0, 0), (-1, -1), tbl_pad_v),
-        ('LEFTPADDING', (0, 0), (-1, -1), 2.0),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 2.0),
+        ('LEFTPADDING', (0, 0), (-1, -1), 2.5),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 2.5),
     ]
 
     if not salaries.exists():
@@ -1822,14 +1814,14 @@ def export_monthly_pdf(request, year=None, month=None):
         ])
     imam_table.setStyle(TableStyle(imam_table_style))
 
-    # 6B. Right: Land Lease Card (271pt)
-    lease_sec_title = "زمین کے ٹھیکے کا ریکارڈ (LAND LEASE)" if is_urdu else "LAND LEASE RECORD"
+    # 6B. Right: Compact Land Lease Card (190pt Width - Shrink Fine Side Card)
+    lease_sec_title = "زمین کے ٹھیکے کا ریکارڈ (LAND LEASE)" if is_urdu else "LAND LEASE"
     lease_card_rows = [
         [Paragraph(f"<b>{shape_ur(lease_sec_title, is_urdu)}</b>", sec_title_style), "", ""]
     ]
 
     if not leases.exists():
-        no_lse_msg = "اس عرصے کے لیے کوئی فعال ٹھیکہ نہیں۔" if is_urdu else "No active land leases."
+        no_lse_msg = "اس عرصے کے لیے کوئی فعال ٹھیکہ نہیں۔" if is_urdu else "No active leases."
         lease_card_rows.append([Paragraph(shape_ur(no_lse_msg, is_urdu), cell_style), "", ""])
     else:
         for l in leases:
@@ -1840,7 +1832,7 @@ def export_monthly_pdf(request, year=None, month=None):
                 textColor=colors.HexColor(status_color), alignment=2
             )
             tenant_name_style = ParagraphStyle(
-                'TenantNameS4', parent=styles['Normal'], fontName=font_bold, fontSize=tbl_hdr_font, leading=tbl_hdr_leading,
+                'TenantNameS4', parent=styles['Normal'], fontName=font_bold, fontSize=tbl_hdr_font - 0.5, leading=tbl_hdr_leading - 0.5,
                 textColor=colors.white
             )
 
@@ -1855,7 +1847,7 @@ def export_monthly_pdf(request, year=None, month=None):
 
             col1_l = "تاریخ" if is_urdu else "Date"
             col2_l = "تفاصیل" if is_urdu else "Notes"
-            col3_l = "وصول رقم" if is_urdu else "Received"
+            col3_l = "وصول" if is_urdu else "Recd"
             lease_card_rows.append([
                 Paragraph(f"<b>{shape_ur(col1_l, is_urdu)}</b>", cell_hdr_style),
                 Paragraph(f"<b>{shape_ur(col2_l, is_urdu)}</b>", cell_hdr_style),
@@ -1865,30 +1857,30 @@ def export_monthly_pdf(request, year=None, month=None):
             for p in l.payments.all().order_by('payment_date'):
                 note_str = p.notes or ("ٹھیکہ وصولی" if is_urdu else "Lease Payment")
                 lease_card_rows.append([
-                    Paragraph(p.payment_date.strftime('%d-%b'), cell_style),
+                    Paragraph(p.payment_date.strftime('%d-%b-%Y'), cell_style),
                     Paragraph(shape_ur(note_str, is_urdu), cell_style),
                     Paragraph(f"{p.amount_received:,.0f}", amt_inc_style)
                 ])
 
             if not l.payments.exists():
-                no_lp_str = "کوئی ادائیگی موصول نہیں ہوئی" if is_urdu else "No payments"
+                no_lp_str = "کوئی ادائیگی نہیں" if is_urdu else "No payments"
                 lease_card_rows.append([Paragraph(shape_ur(no_lp_str, is_urdu), cell_style), "", ""])
 
             rem_color = "#1b5e20" if l.remaining_lease_amount <= 0 else "#b71c1c"
-            lbl_ta = "طے شدہ" if is_urdu else "Agreed"
-            lbl_tr_l = "وصول" if is_urdu else "Received"
+            lbl_ta = "طے" if is_urdu else "Agr"
+            lbl_tr_l = "وصول" if is_urdu else "Rec"
             lbl_rem_l = "بقایا" if is_urdu else "Rem"
             card_footer_style = ParagraphStyle(
                 'CardFS5_l', parent=styles['Normal'], fontName=font_bold, fontSize=tbl_font_size, leading=tbl_leading, textColor=colors.HexColor("#0f172a")
             )
 
             lease_card_rows.append([
-                Paragraph(f"<b>{shape_ur(lbl_ta, is_urdu)}:</b> RS {l.total_agreed_amount:,.0f}", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_tr_l, is_urdu)}:</b> <font color='#1b5e20'>RS {l.total_received:,.0f}</font>", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_rem_l, is_urdu)}:</b> <font color='{rem_color}'>RS {l.remaining_lease_amount:,.0f}</font>", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_ta, is_urdu)}:</b> {l.total_agreed_amount:,.0f}", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_tr_l, is_urdu)}:</b> <font color='#1b5e20'>{l.total_received:,.0f}</font>", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_rem_l, is_urdu)}:</b> <font color='{rem_color}'>{l.remaining_lease_amount:,.0f}</font>", card_footer_style),
             ])
 
-    lease_table = Table(lease_card_rows, colWidths=[45, 146, 80])
+    lease_table = Table(lease_card_rows, colWidths=[40, 85, 65])
     lease_table_style = [
         ('SPAN', (0, 0), (-1, 0)),
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#856404")),
@@ -1897,8 +1889,8 @@ def export_monthly_pdf(request, year=None, month=None):
         ('BOX', (0, 0), (-1, -1), 1.2, colors.HexColor("#856404")),
         ('TOPPADDING', (0, 0), (-1, -1), tbl_pad_v),
         ('BOTTOMPADDING', (0, 0), (-1, -1), tbl_pad_v),
-        ('LEFTPADDING', (0, 0), (-1, -1), 2.0),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 2.0),
+        ('LEFTPADDING', (0, 0), (-1, -1), 1.5),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 1.5),
     ]
 
     if not leases.exists():
