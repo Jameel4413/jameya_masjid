@@ -1403,13 +1403,14 @@ def export_monthly_pdf(request, year=None, month=None):
     expense_items.sort(key=lambda x: x['date'])
 
     buffer = io.BytesIO()
+    # Printable width: 612 - 60 = 552 pt
     doc = SimpleDocTemplate(
         buffer,
         pagesize=letter,
-        rightMargin=36,
-        leftMargin=36,
-        topMargin=36,
-        bottomMargin=36
+        rightMargin=30,
+        leftMargin=30,
+        topMargin=26,
+        bottomMargin=26
     )
 
     story = []
@@ -1418,8 +1419,6 @@ def export_monthly_pdf(request, year=None, month=None):
     # Authentic Full Arabic Bismillah Header with complete diacritics
     bismillah_exact_text = "بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ"
     bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
-    allah_str = shape_ur("یا اللہ", is_urdu=True)
-    rasool_str = shape_ur("یا رسول اللہ", is_urdu=True)
 
     kaaba_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'kaaba.png')
     if not os.path.exists(kaaba_img_path):
@@ -1430,602 +1429,501 @@ def export_monthly_pdf(request, year=None, month=None):
         gumbad_img_path = os.path.join(settings.STATIC_ROOT, 'images', 'gumbad.png')
 
     dummy_p = Paragraph("", styles['Normal'])
-    img_gumbad = RLImage(gumbad_img_path, width=61, height=88) if os.path.exists(gumbad_img_path) else dummy_p
-    img_kaaba = RLImage(kaaba_img_path, width=79, height=88) if os.path.exists(kaaba_img_path) else dummy_p
+    img_gumbad = RLImage(gumbad_img_path, width=54, height=72) if os.path.exists(gumbad_img_path) else dummy_p
+    img_kaaba = RLImage(kaaba_img_path, width=70, height=72) if os.path.exists(kaaba_img_path) else dummy_p
 
     bism_center_style = ParagraphStyle(
-        'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=22, leading=26,
+        'BismCenterM', parent=styles['Normal'], fontName=font_bism, fontSize=20, leading=23,
         textColor=colors.HexColor("#fde047"), alignment=1
     )
 
     p_center = Paragraph(bismillah_str, bism_center_style)
 
-    # 3-Column Header: [Sabz Gumbad] | [Bismillah] | [Kaaba Sharif]
-    bism_box = Table([[img_gumbad, p_center, img_kaaba]], colWidths=[100, 340, 100])
+    # 3-Column Bismillah Header Box (Width = 552pt)
+    bism_box = Table([[img_gumbad, p_center, img_kaaba]], colWidths=[90, 372, 90])
     bism_box.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#022c22")), # Deep Sacred Velvet Emerald
-        ('BOX', (0, 0), (-1, -1), 2.5, colors.HexColor("#c59b27")), # Royal Metallic Gold Frame
-        ('LINEABOVE', (0, 0), (-1, -1), 1.2, colors.HexColor("#fef08a")), # Inner Gold Line Accent
-        ('LINEBELOW', (0, 0), (-1, -1), 1.2, colors.HexColor("#fef08a")),
+        ('BOX', (0, 0), (-1, -1), 2.2, colors.HexColor("#c59b27")), # Royal Metallic Gold Frame
+        ('LINEABOVE', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")), # Inner Gold Line Accent
+        ('LINEBELOW', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")),
         ('ALIGN', (0, 0), (0, 0), 'LEFT'),
         ('ALIGN', (1, 0), (1, 0), 'CENTER'),
         ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 0), # Zero top padding to touch gold border
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 0), # Zero bottom padding to touch gold border
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ('LEFTPADDING', (0, 0), (0, 0), 2),
         ('RIGHTPADDING', (2, 0), (2, 0), 2),
     ]))
     story.append(bism_box)
-    story.append(Spacer(1, 14))
+    story.append(Spacer(1, 4))
 
-    # Custom unique styles (Increased font sizes & bold weights for ultra-readable printouts)
-    title_style = ParagraphStyle(
-        'RepTitle', parent=styles['Heading1'], fontName=font_bold, fontSize=19 if is_urdu else 22, leading=25,
-        textColor=colors.HexColor("#044e3a"), alignment=1
-    )
-    subtitle_style = ParagraphStyle(
-        'RepSubtitle', parent=styles['Normal'], fontName=font_bold, fontSize=12.5, leading=16,
-        textColor=colors.HexColor("#000000"), alignment=1
-    )
-    section_style = ParagraphStyle(
-        'RepSection', parent=styles['Heading2'], fontName=font_bold, fontSize=16 if is_urdu else 15.5, leading=24 if is_urdu else 20,
-        textColor=colors.HexColor("#044e3a"), spaceBefore=18, spaceAfter=9
-    )
-    cell_style = ParagraphStyle(
-        'RepCell', parent=styles['Normal'], fontName=font_bold, fontSize=11 if is_urdu else 11, leading=19 if is_urdu else 15,
-        textColor=colors.HexColor("#000000") # Pure solid black bold for maximum print clarity
-    )
-    cell_hdr_style = ParagraphStyle(
-        'RepCellHdr', parent=styles['Normal'], fontName=font_bold, fontSize=11.5 if is_urdu else 11.5, leading=19 if is_urdu else 15,
-        textColor=colors.white
-    )
-    cell_amount_style = ParagraphStyle(
-        'RepCellAmt', parent=styles['Normal'], fontName=font_bold, fontSize=11.5 if is_urdu else 11.5, leading=19 if is_urdu else 15,
-        textColor=colors.HexColor("#044e3a"), alignment=2
-    )
-
-    # Custom styles for Imam & Thekedar Cards
-    imam_name_style = ParagraphStyle(
-        'ImamName', parent=styles['Normal'], fontName=font_bold, fontSize=13.5, leading=17,
-        textColor=colors.white
-    )
-    thekedar_name_style = ParagraphStyle(
-        'ThekedarName', parent=styles['Normal'], fontName=font_bold, fontSize=13.5, leading=17,
-        textColor=colors.white
-    )
-    card_info_style = ParagraphStyle(
-        'CardInfo', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=14,
-        textColor=colors.HexColor("#0f172a")
-    )
-    card_footer_style = ParagraphStyle(
-        'CardF', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=15,
-        textColor=colors.HexColor("#0f172a")
-    )
-
-    # Document Header Banner Box (Styled matching Bismillah aesthetics)
+    # Compact Header Banner Box
     hdr_title = "جامع مسجد نور مالیاتی رپورٹ" if is_urdu else "JAMEYA MASJID NOOR FINANCIAL REPORT"
     hdr_sub = f"تفصیلی اسٹیٹمنٹ برائے {month_name}" if is_urdu else f"Detailed Statement for {month_name}"
     
     title_box_style = ParagraphStyle(
-        'RepTitleBox', parent=styles['Heading1'], fontName=font_bold, fontSize=18 if is_urdu else 19, leading=24,
-        textColor=colors.HexColor("#fef08a"), alignment=1 # Metallic Gold Title Text
+        'RepTitleBox', parent=styles['Heading1'], fontName=font_bold, fontSize=15 if is_urdu else 16, leading=19,
+        textColor=colors.HexColor("#fef08a"), alignment=1
     )
     subtitle_box_style = ParagraphStyle(
-        'RepSubtitleBox', parent=styles['Normal'], fontName=font_bold, fontSize=12, leading=16,
-        textColor=colors.white, alignment=1 # High-contrast White Subtitle Text
+        'RepSubtitleBox', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=13,
+        textColor=colors.white, alignment=1
     )
 
     p_title = Paragraph(f"<b>{shape_ur(hdr_title, is_urdu)}</b>", title_box_style)
     p_sub = Paragraph(shape_ur(hdr_sub, is_urdu), subtitle_box_style)
 
-    header_banner_table = Table([[p_title], [p_sub]], colWidths=[520])
+    header_banner_table = Table([[p_title], [p_sub]], colWidths=[552])
     header_banner_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")), # Deep Sacred Emerald Fill
-        ('BOX', (0, 0), (-1, -1), 2.2, colors.HexColor("#c59b27")), # Metallic Gold Frame
-        ('LINEBELOW', (0, 0), (-1, 0), 1.0, colors.HexColor("#c59b27")), # Golden Divider Accent Line
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")),
+        ('BOX', (0, 0), (-1, -1), 1.8, colors.HexColor("#c59b27")),
+        ('LINEBELOW', (0, 0), (-1, 0), 0.8, colors.HexColor("#c59b27")),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
     ]))
     story.append(header_banner_table)
-    story.append(Spacer(1, 14))
+    story.append(Spacer(1, 5))
 
-    # Highlighted Hero Summary Cards (Top Section)
+    # Top Executive Summary Strip (4 Columns: Prev Bal, Total Inc, Total Exp, Net Bal)
     card_title_style = ParagraphStyle(
-        'CardT', parent=styles['Normal'], fontName=font_bold, fontSize=11, leading=14,
+        'CardT', parent=styles['Normal'], fontName=font_bold, fontSize=8.5, leading=11,
         textColor=colors.white, alignment=1
     )
+    card_val_prev = ParagraphStyle(
+        'CardValPrev', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=14,
+        textColor=colors.HexColor("#e0f2fe"), alignment=1
+    )
     card_val_inc = ParagraphStyle(
-        'CardValInc', parent=styles['Normal'], fontName=font_bold, fontSize=15.5, leading=19,
-        textColor=colors.HexColor("#fef08a"), alignment=1 # Highlighted Metallic Gold
+        'CardValInc', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=14,
+        textColor=colors.HexColor("#fef08a"), alignment=1
     )
     card_val_exp = ParagraphStyle(
-        'CardValExp', parent=styles['Normal'], fontName=font_bold, fontSize=15.5, leading=19,
-        textColor=colors.HexColor("#fee2e2"), alignment=1 # High contrast Rose White
+        'CardValExp', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=14,
+        textColor=colors.HexColor("#fee2e2"), alignment=1
     )
     card_val_net = ParagraphStyle(
-        'CardValNet', parent=styles['Normal'], fontName=font_bold, fontSize=15.5, leading=19,
+        'CardValNet', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=14,
         textColor=colors.HexColor("#e0f2fe") if net_monthly_balance >= 0 else colors.HexColor("#fee2e2"), alignment=1
     )
 
+    lbl_prev_bal = "سابقہ بقایا" if is_urdu else "PREV BAL"
     lbl_tot_inc = "کل آمدنی" if is_urdu else "TOTAL INCOME"
     lbl_tot_exp = "کل اخراجات" if is_urdu else "TOTAL EXPENSE"
     lbl_net_bal = "خالص بیلنس" if is_urdu else "NET BALANCE"
 
     summary_data = [
         [
+            Paragraph(shape_ur(lbl_prev_bal, is_urdu), card_title_style),
             Paragraph(shape_ur(lbl_tot_inc, is_urdu), card_title_style),
             Paragraph(shape_ur(lbl_tot_exp, is_urdu), card_title_style),
             Paragraph(shape_ur(lbl_net_bal, is_urdu), card_title_style)
         ],
         [
+            Paragraph(f"RS {prev_months_remaining:,.0f}", card_val_prev),
             Paragraph(f"RS {month_total_income:,.0f}", card_val_inc),
             Paragraph(f"RS {month_total_expense:,.0f}", card_val_exp),
             Paragraph(f"RS {net_monthly_balance:,.0f}", card_val_net)
         ]
     ]
-    summary_table = Table(summary_data, colWidths=[180, 180, 180])
+    summary_table = Table(summary_data, colWidths=[138, 138, 138, 138])
     summary_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, 1), colors.HexColor("#044e3a")), # Sacred Emerald Fill for HIGHLIGHTED Total Income Card
-        ('BACKGROUND', (1, 0), (1, 1), colors.HexColor("#991b1b")), # Rich Dark Crimson Fill for Total Expense Card
-        ('BACKGROUND', (2, 0), (2, 1), colors.HexColor("#0369a1") if net_monthly_balance >= 0 else colors.HexColor("#991b1b")),
+        ('BACKGROUND', (0, 0), (0, 1), colors.HexColor("#1e3a8a")), # Deep Blue Fill for Prev Bal
+        ('BACKGROUND', (1, 0), (1, 1), colors.HexColor("#044e3a")), # Sacred Emerald Fill for Total Income
+        ('BACKGROUND', (2, 0), (2, 1), colors.HexColor("#991b1b")), # Rich Dark Crimson Fill for Total Expense
+        ('BACKGROUND', (3, 0), (3, 1), colors.HexColor("#0369a1") if net_monthly_balance >= 0 else colors.HexColor("#991b1b")),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('BOX', (0, 0), (0, -1), 2.2, colors.HexColor("#c59b27")), # Metallic Gold Frame around Total Income Card
-        ('BOX', (1, 0), (1, -1), 1.8, colors.HexColor("#b71c1c")),
-        ('BOX', (2, 0), (2, -1), 1.8, colors.HexColor("#0284c7")),
-        ('LINEBELOW', (0, 0), (-1, 0), 1.0, colors.HexColor("#fef08a")), # Accent inner line separating title and value
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('BOX', (0, 0), (0, -1), 1.2, colors.HexColor("#3b82f6")),
+        ('BOX', (1, 0), (1, -1), 1.2, colors.HexColor("#c59b27")),
+        ('BOX', (2, 0), (2, -1), 1.2, colors.HexColor("#b71c1c")),
+        ('BOX', (3, 0), (3, -1), 1.2, colors.HexColor("#0284c7")),
+        ('LINEBELOW', (0, 0), (-1, 0), 0.8, colors.HexColor("#fef08a")),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
     ]))
     story.append(summary_table)
-    story.append(Spacer(1, 15))
+    story.append(Spacer(1, 5))
 
-    # Income Section
-    sec_inc_title = "آمدنی کی تفصیل" if is_urdu else "Income Breakdown (Aamdan Tafseel)"
-    story.append(Paragraph(f"<b>{shape_ur(sec_inc_title, is_urdu)}</b>", section_style))
-    inc_header_style = ParagraphStyle(
-        'IncH', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=15, textColor=colors.white
+    # Shared Paragraph Styles for Side-by-Side Tables
+    cell_style = ParagraphStyle(
+        'RepCellS', parent=styles['Normal'], fontName=font_bold, fontSize=8.5 if is_urdu else 8.5, leading=11 if is_urdu else 11,
+        textColor=colors.HexColor("#000000")
     )
+    cell_hdr_style = ParagraphStyle(
+        'RepCellHdrS', parent=styles['Normal'], fontName=font_bold, fontSize=9 if is_urdu else 9, leading=12,
+        textColor=colors.white
+    )
+    section_hdr_style = ParagraphStyle(
+        'SecHdrS', parent=styles['Normal'], fontName=font_bold, fontSize=10.5 if is_urdu else 10, leading=13,
+        textColor=colors.HexColor("#fef08a"), alignment=1
+    )
+
+    # =========================================================================
+    # ROW 1 GRID: INCOME TABLE (Left, 271pt) & EXPENSE TABLE (Right, 271pt)
+    # =========================================================================
+
+    # 1A. Left Box: Income Table
+    inc_header_style = cell_hdr_style
     inc_amount_style = ParagraphStyle(
-        'IncAmt', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=15,
+        'IncAmtS', parent=styles['Normal'], fontName=font_bold, fontSize=8.5, leading=11,
         textColor=colors.HexColor("#1b5e20"), alignment=2
     )
 
     h_date = "تاریخ" if is_urdu else "Date"
-    h_src = "ذریعہ / قسم" if is_urdu else "Source / Type"
-    h_note = "نوٹس / تفصیل" if is_urdu else "Notes / Description"
+    h_src = "ذریعہ / تفصیل" if is_urdu else "Source / Detail"
     h_amt = "رقم" if is_urdu else "Amount"
 
-    inc_rows = [[
-        Paragraph(shape_ur(h_date, is_urdu), inc_header_style),
-        Paragraph(shape_ur(h_src, is_urdu), inc_header_style),
-        Paragraph(shape_ur(h_note, is_urdu), inc_header_style),
-        Paragraph(shape_ur(h_amt, is_urdu), inc_header_style)
-    ]]
+    inc_sec_title = "آمدنی کی تفصیل (INCOME BREAKDOWN)" if is_urdu else "INCOME BREAKDOWN"
+    inc_rows = [
+        # Section Header Banner
+        [Paragraph(f"<b>{shape_ur(inc_sec_title, is_urdu)}</b>", section_hdr_style), "", ""],
+        # Table Headers
+        [
+            Paragraph(shape_ur(h_date, is_urdu), inc_header_style),
+            Paragraph(shape_ur(h_src, is_urdu), inc_header_style),
+            Paragraph(shape_ur(h_amt, is_urdu), inc_header_style)
+        ]
+    ]
 
     for item in income_items:
         inc_rows.append([
             Paragraph(item['date'].strftime('%d-%b-%Y'), cell_style),
             Paragraph(shape_ur(item['source'], is_urdu), cell_style),
-            Paragraph(shape_ur(item['notes'], is_urdu), cell_style),
             Paragraph(f"RS {item['amount']:,.0f}", inc_amount_style)
         ])
 
     if not income_items:
         no_inc_msg = "اس عرصے کے لیے کوئی آمدنی کا ریکارڈ نہیں ہے۔" if is_urdu else "No income recorded for this period."
-        inc_rows.append([Paragraph(shape_ur(no_inc_msg, is_urdu), cell_style), "", "", ""])
+        inc_rows.append([Paragraph(shape_ur(no_inc_msg, is_urdu), cell_style), "", ""])
     else:
         tot_inc_lbl = "کل آمدنی" if is_urdu else "TOTAL INCOME"
         total_inc_lbl_style = ParagraphStyle(
-            'TotIncLbl', parent=styles['Normal'], fontName=font_bold, fontSize=12.5, leading=16,
+            'TotIncLblS', parent=styles['Normal'], fontName=font_bold, fontSize=9.5, leading=12,
             textColor=colors.white
         )
         total_inc_val_style = ParagraphStyle(
-            'TotIncVal', parent=styles['Normal'], fontName=font_bold, fontSize=13, leading=16,
-            textColor=colors.HexColor("#fef08a"), alignment=2 # High-contrast bright gold total
+            'TotIncValS', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=12,
+            textColor=colors.HexColor("#fef08a"), alignment=2
         )
         inc_rows.append([
             Paragraph(f"<b>{shape_ur(tot_inc_lbl, is_urdu)}</b>", total_inc_lbl_style),
-            "", "",
+            "",
             Paragraph(f"RS {month_total_income:,.0f}", total_inc_val_style)
         ])
 
-    inc_table = Table(inc_rows, colWidths=[90, 130, 190, 110])
+    inc_table = Table(inc_rows, colWidths=[65, 125, 81])
     inc_table_style = [
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#044e3a")), # Deep Emerald Header
+        ('SPAN', (0, 0), (-1, 0)),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#044e3a")), # Emerald Section Title
+        ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor("#065f46")), # Sub-header
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('GRID', (0, 0), (-1, -1), 1.2, colors.HexColor("#044e3a")), # 1.2pt Solid Emerald Grid Lines
-        ('BOX', (0, 0), (-1, -1), 2.0, colors.HexColor("#044e3a")), # Solid Emerald Frame
-        ('TOPPADDING', (0, 0), (-1, -1), 8.5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8.5),
+        ('GRID', (0, 1), (-1, -1), 0.6, colors.HexColor("#044e3a")),
+        ('BOX', (0, 0), (-1, -1), 1.5, colors.HexColor("#044e3a")),
+        ('TOPPADDING', (0, 0), (-1, -1), 2.5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2.5),
+        ('LEFTPADDING', (0, 0), (-1, -1), 3),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
     ]
     if not income_items:
-        inc_table_style.append(('SPAN', (0, 1), (-1, 1)))
+        inc_table_style.append(('SPAN', (0, 2), (-1, 2)))
     else:
-        inc_table_style.append(('SPAN', (0, -1), (2, -1)))
-        inc_table_style.append(('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#044e3a"))) # HIGHLIGHTED Total Income Cell!
-        inc_table_style.append(('LINEABOVE', (0, -1), (-1, -1), 2.0, colors.HexColor("#c59b27"))) # Gold accent line above total
+        inc_table_style.append(('SPAN', (0, -1), (1, -1)))
+        inc_table_style.append(('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#044e3a")))
+        inc_table_style.append(('LINEABOVE', (0, -1), (-1, -1), 1.2, colors.HexColor("#c59b27")))
 
     inc_table.setStyle(TableStyle(inc_table_style))
-    story.append(inc_table)
-    story.append(Spacer(1, 15))
 
-    # Expense Section
-    sec_exp_title = "اخراجات کی تفصیل" if is_urdu else "Expense Breakdown (Kharajaat Tafseel)"
-    story.append(Paragraph(f"<b>{shape_ur(sec_exp_title, is_urdu)}</b>", section_style))
-    exp_header_style = ParagraphStyle(
-        'ExpH', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=15, textColor=colors.white
-    )
+    # 1B. Right Box: Expense Table
+    exp_header_style = cell_hdr_style
     exp_amount_style = ParagraphStyle(
-        'ExpAmt', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=15,
+        'ExpAmtS', parent=styles['Normal'], fontName=font_bold, fontSize=8.5, leading=11,
         textColor=colors.HexColor("#b71c1c"), alignment=2
     )
 
-    h_cat = "زمرہ" if is_urdu else "Category"
-    h_desc = "تفصیل / دیکھ بھال" if is_urdu else "Description / Details"
+    h_cat = "زمرہ / تفصیل" if is_urdu else "Category / Desc"
 
-    exp_rows = [[
-        Paragraph(shape_ur(h_date, is_urdu), exp_header_style),
-        Paragraph(shape_ur(h_cat, is_urdu), exp_header_style),
-        Paragraph(shape_ur(h_desc, is_urdu), exp_header_style),
-        Paragraph(shape_ur(h_amt, is_urdu), exp_header_style)
-    ]]
+    exp_sec_title = "اخراجات کی تفصیل (EXPENSE BREAKDOWN)" if is_urdu else "EXPENSE BREAKDOWN"
+    exp_rows = [
+        # Section Header Banner
+        [Paragraph(f"<b>{shape_ur(exp_sec_title, is_urdu)}</b>", section_hdr_style), "", ""],
+        # Table Headers
+        [
+            Paragraph(shape_ur(h_date, is_urdu), exp_header_style),
+            Paragraph(shape_ur(h_cat, is_urdu), exp_header_style),
+            Paragraph(shape_ur(h_amt, is_urdu), exp_header_style)
+        ]
+    ]
 
     for item in expense_items:
+        # Combine Category and Description into single line for compactness
+        desc_text = f"{item['category']} ({item['description']})" if item['description'] != "-" else item['category']
         exp_rows.append([
             Paragraph(item['date'].strftime('%d-%b-%Y'), cell_style),
-            Paragraph(shape_ur(item['category'], is_urdu), cell_style),
-            Paragraph(shape_ur(item['description'], is_urdu), cell_style),
+            Paragraph(shape_ur(desc_text, is_urdu), cell_style),
             Paragraph(f"RS {item['amount']:,.0f}", exp_amount_style)
         ])
 
     if not expense_items:
         no_exp_msg = "اس عرصے کے لیے کوئی خرچہ ریکارڈ نہیں ہے۔" if is_urdu else "No expenses recorded for this period."
-        exp_rows.append([Paragraph(shape_ur(no_exp_msg, is_urdu), cell_style), "", "", ""])
+        exp_rows.append([Paragraph(shape_ur(no_exp_msg, is_urdu), cell_style), "", ""])
     else:
         tot_exp_lbl = "کل اخراجات" if is_urdu else "TOTAL EXPENSE"
         total_exp_lbl_style = ParagraphStyle(
-            'TotExpLbl', parent=styles['Normal'], fontName=font_bold, fontSize=12.5, leading=16,
+            'TotExpLblS', parent=styles['Normal'], fontName=font_bold, fontSize=9.5, leading=12,
             textColor=colors.white
         )
         total_exp_val_style = ParagraphStyle(
-            'TotExpVal', parent=styles['Normal'], fontName=font_bold, fontSize=13, leading=16,
-            textColor=colors.HexColor("#fee2e2"), alignment=2 # High-contrast bright rose total
+            'TotExpValS', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=12,
+            textColor=colors.HexColor("#fee2e2"), alignment=2
         )
         exp_rows.append([
             Paragraph(f"<b>{shape_ur(tot_exp_lbl, is_urdu)}</b>", total_exp_lbl_style),
-            "", "",
+            "",
             Paragraph(f"RS {month_total_expense:,.0f}", total_exp_val_style)
         ])
 
-    exp_table = Table(exp_rows, colWidths=[90, 120, 200, 110])
+    exp_table = Table(exp_rows, colWidths=[65, 125, 81])
     exp_table_style = [
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#991b1b")), # Rich Dark Crimson Header
+        ('SPAN', (0, 0), (-1, 0)),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#991b1b")), # Crimson Section Title
+        ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor("#7f1d1d")), # Sub-header
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('GRID', (0, 0), (-1, -1), 1.0, colors.HexColor("#991b1b")), # 1.0pt Solid Crimson Grid Lines
-        ('BOX', (0, 0), (-1, -1), 1.8, colors.HexColor("#991b1b")), # Solid Crimson Frame
-        ('TOPPADDING', (0, 0), (-1, -1), 7.5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 7.5),
+        ('GRID', (0, 1), (-1, -1), 0.6, colors.HexColor("#991b1b")),
+        ('BOX', (0, 0), (-1, -1), 1.5, colors.HexColor("#991b1b")),
+        ('TOPPADDING', (0, 0), (-1, -1), 2.5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2.5),
+        ('LEFTPADDING', (0, 0), (-1, -1), 3),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
     ]
     if not expense_items:
-        exp_table_style.append(('SPAN', (0, 1), (-1, 1)))
+        exp_table_style.append(('SPAN', (0, 2), (-1, 2)))
     else:
-        exp_table_style.append(('SPAN', (0, -1), (2, -1)))
-        exp_table_style.append(('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#991b1b"))) # HIGHLIGHTED Total Expense Cell!
-        exp_table_style.append(('LINEABOVE', (0, -1), (-1, -1), 2.0, colors.HexColor("#c59b27"))) # Gold accent line above total
+        exp_table_style.append(('SPAN', (0, -1), (1, -1)))
+        exp_table_style.append(('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#991b1b")))
+        exp_table_style.append(('LINEABOVE', (0, -1), (-1, -1), 1.2, colors.HexColor("#c59b27")))
 
     exp_table.setStyle(TableStyle(exp_table_style))
-    story.append(exp_table)
-    story.append(Spacer(1, 20))
 
-    # Imam Salary Section (Cards)
-    sec_imam_title = "امام کی تنخواہ کا ریکارڈ" if is_urdu else "Imam Salary Status (Mahnana Tankhah Tafseel)"
-    story.append(Paragraph(f"<b>{shape_ur(sec_imam_title, is_urdu)}</b>", section_style))
+    # Outer Row 1 Container (271pt + 10pt gap + 271pt = 552pt)
+    row1_container = Table([[inc_table, "", exp_table]], colWidths=[271, 10, 271])
+    row1_container.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(row1_container)
+    story.append(Spacer(1, 5))
+
+    # =========================================================================
+    # ROW 2 GRID: IMAM SALARY CARD (Left, 271pt) & LAND LEASE CARD (Right, 271pt)
+    # =========================================================================
+
+    # 2A. Left Box: Imam Salary Status
+    imam_sec_title = "امام کی تنخواہ (IMAM SALARY)" if is_urdu else "IMAM SALARY STATUS"
+    imam_card_rows = [
+        [Paragraph(f"<b>{shape_ur(imam_sec_title, is_urdu)}</b>", section_hdr_style), "", ""]
+    ]
+
     if not salaries.exists():
-        no_sal_msg = "اس عرصے کے لیے کوئی تنخواہ کا ریکارڈ نہیں مل سکا۔" if is_urdu else "No Imam salary records found for this period."
-        story.append(Paragraph(shape_ur(no_sal_msg, is_urdu), cell_style))
-        story.append(Spacer(1, 15))
+        no_sal_msg = "اس عرصے کے لیے کوئی تنخواہ کا ریکارڈ نہیں۔" if is_urdu else "No Imam salary records for this period."
+        imam_card_rows.append([Paragraph(shape_ur(no_sal_msg, is_urdu), cell_style), "", ""])
     else:
         for s in salaries:
-            if is_urdu:
-                status_text = "مکمل ادا شدہ" if s.is_fully_paid else "بقایا"
-            else:
-                status_text = "FULLY PAID" if s.is_fully_paid else "PENDING"
+            status_text = ("مکمل ادا" if s.is_fully_paid else "بقایا") if is_urdu else ("PAID" if s.is_fully_paid else "PENDING")
             status_color = "#a7f3d0" if s.is_fully_paid else "#fecaca"
             status_badge_style = ParagraphStyle(
-                'ImamStatus', parent=styles['Normal'], fontName=font_bold, fontSize=10.5, leading=13,
+                'ImamStS', parent=styles['Normal'], fontName=font_bold, fontSize=8.5, leading=11,
                 textColor=colors.HexColor(status_color), alignment=2
             )
+            imam_header_name_style = ParagraphStyle(
+                'ImamHdrNameS', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=12,
+                textColor=colors.white
+            )
 
-            st_prefix = "حالت: " if is_urdu else "STATUS: "
-            s_month_name = URDU_MONTH_NAMES.get(s.month_year.month, '') if is_urdu else s.month_year.strftime('%B')
-            s_period_str = f"{s_month_name} {s.month_year.year}"
-            period_label_text = f"مدت تنخواہ: {s_period_str}" if is_urdu else f"Salary Period: {s_period_str}"
+            # Imam Name & Status Badge Row
+            imam_card_rows.append([
+                Paragraph(f"<b>{shape_ur(s.imam_name, is_urdu)}</b>", imam_header_name_style),
+                "",
+                Paragraph(f"<b>{shape_ur(status_text, is_urdu)}</b>", status_badge_style)
+            ])
 
-            col1 = "ادائیگی کی تاریخ" if is_urdu else "Payment Date"
-            col2 = "ادا شدہ رقم" if is_urdu else "Amount Paid"
-            col3 = "تفصیل / اقساط" if is_urdu else "Notes / Details"
+            # Mini Table Header
+            col1 = "تاریخ" if is_urdu else "Date"
+            col2 = "رقم" if is_urdu else "Amount"
+            col3 = "اقساط / نوٹس" if is_urdu else "Notes"
+            imam_card_rows.append([
+                Paragraph(f"<b>{shape_ur(col1, is_urdu)}</b>", cell_hdr_style),
+                Paragraph(f"<b>{shape_ur(col2, is_urdu)}</b>", cell_hdr_style),
+                Paragraph(f"<b>{shape_ur(col3, is_urdu)}</b>", cell_hdr_style)
+            ])
 
-            salary_card_data = [
-                # Row 0: Imam Name & Status Badge
-                [
-                    Paragraph(f"<b>{shape_ur(s.imam_name, is_urdu)}</b>", imam_name_style),
-                    "",
-                    Paragraph(f"<b>{shape_ur(st_prefix + status_text, is_urdu)}</b>", status_badge_style)
-                ],
-                # Row 1: Subtitle details
-                [
-                    Paragraph(shape_ur(period_label_text, is_urdu), card_info_style),
-                    "",
-                    ""
-                ],
-                # Row 2: Table Header
-                [
-                    Paragraph(f"<b>{shape_ur(col1, is_urdu)}</b>", cell_hdr_style),
-                    Paragraph(f"<b>{shape_ur(col2, is_urdu)}</b>", cell_hdr_style),
-                    Paragraph(f"<b>{shape_ur(col3, is_urdu)}</b>", cell_hdr_style)
-                ]
-            ]
-            
             for p in s.installments.all().order_by('payment_date'):
-                note_str = p.notes or ("قسط ادائیگی" if is_urdu else "Installment Payment")
-                salary_card_data.append([
+                note_str = p.notes or ("قسط ادائیگی" if is_urdu else "Installment")
+                imam_card_rows.append([
                     Paragraph(p.payment_date.strftime('%d-%b-%Y'), cell_style),
-                    Paragraph(f"RS {p.amount_paid:,.0f}", cell_amount_style),
+                    Paragraph(f"RS {p.amount_paid:,.0f}", inc_amount_style),
                     Paragraph(shape_ur(note_str, is_urdu), cell_style)
                 ])
+
             if not s.installments.exists():
                 no_p_str = "ابھی کوئی ادائیگی نہیں ہوئی" if is_urdu else "No payments made yet"
-                salary_card_data.append([
-                    Paragraph(shape_ur(no_p_str, is_urdu), cell_style),
-                    "",
-                    ""
-                ])
+                imam_card_rows.append([Paragraph(shape_ur(no_p_str, is_urdu), cell_style), "", ""])
 
-            # Separate Summary Rows for Month and Year
+            # Footer summary row for Imam
             rem_m_color = "#1b5e20" if s.remaining_salary <= 0 else "#b71c1c"
-            rem_y_color = "#1b5e20" if s.remaining_yearly_salary <= 0 else "#b71c1c"
-
-            if is_urdu:
-                lbl_m_tot = "ماہانہ کل تنخواہ"
-                lbl_m_paid = "ماہانہ ادا شدہ"
-                lbl_m_rem = "ماہانہ بقایا تنخواہ"
-                
-                lbl_y_tot = "سالانہ کل تنخواہ"
-                lbl_y_paid = "کل ادا شدہ"
-                lbl_y_rem = "سالانہ بقایا تنخواہ"
-            else:
-                lbl_m_tot = "Monthly Total"
-                lbl_m_paid = "Paid (Month)"
-                lbl_m_rem = "Month Remaining Salary"
-                
-                lbl_y_tot = "Annual Total"
-                lbl_y_paid = "Total Paid (Year)"
-                lbl_y_rem = "Year Remaining Salary"
-
-            row_month = [
-                Paragraph(f"<b>{shape_ur(lbl_m_tot, is_urdu)}:</b><br/>RS {s.total_salary:,.0f}", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_m_paid, is_urdu)}:</b><br/><font color='#1b5e20'><b>RS {s.total_paid:,.0f}</b></font>", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_m_rem, is_urdu)}:</b><br/><font color='{rem_m_color}'><b>RS {s.remaining_salary:,.0f}</b></font>", card_footer_style),
-            ]
-
-            row_year = [
-                Paragraph(f"<b>{shape_ur(lbl_y_tot, is_urdu)}:</b><br/>RS {s.effective_yearly_salary:,.0f}", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_y_paid, is_urdu)}:</b><br/><font color='#1b5e20'><b>RS {s.total_paid:,.0f}</b></font>", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_y_rem, is_urdu)}:</b><br/><font color='{rem_y_color}'><b>RS {s.remaining_yearly_salary:,.0f}</b></font>", card_footer_style),
-            ]
-
-            salary_card_data.append(row_month)
-            salary_card_data.append(row_year)
-
-            salary_card_table = Table(salary_card_data, colWidths=[180, 180, 180])
-            
-            table_styles = [
-                ('SPAN', (0, 0), (1, 0)),
-                ('SPAN', (0, 1), (-1, 1)),
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#044e3a")), # Deep Emerald Header Block
-                ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor("#f0f7f3")), # Soft Mint Subheader
-                ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor("#1f2937")), # Dark Charcoal Table Header
-                ('BACKGROUND', (0, -2), (-1, -2), colors.HexColor("#d8ede2")), # Month summary mint tint
-                ('LINEABOVE', (0, -2), (-1, -2), 1.5, colors.HexColor("#044e3a")),
-                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#fff8e7")), # Year summary gold tint
-                ('LINEABOVE', (0, -1), (-1, -1), 1.5, colors.HexColor("#c59b27")),
-                ('BOX', (0, 0), (-1, -1), 1.8, colors.HexColor("#044e3a")), # Solid Deep Emerald Frame
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('TOPPADDING', (0, 0), (-1, -1), 7.5),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 7.5),
-            ]
-            if not s.installments.exists():
-                table_styles.append(('SPAN', (0, 3), (-1, 3)))
-            else:
-                table_styles.append(('GRID', (0, 2), (-1, -3), 1.0, colors.HexColor("#044e3a"))) # 1.0pt Solid Emerald Grid Lines!
-                
-            salary_card_table.setStyle(TableStyle(table_styles))
-            story.append(salary_card_table)
-            story.append(Spacer(1, 15))
-
-    # Land Lease Section (Cards)
-    sec_lease_title = "زمین کا ٹھیکہ (زمین کا کرایہ)" if is_urdu else "Land Lease Status (Zameen Theka Tafseel)"
-    story.append(Paragraph(f"<b>{shape_ur(sec_lease_title, is_urdu)}</b>", section_style))
-    if not leases.exists():
-        no_lse_msg = "اس عرصے کے لیے کوئی فعال ٹھیکہ ریکارڈ نہیں مل سکا۔" if is_urdu else "No active land leases found for this period."
-        story.append(Paragraph(shape_ur(no_lse_msg, is_urdu), cell_style))
-        story.append(Spacer(1, 15))
-    else:
-        for l in leases:
-            if is_urdu:
-                status_text = "مکمل ادا شدہ" if l.remaining_lease_amount <= 0 else "فعال"
-            else:
-                status_text = "FULLY PAID" if l.remaining_lease_amount <= 0 else "ACTIVE"
-            status_color = "#a7f3d0" if l.remaining_lease_amount <= 0 else "#fef08a"
-            status_badge_style = ParagraphStyle(
-                'LeaseStatus', parent=styles['Normal'], fontName=font_bold, fontSize=10.5, leading=13,
-                textColor=colors.HexColor(status_color), alignment=2
+            lbl_m_tot = "ماہانہ تنخواہ" if is_urdu else "Total Salary"
+            lbl_m_paid = "ادا شدہ" if is_urdu else "Paid"
+            lbl_m_rem = "بقایا" if is_urdu else "Remaining"
+            card_footer_style = ParagraphStyle(
+                'CardFS', parent=styles['Normal'], fontName=font_bold, fontSize=8, leading=10,
+                textColor=colors.HexColor("#0f172a")
             )
 
-            st_prefix = "حالت: " if is_urdu else "STATUS: "
+            imam_card_rows.append([
+                Paragraph(f"<b>{shape_ur(lbl_m_tot, is_urdu)}:</b> RS {s.total_salary:,.0f}", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_m_paid, is_urdu)}:</b> <font color='#1b5e20'>RS {s.total_paid:,.0f}</font>", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_m_rem, is_urdu)}:</b> <font color='{rem_m_color}'>RS {s.remaining_salary:,.0f}</font>", card_footer_style),
+            ])
 
-            if is_urdu:
-                st_m = URDU_MONTH_NAMES.get(l.start_date.month, '')
-                en_m = URDU_MONTH_NAMES.get(l.end_date.month, '')
-                period_str = f"{st_m} {l.start_date.year} - {en_m} {l.end_date.year}"
-                lbl_thekedar = "ٹھیکیدار"
-                lbl_phone = "فون / رابطہ"
-                lbl_area = "زمین کا رقبہ"
-                lbl_duration = "ٹھیکہ کی مدت"
-                lbl_period = "تاریخ کی مدت"
-                lbl_years = "سال"
-                tenant_name_ur = translate_user_input_to_urdu(l.tenant_name)
-                area_ur = translate_user_input_to_urdu(l.land_area)
-            else:
-                period_str = f"{l.start_date.strftime('%b %Y')} - {l.end_date.strftime('%b %Y')}"
-                lbl_thekedar = "Tenant"
-                lbl_phone = "Phone / Contact"
-                lbl_area = "Land Area"
-                lbl_duration = "Lease Duration"
-                lbl_period = "Lease Period"
-                lbl_years = "Years"
-                tenant_name_ur = l.tenant_name
-                area_ur = l.land_area
+    imam_table = Table(imam_card_rows, colWidths=[80, 75, 116])
+    imam_table_style = [
+        ('SPAN', (0, 0), (-1, 0)),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#044e3a")), # Emerald Header
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 1), (-1, -1), 0.5, colors.HexColor("#044e3a")),
+        ('BOX', (0, 0), (-1, -1), 1.5, colors.HexColor("#044e3a")),
+        ('TOPPADDING', (0, 0), (-1, -1), 2.2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2.2),
+        ('LEFTPADDING', (0, 0), (-1, -1), 3),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+    ]
 
-            tenant_phone = l.tenant_contact if l.tenant_contact else ("نہیں دیا گیا" if is_urdu else "N/A")
+    if not salaries.exists():
+        imam_table_style.append(('SPAN', (0, 1), (-1, 1)))
+    else:
+        # Style Imam Subheader (Row 1) & Table Header (Row 2)
+        imam_table_style.extend([
+            ('SPAN', (0, 1), (1, 1)),
+            ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor("#065f46")),
+            ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor("#1f2937")),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#d8ede2")),
+            ('LINEABOVE', (0, -1), (-1, -1), 1.0, colors.HexColor("#044e3a")),
+        ])
 
-            col1_l = "ادائیگی کی تاریخ" if is_urdu else "Payment Date"
-            col2_l = "وصول شدہ رقم" if is_urdu else "Amount Received"
-            col3_l = "تفصیل / نوٹس" if is_urdu else "Notes / Details"
+    imam_table.setStyle(TableStyle(imam_table_style))
 
-            thekedar_header_html = f"<b>{shape_ur(lbl_thekedar + ': ', is_urdu)}{shape_ur(tenant_name_ur, is_urdu)}</b><br/><font size='10' color='#fef08a'><b>📞 {shape_ur(lbl_phone + ': ', is_urdu)}</b>{tenant_phone}</font>"
+    # 2B. Right Box: Land Lease Status
+    lease_sec_title = "زمین کا ٹھیکہ (LAND LEASE)" if is_urdu else "LAND LEASE STATUS"
+    lease_card_rows = [
+        [Paragraph(f"<b>{shape_ur(lease_sec_title, is_urdu)}</b>", section_hdr_style), "", ""]
+    ]
 
-            # Create 3 distinct highlighted Stat Boxes for Area, Duration, and Period
-            spec_box_hdr_style = ParagraphStyle('SpecHdr', parent=styles['Normal'], fontName=font_bold, fontSize=9, leading=12, alignment=1)
-            spec_box_val_style = ParagraphStyle('SpecVal', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=15, alignment=1)
-            spec_box_per_style = ParagraphStyle('SpecPer', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=13, alignment=1)
+    if not leases.exists():
+        no_lse_msg = "اس عرصے کے لیے کوئی فعال ٹھیکہ نہیں۔" if is_urdu else "No active land leases for this period."
+        lease_card_rows.append([Paragraph(shape_ur(no_lse_msg, is_urdu), cell_style), "", ""])
+    else:
+        for l in leases:
+            status_text = ("مکمل ادا" if l.remaining_lease_amount <= 0 else "فعال") if is_urdu else ("PAID" if l.remaining_lease_amount <= 0 else "ACTIVE")
+            status_color = "#a7f3d0" if l.remaining_lease_amount <= 0 else "#fef08a"
+            status_badge_style = ParagraphStyle(
+                'LeaseStS', parent=styles['Normal'], fontName=font_bold, fontSize=8.5, leading=11,
+                textColor=colors.HexColor(status_color), alignment=2
+            )
+            tenant_name_style = ParagraphStyle(
+                'TenantNameS', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=12,
+                textColor=colors.white
+            )
 
-            # Box 1: Land Area (Warm Amber Gold Box)
-            p_b1_lbl = Paragraph(f"<b>{shape_ur(lbl_area, is_urdu)}</b>", ParagraphStyle('B1L', parent=spec_box_hdr_style, textColor=colors.HexColor("#92400e")))
-            p_b1_val = Paragraph(f"<b>{shape_ur(area_ur, is_urdu)}</b>", ParagraphStyle('B1V', parent=spec_box_val_style, textColor=colors.HexColor("#78350f")))
-            box1_table = Table([[p_b1_lbl], [p_b1_val]], colWidths=[166])
-            box1_table.setStyle(TableStyle([
-                ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#fef3c7")),
-                ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor("#d97706")),
-                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-                ('TOPPADDING', (0,0), (-1,-1), 4),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-            ]))
+            tenant_disp = translate_user_input_to_urdu(l.tenant_name) if is_urdu else l.tenant_name
+            area_disp = translate_user_input_to_urdu(l.land_area) if is_urdu else l.land_area
 
-            # Box 2: Lease Duration (Soft Sky Blue Box)
-            p_b2_lbl = Paragraph(f"<b>{shape_ur(lbl_duration, is_urdu)}</b>", ParagraphStyle('B2L', parent=spec_box_hdr_style, textColor=colors.HexColor("#075985")))
-            p_b2_val = Paragraph(f"<b>{l.duration_years} {shape_ur(lbl_years, is_urdu)}</b>", ParagraphStyle('B2V', parent=spec_box_val_style, textColor=colors.HexColor("#0369a1")))
-            box2_table = Table([[p_b2_lbl], [p_b2_val]], colWidths=[166])
-            box2_table.setStyle(TableStyle([
-                ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#e0f2fe")),
-                ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor("#0284c7")),
-                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-                ('TOPPADDING', (0,0), (-1,-1), 4),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-            ]))
+            # Tenant Name & Status Badge Row
+            lease_card_rows.append([
+                Paragraph(f"<b>{shape_ur(tenant_disp, is_urdu)} ({shape_ur(area_disp, is_urdu)})</b>", tenant_name_style),
+                "",
+                Paragraph(f"<b>{shape_ur(status_text, is_urdu)}</b>", status_badge_style)
+            ])
 
-            # Box 3: Lease Period (Fresh Mint Green Box)
-            p_b3_lbl = Paragraph(f"<b>{shape_ur(lbl_period, is_urdu)}</b>", ParagraphStyle('B3L', parent=spec_box_hdr_style, textColor=colors.HexColor("#166534")))
-            p_b3_val = Paragraph(f"<b>{shape_ur(period_str, is_urdu)}</b>", ParagraphStyle('B3V', parent=spec_box_per_style, textColor=colors.HexColor("#15803d")))
-            box3_table = Table([[p_b3_lbl], [p_b3_val]], colWidths=[174])
-            box3_table.setStyle(TableStyle([
-                ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#f0fdf4")),
-                ('BOX', (0,0), (-1,-1), 1.2, colors.HexColor("#16a34a")),
-                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-                ('TOPPADDING', (0,0), (-1,-1), 4),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-            ]))
+            # Mini Table Header
+            col1_l = "تاریخ" if is_urdu else "Date"
+            col2_l = "وصول رقم" if is_urdu else "Received"
+            col3_l = "نوٹس" if is_urdu else "Notes"
+            lease_card_rows.append([
+                Paragraph(f"<b>{shape_ur(col1_l, is_urdu)}</b>", cell_hdr_style),
+                Paragraph(f"<b>{shape_ur(col2_l, is_urdu)}</b>", cell_hdr_style),
+                Paragraph(f"<b>{shape_ur(col3_l, is_urdu)}</b>", cell_hdr_style)
+            ])
 
-            # Container row holding all 3 highlighted boxes side-by-side
-            spec_boxes_container = Table([[box1_table, box2_table, box3_table]], colWidths=[173, 173, 180])
-            spec_boxes_container.setStyle(TableStyle([
-                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-                ('TOPPADDING', (0,0), (-1,-1), 3),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 3),
-                ('LEFTPADDING', (0,0), (-1,-1), 0),
-                ('RIGHTPADDING', (0,0), (-1,-1), 0),
-            ]))
-
-            lease_card_data = [
-                # Row 0: Tenant Name & Phone Number (Col 0-1) + Status Badge (Col 2)
-                [
-                    Paragraph(thekedar_header_html, thekedar_name_style),
-                    "",
-                    Paragraph(f"<b>{shape_ur(st_prefix + status_text, is_urdu)}</b>", status_badge_style)
-                ],
-                # Row 1: Container Row with 3 Highlighted Boxes
-                [
-                    spec_boxes_container,
-                    "",
-                    ""
-                ],
-                # Row 2: Table Header
-                [
-                    Paragraph(f"<b>{shape_ur(col1_l, is_urdu)}</b>", cell_hdr_style),
-                    Paragraph(f"<b>{shape_ur(col2_l, is_urdu)}</b>", cell_hdr_style),
-                    Paragraph(f"<b>{shape_ur(col3_l, is_urdu)}</b>", cell_hdr_style)
-                ]
-            ]
-            
             for p in l.payments.all().order_by('payment_date'):
                 note_str = p.notes or ("ٹھیکہ قسط" if is_urdu else "Lease Payment")
-                lease_card_data.append([
+                lease_card_rows.append([
                     Paragraph(p.payment_date.strftime('%d-%b-%Y'), cell_style),
-                    Paragraph(f"RS {p.amount_received:,.0f}", cell_amount_style),
+                    Paragraph(f"RS {p.amount_received:,.0f}", inc_amount_style),
                     Paragraph(shape_ur(note_str, is_urdu), cell_style)
                 ])
+
             if not l.payments.exists():
                 no_lp_str = "ابھی کوئی ادائیگی موصول نہیں ہوئی" if is_urdu else "No payments received yet"
-                lease_card_data.append([
-                    Paragraph(shape_ur(no_lp_str, is_urdu), cell_style),
-                    "",
-                    ""
-                ])
+                lease_card_rows.append([Paragraph(shape_ur(no_lp_str, is_urdu), cell_style), "", ""])
 
-            # Bottom Summary Row with Large Totals
+            # Footer summary row for Lease
             rem_color = "#1b5e20" if l.remaining_lease_amount <= 0 else "#b71c1c"
             lbl_ta = "کل طے شدہ" if is_urdu else "Total Agreed"
-            lbl_tr_l = "کل وصول شدہ" if is_urdu else "Total Received"
+            lbl_tr_l = "وصول شدہ" if is_urdu else "Received"
             lbl_rem_l = "بقایا" if is_urdu else "Remaining"
+            card_footer_style = ParagraphStyle(
+                'CardFS', parent=styles['Normal'], fontName=font_bold, fontSize=8, leading=10,
+                textColor=colors.HexColor("#0f172a")
+            )
 
-            summary_row = [
-                Paragraph(f"<b>{shape_ur(lbl_ta, is_urdu)}:</b><br/><font size='11.5' color='#0f172a'><b>RS {l.total_agreed_amount:,.0f}</b></font>", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_tr_l, is_urdu)}:</b><br/><font size='11.5' color='#1b5e20'><b>RS {l.total_received:,.0f}</b></font>", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_rem_l, is_urdu)}:</b><br/><font size='11.5' color='{rem_color}'><b>RS {l.remaining_lease_amount:,.0f}</b></font>", card_footer_style)
-            ]
-            lease_card_data.append(summary_row)
+            lease_card_rows.append([
+                Paragraph(f"<b>{shape_ur(lbl_ta, is_urdu)}:</b> RS {l.total_agreed_amount:,.0f}", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_tr_l, is_urdu)}:</b> <font color='#1b5e20'>RS {l.total_received:,.0f}</font>", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_rem_l, is_urdu)}:</b> <font color='{rem_color}'>RS {l.remaining_lease_amount:,.0f}</font>", card_footer_style),
+            ])
 
-            lease_card_table = Table(lease_card_data, colWidths=[180, 180, 180])
-            
-            lease_table_styles = [
-                ('SPAN', (0, 0), (1, 0)),
-                ('SPAN', (0, 1), (-1, 1)),
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#856404")), # Metallic Gold Header Block
-                ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor("#fffdf5")), # Soft neutral background behind boxes
-                ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor("#1f2937")), # Dark Charcoal Table Header
-                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#fff8e7")), # Gold Summary Block
-                ('LINEABOVE', (0, -1), (-1, -1), 1.5, colors.HexColor("#c59b27")),
-                ('BOX', (0, 0), (-1, -1), 1.8, colors.HexColor("#c59b27")), # Solid Gold Frame
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('TOPPADDING', (0, 0), (-1, -1), 7.5),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 7.5),
-            ]
-            if not l.payments.exists():
-                lease_table_styles.append(('SPAN', (0, 3), (-1, 3)))
-            else:
-                lease_table_styles.append(('GRID', (0, 2), (-1, -2), 1.0, colors.HexColor("#c59b27"))) # 1.0pt Solid Gold Grid Lines!
-                
-            lease_card_table.setStyle(TableStyle(lease_table_styles))
-            story.append(lease_card_table)
-            story.append(Spacer(1, 15))
+    lease_table = Table(lease_card_rows, colWidths=[80, 75, 116])
+    lease_table_style = [
+        ('SPAN', (0, 0), (-1, 0)),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#856404")), # Metallic Gold Header
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 1), (-1, -1), 0.5, colors.HexColor("#856404")),
+        ('BOX', (0, 0), (-1, -1), 1.5, colors.HexColor("#856404")),
+        ('TOPPADDING', (0, 0), (-1, -1), 2.2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2.2),
+        ('LEFTPADDING', (0, 0), (-1, -1), 3),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+    ]
+
+    if not leases.exists():
+        lease_table_style.append(('SPAN', (0, 1), (-1, 1)))
+    else:
+        # Style Lease Subheader (Row 1) & Table Header (Row 2)
+        lease_table_style.extend([
+            ('SPAN', (0, 1), (1, 1)),
+            ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor("#a16207")),
+            ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor("#1f2937")),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#fff8e7")),
+            ('LINEABOVE', (0, -1), (-1, -1), 1.0, colors.HexColor("#c59b27")),
+        ])
+
+    lease_table.setStyle(TableStyle(lease_table_style))
+
+    # Outer Row 2 Container (271pt + 10pt gap + 271pt = 552pt)
+    row2_container = Table([[imam_table, "", lease_table]], colWidths=[271, 10, 271])
+    row2_container.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(row2_container)
 
     doc.build(story, onFirstPage=draw_islamic_pdf_background, onLaterPages=draw_islamic_pdf_background)
     buffer.seek(0)
@@ -2034,4 +1932,5 @@ def export_monthly_pdf(request, year=None, month=None):
     filename = f"Masjid_Detailed_Report_{selected_year}_{selected_month or 'annual'}_{pdf_lang}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
 
