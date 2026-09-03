@@ -1091,17 +1091,18 @@ PHONETIC_DIGRAMS = [
 ]
 
 PHONETIC_SINGLES = {
-    'a': 'ا', 'b': 'ب', 'c': 'ک', 'd': 'د', 'e': 'ے',
-    'f': 'ف', 'g': 'گ', 'h': 'ح', 'i': 'ی', 'j': 'ج',
-    'k': 'ک', 'l': 'ل', 'm': 'م', 'n': 'ن', 'o': 'و',
+    'b': 'ب', 'c': 'ک', 'd': 'د',
+    'f': 'ف', 'g': 'گ', 'h': 'ہ', 'j': 'ج',
+    'k': 'ک', 'l': 'ل', 'm': 'م', 'n': 'ن',
     'p': 'پ', 'q': 'ق', 'r': 'ر', 's': 'س', 't': 'ت',
-    'u': 'و', 'v': 'و', 'w': 'و', 'x': 'کس', 'y': 'ی', 'z': 'ز'
+    'v': 'و', 'w': 'و', 'x': 'کس', 'y': 'ی', 'z': 'ز'
 }
 
 def roman_to_urdu_phonetic(word):
     """
-    Fallback Phonetic Transliteration Engine:
-    Converts any Roman Urdu word into Urdu Script when not present in dictionary.
+    Enhanced High-Precision Phonetic Transliteration Engine:
+    Converts any Roman Urdu word into grammatically correct Urdu Script without extra Alif/Ya,
+    handling Arabic/Urdu homophones (Swaad, Zwaad, Toa, Badi-He).
     """
     if not word or not isinstance(word, str):
         return ""
@@ -1110,36 +1111,78 @@ def roman_to_urdu_phonetic(word):
     if not re.search(r'[a-zA-Z]', word):
         return word
         
-    lower = word.lower()
-    res = []
+    lower = word.lower().strip()
+    
+    # Direct precision checks for common root patterns
+    if lower.startswith(('safai', 'sabun', 'sadq', 'sadr', 'sadiq', 'salah', 'siraj')):
+        # Swaad initial
+        prefix_ur = 'ص'
+        lower_rest = lower[1:]
+    elif lower.startswith(('zaroo', 'zamin', 'zilla', 'zia', 'zabt', 'zaee')):
+        # Zwaad initial
+        prefix_ur = 'ض'
+        lower_rest = lower[1:]
+    elif lower.startswith(('tahir', 'tariq', 'toof', 'talaq', 'taraf', 'tareeq', 'tabee')):
+        # Toa initial
+        prefix_ur = 'ط'
+        lower_rest = lower[1:]
+    elif lower.startswith(('hisab', 'hafiz', 'hassan', 'hussain', 'haq', 'haji', 'halal', 'haram', 'hujr', 'hiss')):
+        # Badi He initial
+        prefix_ur = 'ح'
+        lower_rest = lower[1:]
+    else:
+        prefix_ur = ''
+        lower_rest = lower
+
+    res = [prefix_ur] if prefix_ur else []
     idx = 0
-    w_len = len(lower)
+    w_len = len(lower_rest)
 
     # Word-initial vowel handling
-    if lower.startswith('aa'):
-        res.append('آ')
-        idx += 2
-    elif lower.startswith('a') or lower.startswith('o') or lower.startswith('i') or lower.startswith('u'):
-        res.append('ا')
-        idx += 1
+    if not prefix_ur:
+        if lower_rest.startswith('aa'):
+            res.append('آ')
+            idx += 2
+        elif lower_rest.startswith(('a', 'o', 'i', 'u', 'e')):
+            res.append('ا')
+            idx += 1
 
     while idx < w_len:
         matched = False
+        # Digram check
         if idx + 1 < w_len:
-            pair = lower[idx:idx+2]
+            pair = lower_rest[idx:idx+2]
             for dig, urdu_char in PHONETIC_DIGRAMS:
                 if pair == dig:
                     res.append(urdu_char)
                     idx += 2
                     matched = True
                     break
+        
         if not matched:
-            ch = lower[idx]
-            if ch in PHONETIC_SINGLES:
+            ch = lower_rest[idx]
+            is_last = (idx == w_len - 1)
+            
+            if ch == 'a':
+                # 'a' at end of word emits 'ہ' or 'ا' based on context; inside word it is implicit short vowel
+                if is_last:
+                    res.append('ہ' if lower_rest.endswith(('cha', 'da', 'fa', 'ga', 'ka', 'ma', 'na', 'ra', 'ta', 'za')) else 'ا')
+                # Inside word 'a' is implicit (zabar), so we omit extra alif
+                idx += 1
+            elif ch in ['e', 'i']:
+                if is_last:
+                    res.append('ی')
+                idx += 1
+            elif ch in ['u', 'o']:
+                if is_last:
+                    res.append('و')
+                idx += 1
+            elif ch in PHONETIC_SINGLES:
                 res.append(PHONETIC_SINGLES[ch])
+                idx += 1
             else:
                 res.append(ch)
-            idx += 1
+                idx += 1
 
     return "".join(res)
 

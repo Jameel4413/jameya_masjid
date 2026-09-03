@@ -108,32 +108,47 @@ def register_urdu_fonts():
     global _URDU_FONT_REGISTERED
     if not _URDU_FONT_REGISTERED:
         local_font_dir = os.path.join(settings.BASE_DIR, 'donation', 'fonts')
+        local_nastaliq = os.path.join(local_font_dir, 'NotoNastaliqUrdu.ttf')
         local_reg = os.path.join(local_font_dir, 'tahoma.ttf')
         local_bold = os.path.join(local_font_dir, 'tahomabd.ttf')
 
-        font_paths = [
-            # 1. Bundled High-Precision Book Fonts (Fully compatible with ReportLab shaping)
-            (local_reg, local_bold),
-            # 2. Windows System Fonts
-            ("C:/Windows/Fonts/tahoma.ttf", "C:/Windows/Fonts/tahomabd.ttf"),
-            ("C:/Windows/Fonts/arial.ttf", "C:/Windows/Fonts/arialbd.ttf"),
-            ("C:/Windows/Fonts/segoeui.ttf", "C:/Windows/Fonts/segoeuib.ttf"),
-            # 3. Linux / Vercel Serverless System Fonts
-            ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
-            ("/usr/share/fonts/truetype/freefont/FreeSans.ttf", "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf"),
-        ]
-        for regular, bold in font_paths:
-            if os.path.exists(regular) and os.path.exists(bold):
-                try:
-                    pdfmetrics.registerFont(TTFont('UrduNaskh', regular))
-                    pdfmetrics.registerFont(TTFont('UrduNaskh-Bold', bold))
-                    pdfmetrics.registerFont(TTFont('UrduFont', regular))
-                    pdfmetrics.registerFont(TTFont('UrduFont-Bold', bold))
-                    pdfmetrics.registerFont(TTFont('UrduNastaliq', bold))
-                    _URDU_FONT_REGISTERED = True
-                    break
-                except Exception:
-                    pass
+        registered = False
+        if os.path.exists(local_nastaliq):
+            try:
+                pdfmetrics.registerFont(TTFont('UrduNastaliq', local_nastaliq))
+                pdfmetrics.registerFont(TTFont('UrduNaskh', local_nastaliq))
+                pdfmetrics.registerFont(TTFont('UrduNaskh-Bold', local_nastaliq))
+                pdfmetrics.registerFont(TTFont('UrduFont', local_nastaliq))
+                pdfmetrics.registerFont(TTFont('UrduFont-Bold', local_nastaliq))
+                _URDU_FONT_REGISTERED = True
+                registered = True
+            except Exception:
+                pass
+
+        if not registered:
+            font_paths = [
+                # 1. Bundled High-Precision Book Fonts
+                (local_reg, local_bold),
+                # 2. Windows System Fonts
+                ("C:/Windows/Fonts/tahoma.ttf", "C:/Windows/Fonts/tahomabd.ttf"),
+                ("C:/Windows/Fonts/arial.ttf", "C:/Windows/Fonts/arialbd.ttf"),
+                ("C:/Windows/Fonts/segoeui.ttf", "C:/Windows/Fonts/segoeuib.ttf"),
+                # 3. Linux / Vercel Serverless System Fonts
+                ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
+                ("/usr/share/fonts/truetype/freefont/FreeSans.ttf", "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf"),
+            ]
+            for regular, bold in font_paths:
+                if os.path.exists(regular) and os.path.exists(bold):
+                    try:
+                        pdfmetrics.registerFont(TTFont('UrduNaskh', regular))
+                        pdfmetrics.registerFont(TTFont('UrduNaskh-Bold', bold))
+                        pdfmetrics.registerFont(TTFont('UrduFont', regular))
+                        pdfmetrics.registerFont(TTFont('UrduFont-Bold', bold))
+                        pdfmetrics.registerFont(TTFont('UrduNastaliq', bold))
+                        _URDU_FONT_REGISTERED = True
+                        break
+                    except Exception:
+                        pass
 
         _URDU_FONT_REGISTERED = True
 
