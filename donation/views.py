@@ -1846,7 +1846,7 @@ def export_monthly_pdf(request, year=None, month=None):
         ])
     imam_table.setStyle(TableStyle(imam_table_style))
 
-    # 6B. Right: Ultra-Compact 3D Elevated Micro Card (140pt Width - Full-Text Labels, Stylish Installments)
+    # 6B. Right: Ultra-Compact 3D Elevated Micro Card (Strict 140pt Width Restored)
     lease_sec_title = "زمین کا ٹھیکہ" if is_urdu else "Zameen Ka Theka"
     card_font_size = 4.8
     card_leading = 5.8
@@ -1879,7 +1879,7 @@ def export_monthly_pdf(request, year=None, month=None):
     ]
 
     if not leases.exists():
-        no_lse_msg = "اس عرصے کے لیے کوئی فعال ٹھیکہ نہیں۔" if is_urdu else "No active leases recorded."
+        no_lse_msg = "اس عرصے کے لیے کوئی فعال ٹھیکہ نہیں" if is_urdu else "No active leases"
         card_rows.append([Paragraph(shape_ur(no_lse_msg, is_urdu), card_val_style), ""])
     else:
         for l in leases:
@@ -1930,10 +1930,10 @@ def export_monthly_pdf(request, year=None, month=None):
                 Paragraph(f"<font color='{rem_color}'><b>RS {l.remaining_lease_amount:,.0f}</b></font> ({shape_ur(status_text, is_urdu)})", card_val_style)
             ])
 
-            # Enhanced Installments Sub-Header Banner
+            # Enhanced Installments Sub-Header Banner (Strict 140pt Card Fit)
             inst_hdr = "اقساط کا ریکارڈ (INSTALLMENTS)" if is_urdu else "INSTALLMENTS RECORD"
             inst_hdr_style = ParagraphStyle(
-                'InstSubHdr', parent=styles['Normal'], fontName=font_bold, fontSize=4.6, leading=5.6, textColor=colors.HexColor("#fde047"), alignment=1
+                'InstSubHdr', parent=styles['Normal'], fontName=font_bold, fontSize=4.8, leading=5.8, textColor=colors.HexColor("#fde047"), alignment=1
             )
             inst_subhdr_idx = len(card_rows)
             card_rows.append([
@@ -1945,13 +1945,14 @@ def export_monthly_pdf(request, year=None, month=None):
                 note_str = p.notes or ("ٹھیکہ وصولی" if is_urdu else "Lease Payment")
                 note_trans = translate_user_input_to_urdu(note_str) if is_urdu else note_str
                 date_cell = Paragraph(f"<font color='#047857'><b>{p.payment_date.strftime('%d-%b-%Y')}</b></font>", card_val_style)
-                amt_cell = Paragraph(f"<font color='#15803d'><b>+RS {p.amount_received:,.0f}</b></font> <font color='#475569'>({shape_ur(note_trans, is_urdu)})</font>", card_val_style)
+                amt_cell = Paragraph(f"<font color='#15803d'><b>+RS {p.amount_received:,.0f}</b></font> <font color='#334155'>({shape_ur(note_trans, is_urdu)})</font>", card_val_style)
                 card_rows.append([date_cell, amt_cell])
             inst_end_idx = len(card_rows) - 1
 
             if not l.payments.exists():
-                no_lp_str = "کوئی ادائیگی موصول نہیں ہوئی" if is_urdu else "No payments received"
-                card_rows.append([Paragraph(shape_ur(no_lp_str, is_urdu), card_val_style), ""])
+                no_lp_str = "کوئی قسط موصول نہیں ہوئی" if is_urdu else "No payments received"
+                no_lp_cell = Paragraph(f"<font color='#b45309'><b>{shape_ur(no_lp_str, is_urdu)}</b></font>", card_val_style)
+                card_rows.append([no_lp_cell, ""])
 
     inner_table = Table(card_rows, colWidths=[40, 94])
     inner_table_style = [
@@ -1959,17 +1960,17 @@ def export_monthly_pdf(request, year=None, month=None):
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#047857")), # Emerald Main Banner
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor("#fffdf5")), # Soft Ivory
-        ('TOPPADDING', (0, 0), (-1, -1), 0.2),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 0.2),
-        ('LEFTPADDING', (0, 0), (-1, -1), 1.0),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 1.0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0.5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0.5),
+        ('LEFTPADDING', (0, 0), (-1, -1), 1.2),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 1.2),
     ]
 
     if leases.exists() and 'inst_subhdr_idx' in locals():
         inner_table_style.append(('BACKGROUND', (0, inst_subhdr_idx), (-1, inst_subhdr_idx), colors.HexColor("#065f46"))) # Forest Sub-Banner
         if inst_end_idx >= inst_start_idx:
             inner_table_style.append(('BACKGROUND', (0, inst_start_idx), (-1, inst_end_idx), colors.HexColor("#f0fdf4"))) # Soft Mint Tint
-            inner_table_style.append(('LINEBELOW', (0, inst_start_idx), (-1, inst_end_idx), 0.3, colors.HexColor("#bbf7d0")))
+            inner_table_style.append(('GRID', (0, inst_start_idx), (-1, inst_end_idx), 0.3, colors.HexColor("#bbf7d0"))) # Mint Grid Lines!
 
     for idx, row_item in enumerate(card_rows):
         if len(row_item) > 1 and row_item[1] == "":
@@ -1977,7 +1978,7 @@ def export_monthly_pdf(request, year=None, month=None):
 
     inner_table.setStyle(TableStyle(inner_table_style))
 
-    # Wrap in custom 3D Rounded Elevated Card Container (140pt Width)
+    # Wrap in custom 3D Rounded Elevated Card Container (Strict 140pt Width Restored)
     class ThreeDRoundedCard(Flowable):
         def __init__(self, content_table, width=140):
             super().__init__()
