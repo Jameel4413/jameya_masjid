@@ -1930,19 +1930,24 @@ def export_monthly_pdf(request, year=None, month=None):
                 Paragraph(f"<font color='{rem_color}'><b>RS {l.remaining_lease_amount:,.0f}</b></font> ({shape_ur(status_text, is_urdu)})", card_val_style)
             ])
 
-            # Enhanced Installments Sub-Header
-            inst_hdr = "اقساط کا ریکارڈ" if is_urdu else "Installments Record"
+            # Enhanced Installments Sub-Header Banner
+            inst_hdr = "اقساط کا ریکارڈ (INSTALLMENTS)" if is_urdu else "INSTALLMENTS RECORD"
+            inst_hdr_style = ParagraphStyle(
+                'InstSubHdr', parent=styles['Normal'], fontName=font_bold, fontSize=4.6, leading=5.6, textColor=colors.HexColor("#fde047"), alignment=1
+            )
+            inst_subhdr_idx = len(card_rows)
             card_rows.append([
-                Paragraph(f"<font color='#047857'><b>• {shape_ur(inst_hdr, is_urdu)}</b></font>", ParagraphStyle('InstSubHdr', parent=card_lbl_style, fontSize=4.6, leading=5.6)), ""
+                Paragraph(f"<b>{shape_ur(inst_hdr, is_urdu)}</b>", inst_hdr_style), ""
             ])
 
+            inst_start_idx = len(card_rows)
             for p in l.payments.all().order_by('payment_date'):
                 note_str = p.notes or ("ٹھیکہ وصولی" if is_urdu else "Lease Payment")
                 note_trans = translate_user_input_to_urdu(note_str) if is_urdu else note_str
-                card_rows.append([
-                    Paragraph(f"• {p.payment_date.strftime('%d-%b-%Y')}", card_val_style),
-                    Paragraph(f"<font color='#15803d'><b>RS {p.amount_received:,.0f}</b></font> <font color='#475569'>({shape_ur(note_trans, is_urdu)})</font>", card_val_style)
-                ])
+                date_cell = Paragraph(f"<font color='#047857'><b>{p.payment_date.strftime('%d-%b-%Y')}</b></font>", card_val_style)
+                amt_cell = Paragraph(f"<font color='#15803d'><b>+RS {p.amount_received:,.0f}</b></font> <font color='#475569'>({shape_ur(note_trans, is_urdu)})</font>", card_val_style)
+                card_rows.append([date_cell, amt_cell])
+            inst_end_idx = len(card_rows) - 1
 
             if not l.payments.exists():
                 no_lp_str = "کوئی ادائیگی موصول نہیں ہوئی" if is_urdu else "No payments received"
@@ -1951,14 +1956,20 @@ def export_monthly_pdf(request, year=None, month=None):
     inner_table = Table(card_rows, colWidths=[40, 94])
     inner_table_style = [
         ('SPAN', (0, 0), (-1, 0)),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#047857")), # Emerald Banner
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#047857")), # Emerald Main Banner
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor("#fffdf5")), # Crisp Soft Ivory
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor("#fffdf5")), # Soft Ivory
         ('TOPPADDING', (0, 0), (-1, -1), 0.2),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0.2),
         ('LEFTPADDING', (0, 0), (-1, -1), 1.0),
         ('RIGHTPADDING', (0, 0), (-1, -1), 1.0),
     ]
+
+    if leases.exists() and 'inst_subhdr_idx' in locals():
+        inner_table_style.append(('BACKGROUND', (0, inst_subhdr_idx), (-1, inst_subhdr_idx), colors.HexColor("#065f46"))) # Forest Sub-Banner
+        if inst_end_idx >= inst_start_idx:
+            inner_table_style.append(('BACKGROUND', (0, inst_start_idx), (-1, inst_end_idx), colors.HexColor("#f0fdf4"))) # Soft Mint Tint
+            inner_table_style.append(('LINEBELOW', (0, inst_start_idx), (-1, inst_end_idx), 0.3, colors.HexColor("#bbf7d0")))
 
     for idx, row_item in enumerate(card_rows):
         if len(row_item) > 1 and row_item[1] == "":
