@@ -1778,8 +1778,13 @@ def export_monthly_pdf(request, year=None, month=None):
                 no_p_str = "کوئی قسط کی ادائیگی نہیں ہوئی" if is_urdu else "No installments"
                 imam_card_rows.append([Paragraph(shape_ur(no_p_str, is_urdu), cell_style), "", ""])
 
-            rem_m_color = "#1b5e20" if s.remaining_salary <= 0 else "#b71c1c"
-            rem_y_color = "#1b5e20" if s.remaining_yearly_salary <= 0 else "#b71c1c"
+            rem_m_color = "#065f46" if s.remaining_salary <= 0 else "#991b1b"
+            rem_m_bg = "#a7f3d0" if s.remaining_salary <= 0 else "#fee2e2"
+            rem_m_border = "#059669" if s.remaining_salary <= 0 else "#dc2626"
+
+            rem_y_color = "#065f46" if s.remaining_yearly_salary <= 0 else "#9a3412"
+            rem_y_bg = "#a7f3d0" if s.remaining_yearly_salary <= 0 else "#ffedd5"
+            rem_y_border = "#059669" if s.remaining_yearly_salary <= 0 else "#ea580c"
 
             lbl_m_tot = "ماهانہ کل تنخواہ" if is_urdu else "Monthly Salary"
             lbl_m_paid = "کل ادا شد" if is_urdu else "Total Paid"
@@ -1791,19 +1796,25 @@ def export_monthly_pdf(request, year=None, month=None):
             card_footer_style = ParagraphStyle(
                 'CardFS5', parent=styles['Normal'], fontName=font_bold, fontSize=tbl_font_size, leading=tbl_leading, textColor=colors.HexColor("#0f172a")
             )
+            card_footer_m_rem_style = ParagraphStyle(
+                'CardFSMRem', parent=styles['Normal'], fontName=font_bold, fontSize=tbl_font_size + 0.5, leading=tbl_leading + 0.5, textColor=colors.HexColor(rem_m_color), alignment=2
+            )
+            card_footer_y_rem_style = ParagraphStyle(
+                'CardFSYRem', parent=styles['Normal'], fontName=font_bold, fontSize=tbl_font_size + 0.5, leading=tbl_leading + 0.5, textColor=colors.HexColor(rem_y_color), alignment=2
+            )
 
-            # Footer Row 1: Monthly Breakdown (Monthly Salary | Total Paid | Monthly Remaining)
+            # Footer Row 1: Monthly Breakdown (Monthly Salary | Total Paid | Monthly Remaining HIGHLIGHTED)
             imam_card_rows.append([
                 Paragraph(f"<b>{shape_ur(lbl_m_tot, is_urdu)}:</b> RS {s.total_salary:,.0f}", card_footer_style),
                 Paragraph(f"<b>{shape_ur(lbl_m_paid, is_urdu)}:</b> <font color='#1b5e20'>RS {s.total_paid:,.0f}</font>", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_m_rem, is_urdu)}:</b> <font color='{rem_m_color}'>RS {s.remaining_salary:,.0f}</font>", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_m_rem, is_urdu)}:</b> RS {s.remaining_salary:,.0f}", card_footer_m_rem_style),
             ])
 
-            # Footer Row 2: Yearly Breakdown (Yearly Salary | Yearly Remaining)
+            # Footer Row 2: Yearly Breakdown (Yearly Salary | Yearly Remaining HIGHLIGHTED)
             imam_card_rows.append([
                 Paragraph(f"<b>{shape_ur(lbl_y_tot, is_urdu)}:</b> RS {s.effective_yearly_salary:,.0f}", card_footer_style),
                 "",
-                Paragraph(f"<b>{shape_ur(lbl_y_rem, is_urdu)}:</b> <font color='{rem_y_color}'>RS {s.remaining_yearly_salary:,.0f}</font>", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_y_rem, is_urdu)}:</b> RS {s.remaining_yearly_salary:,.0f}", card_footer_y_rem_style),
             ])
 
     imam_table = Table(imam_card_rows, colWidths=[100, 152, 100])
@@ -1827,9 +1838,14 @@ def export_monthly_pdf(request, year=None, month=None):
             ('SPAN', (0, -1), (1, -1)),
             ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor("#065f46")),
             ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor("#1f2937")),
-            ('BACKGROUND', (0, -2), (-1, -1), colors.HexColor("#d8ede2")),
+            ('BACKGROUND', (0, -2), (1, -1), colors.HexColor("#e2e8f0")),
+            ('BACKGROUND', (2, -2), (2, -2), colors.HexColor(rem_m_bg)),
+            ('BOX', (2, -2), (2, -2), 1.0, colors.HexColor(rem_m_border)),
+            ('BACKGROUND', (2, -1), (2, -1), colors.HexColor(rem_y_bg)),
+            ('BOX', (2, -1), (2, -1), 1.0, colors.HexColor(rem_y_border)),
             ('LINEABOVE', (0, -2), (-1, -2), 1.0, colors.HexColor("#044e3a")),
         ])
+    imam_table.setStyle(TableStyle(imam_table_style))
     imam_table.setStyle(TableStyle(imam_table_style))
 
     # 6B. Right: Ultra-Compact Micro Land Lease Card (190pt Width - Super Dense & Fine Font)
