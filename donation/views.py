@@ -1846,12 +1846,12 @@ def export_monthly_pdf(request, year=None, month=None):
         ])
     imam_table.setStyle(TableStyle(imam_table_style))
 
-    # 6B. Right: 3D Elevated Rounded Card (190pt Width - 6pt Rounded Corners, Drop Shadow, 6.0pt High-Readability Font)
-    lease_sec_title = "زمین کے ٹھیکے کا رکارڈ (LAND LEASE)" if is_urdu else "LAND LEASE AUDIT"
-    card_font_size = 6.0
-    card_leading = 8.0
-    card_hdr_size = 6.5
-    card_hdr_leading = 8.5
+    # 6B. Right: Ultra-Compact 3D Elevated Micro Card (155pt Width - 5.0pt Crisp Font, Micro 0.2pt Padding)
+    lease_sec_title = "زمین کا ٹھیکہ (LAND LEASE)" if is_urdu else "LAND LEASE AUDIT"
+    card_font_size = 5.0
+    card_leading = 6.2
+    card_hdr_size = 5.5
+    card_hdr_leading = 6.8
 
     card_lbl_style = ParagraphStyle(
         'CardLbl', parent=styles['Normal'], fontName=font_bold if is_urdu else font_bold, fontSize=card_font_size, leading=card_leading, textColor=colors.HexColor("#78350f")
@@ -1882,13 +1882,13 @@ def export_monthly_pdf(request, year=None, month=None):
             dur_str = f"{start_str} تا {end_str}" if is_urdu else f"{start_str} to {end_str}"
             rem_color = "#15803d" if l.remaining_lease_amount <= 0 else "#b91c1c"
 
-            lbl_thk = "ٹھیکیدار کا نام:" if is_urdu else "Tenant Name:"
-            lbl_cnt = "رابطہ / فون:" if is_urdu else "Contact Phone:"
-            lbl_ara = "زمین کا رقبہ:" if is_urdu else "Land Area:"
-            lbl_dur = "مدت ٹھیکہ:" if is_urdu else "Lease Period:"
-            lbl_ta = "طے شدہ رقم:" if is_urdu else "Agreed Amount:"
-            lbl_tr_l = "وصول شدہ:" if is_urdu else "Total Received:"
-            lbl_rem_l = "باقی بقایا:" if is_urdu else "Remaining:"
+            lbl_thk = "ٹھیکیدار:" if is_urdu else "Tenant:"
+            lbl_cnt = "رابطہ:" if is_urdu else "Phone:"
+            lbl_ara = "رقبہ:" if is_urdu else "Area:"
+            lbl_dur = "مدت:" if is_urdu else "Period:"
+            lbl_ta = "طے:" if is_urdu else "Agreed:"
+            lbl_tr_l = "وصول:" if is_urdu else "Recd:"
+            lbl_rem_l = "بقایا:" if is_urdu else "Rem:"
 
             card_rows.append([
                 Paragraph(f"<b>{shape_ur(lbl_thk, is_urdu)}</b>", card_lbl_style),
@@ -1922,7 +1922,7 @@ def export_monthly_pdf(request, year=None, month=None):
             # Installments Sub-Header
             inst_hdr = "اقساط کی تفصیلات (INSTALLMENTS)" if is_urdu else "INSTALLMENTS RECORD"
             card_rows.append([
-                Paragraph(f"<b><u>{shape_ur(inst_hdr, is_urdu)}</u></b>", ParagraphStyle('InstSubHdr', parent=card_lbl_style, fontSize=6.0)), ""
+                Paragraph(f"<b><u>{shape_ur(inst_hdr, is_urdu)}</u></b>", ParagraphStyle('InstSubHdr', parent=card_lbl_style, fontSize=5.0)), ""
             ])
 
             for p in l.payments.all().order_by('payment_date'):
@@ -1937,16 +1937,16 @@ def export_monthly_pdf(request, year=None, month=None):
                 no_lp_str = "کوئی ادائیگی موصول نہیں ہوئی" if is_urdu else "No payments received"
                 card_rows.append([Paragraph(shape_ur(no_lp_str, is_urdu), card_val_style), ""])
 
-    inner_table = Table(card_rows, colWidths=[55, 125])
+    inner_table = Table(card_rows, colWidths=[38, 112])
     inner_table_style = [
         ('SPAN', (0, 0), (-1, 0)),
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#047857")), # Emerald Banner
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor("#fffdf5")), # Crisp Soft Ivory
-        ('TOPPADDING', (0, 0), (-1, -1), 0.5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 0.5),
-        ('LEFTPADDING', (0, 0), (-1, -1), 1.5),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 1.5),
+        ('TOPPADDING', (0, 0), (-1, -1), 0.2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0.2),
+        ('LEFTPADDING', (0, 0), (-1, -1), 1.0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 1.0),
     ]
 
     for idx, row_item in enumerate(card_rows):
@@ -1957,39 +1957,39 @@ def export_monthly_pdf(request, year=None, month=None):
 
     # Wrap in custom 3D Rounded Elevated Card Container
     class ThreeDRoundedCard(Flowable):
-        def __init__(self, content_table, width=190):
+        def __init__(self, content_table, width=155):
             super().__init__()
             self.content_table = content_table
             self.width = width
             self.height = 0
 
         def wrap(self, availWidth, availHeight):
-            w, h = self.content_table.wrap(self.width - 8, availHeight)
-            self.height = h + 8
+            w, h = self.content_table.wrap(self.width - 6, availHeight)
+            self.height = h + 6
             return self.width, self.height
 
         def draw(self):
             c = self.canv
             w = self.width
             h = self.height
-            r = 6.0
+            r = 5.0
 
             # 1. 3D Drop Shadow Effect
             c.setFillColor(colors.HexColor("#cbd5e1"))
-            c.roundRect(3, -3, w - 3, h - 3, r, fill=1, stroke=0)
+            c.roundRect(2.5, -2.5, w - 2.5, h - 2.5, r, fill=1, stroke=0)
 
             # 2. Card Outer Frame (Soft Ivory background, Emerald Green stroke)
             c.setFillColor(colors.HexColor("#fffdf5"))
             c.setStrokeColor(colors.HexColor("#047857"))
-            c.setLineWidth(1.2)
-            c.roundRect(0, 0, w - 3, h - 3, r, fill=1, stroke=1)
+            c.setLineWidth(1.0)
+            c.roundRect(0, 0, w - 2.5, h - 2.5, r, fill=1, stroke=1)
 
             # 3. Draw inner table
-            self.content_table.drawOn(c, 2, 2)
+            self.content_table.drawOn(c, 1.5, 1.5)
 
-    lease_table = ThreeDRoundedCard(inner_table, width=190)
+    lease_table = ThreeDRoundedCard(inner_table, width=155)
 
-    row3_container = Table([[imam_table, "", lease_table]], colWidths=[352, 10, 190])
+    row3_container = Table([[imam_table, "", lease_table]], colWidths=[377, 20, 155])
     row3_container.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('LEFTPADDING', (0, 0), (-1, -1), 0),
