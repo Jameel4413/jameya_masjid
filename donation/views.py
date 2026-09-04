@@ -2042,6 +2042,9 @@ def export_monthly_pdf(request, year=None, month=None):
     response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
     filename = f"Masjid_Audit_Statement_{selected_year}_{selected_month or 'annual'}_{pdf_lang}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
     return response
 
 
