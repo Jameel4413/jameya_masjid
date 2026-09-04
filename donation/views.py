@@ -1846,8 +1846,8 @@ def export_monthly_pdf(request, year=None, month=None):
         ])
     imam_table.setStyle(TableStyle(imam_table_style))
 
-    # 6B. Right: Ultra-Compact 3D Elevated Micro Card (Strict 140pt Width Restored)
-    lease_sec_title = "زمین کا ٹھیکہ" if is_urdu else "Zameen Ka Theka"
+    # 6B. Right: Ultra-Compact 3D Elevated Micro Card (Strict 140pt Width - Premium Decor & Scramble-Free Installment Notes)
+    lease_sec_title = "زرعی زمین کا ٹھیکہ" if is_urdu else "Agricultural Land Lease"
     card_font_size = 4.8
     card_leading = 5.8
     card_hdr_size = 5.2
@@ -1868,18 +1868,18 @@ def export_monthly_pdf(request, year=None, month=None):
         hdr_total_str = f"RS {first_lease.total_agreed_amount:,.0f}"
         hdr_rem_str = f"RS {first_lease.remaining_lease_amount:,.0f}"
         if is_urdu:
-            hdr_content = f"<b>{shape_ur(lease_sec_title, is_urdu)}</b><br/><font size='4.0' color='#fef08a'><b>{shape_ur('طے:', is_urdu)} {hdr_total_str} | {shape_ur('بقایا:', is_urdu)} {hdr_rem_str}</b></font>"
+            hdr_content = f"<b>❖ {shape_ur(lease_sec_title, is_urdu)} ❖</b><br/><font size='4.0' color='#fef08a'><b>{shape_ur('طے:', is_urdu)} {hdr_total_str} | {shape_ur('بقایا:', is_urdu)} {hdr_rem_str}</b></font>"
         else:
-            hdr_content = f"<b>{lease_sec_title}</b><br/><font size='4.0' color='#fef08a'><b>Agreed: {hdr_total_str} | Rem: {hdr_rem_str}</b></font>"
+            hdr_content = f"<b>❖ {lease_sec_title} ❖</b><br/><font size='4.0' color='#fef08a'><b>Agreed: {hdr_total_str} | Rem: {hdr_rem_str}</b></font>"
     else:
-        hdr_content = f"<b>{shape_ur(lease_sec_title, is_urdu)}</b>"
+        hdr_content = f"<b>❖ {shape_ur(lease_sec_title, is_urdu)} ❖</b>"
 
     card_rows = [
         [Paragraph(hdr_content, card_hdr_style), ""]
     ]
 
     if not leases.exists():
-        no_lse_msg = "اس عرصے کے لیے کوئی فعال ٹھیکہ نہیں" if is_urdu else "No active leases"
+        no_lse_msg = "اس عرصے کے لیے کوئی فعال ٹھیکہ درج نہیں" if is_urdu else "No active leases recorded"
         card_rows.append([Paragraph(shape_ur(no_lse_msg, is_urdu), card_val_style), ""])
     else:
         for l in leases:
@@ -1930,8 +1930,8 @@ def export_monthly_pdf(request, year=None, month=None):
                 Paragraph(f"<font color='{rem_color}'><b>RS {l.remaining_lease_amount:,.0f}</b></font> ({shape_ur(status_text, is_urdu)})", card_val_style)
             ])
 
-            # Enhanced Installments Sub-Header Banner (Strict 140pt Card Fit)
-            inst_hdr = "اقساط کا ریکارڈ (INSTALLMENTS)" if is_urdu else "INSTALLMENTS RECORD"
+            # Enhanced Installments Sub-Header Banner (Executive Gold Banner on Dark Forest)
+            inst_hdr = "❖ اقساط کا تفصیلی ریکارڈ ❖" if is_urdu else "❖ INSTALLMENTS LEDGER ❖"
             inst_hdr_style = ParagraphStyle(
                 'InstSubHdr', parent=styles['Normal'], fontName=font_bold, fontSize=4.8, leading=5.8, textColor=colors.HexColor("#fde047"), alignment=1
             )
@@ -1942,10 +1942,23 @@ def export_monthly_pdf(request, year=None, month=None):
 
             inst_start_idx = len(card_rows)
             for p in l.payments.all().order_by('payment_date'):
-                note_str = p.notes or ("ٹھیکہ وصولی" if is_urdu else "Lease Payment")
-                note_trans = translate_user_input_to_urdu(note_str) if is_urdu else note_str
+                note_raw = p.notes.strip() if p.notes else ""
+                note_trans = translate_user_input_to_urdu(note_raw) if note_raw else ("ٹھیکہ وصولی" if is_urdu else "Lease Payment")
+                
                 date_cell = Paragraph(f"<font color='#047857'><b>{p.payment_date.strftime('%d-%b-%Y')}</b></font>", card_val_style)
-                amt_cell = Paragraph(f"<font color='#15803d'><b>+RS {p.amount_received:,.0f}</b></font> <font color='#334155'>({shape_ur(note_trans, is_urdu)})</font>", card_val_style)
+                
+                if is_urdu:
+                    amt_cell = Paragraph(
+                        f"<font color='#15803d'><b>+RS {p.amount_received:,.0f}</b></font><br/>"
+                        f"<font color='#475569'><b>نوٹ: {shape_ur(note_trans, is_urdu)}</b></font>",
+                        card_val_style
+                    )
+                else:
+                    amt_cell = Paragraph(
+                        f"<font color='#15803d'><b>+RS {p.amount_received:,.0f}</b></font><br/>"
+                        f"<font color='#475569'>Note: {note_trans}</font>",
+                        card_val_style
+                    )
                 card_rows.append([date_cell, amt_cell])
             inst_end_idx = len(card_rows) - 1
 
@@ -1954,7 +1967,7 @@ def export_monthly_pdf(request, year=None, month=None):
                 no_lp_cell = Paragraph(f"<font color='#b45309'><b>{shape_ur(no_lp_str, is_urdu)}</b></font>", card_val_style)
                 card_rows.append([no_lp_cell, ""])
 
-    inner_table = Table(card_rows, colWidths=[40, 94])
+    inner_table = Table(card_rows, colWidths=[42, 92])
     inner_table_style = [
         ('SPAN', (0, 0), (-1, 0)),
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#047857")), # Emerald Main Banner
