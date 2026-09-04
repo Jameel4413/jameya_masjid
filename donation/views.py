@@ -1368,11 +1368,12 @@ def export_monthly_pdf(request, year=None, month=None):
         })
 
     for inc in weekly_incomes:
-        source_disp = DAY_TYPE_URDU.get(inc.get_day_type_display(), inc.get_day_type_display()) if is_urdu else inc.get_day_type_display()
+        source_disp = DAY_TYPE_URDU.get(inc.get_day_type_display(), translate_user_input_to_urdu(inc.get_day_type_display())) if is_urdu else inc.get_day_type_display()
+        notes_disp = translate_user_input_to_urdu(inc.notes) if (is_urdu and inc.notes and inc.notes.strip() != "-") else (inc.notes or "-")
         income_items.append({
             'date': inc.date,
             'source': source_disp,
-            'notes': inc.notes or "-",
+            'notes': notes_disp,
             'amount': inc.amount,
         })
     income_items.sort(key=lambda x: x['date'])
@@ -1380,8 +1381,9 @@ def export_monthly_pdf(request, year=None, month=None):
     # Combine ALL Expense Items (100% full dataset in 4 distinct fields: Date, Category, Description, Amount)
     expense_items = []
     for exp in expenses:
-        cat_disp = EXPENSE_CAT_URDU.get(exp.get_category_display(), exp.get_category_display()) if is_urdu else exp.get_category_display()
-        desc_disp = exp.description if (exp.description and exp.description.strip() != "-") else "-"
+        cat_disp = EXPENSE_CAT_URDU.get(exp.get_category_display(), translate_user_input_to_urdu(exp.get_category_display())) if is_urdu else exp.get_category_display()
+        raw_desc = exp.description if (exp.description and exp.description.strip() != "-") else "-"
+        desc_disp = translate_user_input_to_urdu(raw_desc) if (is_urdu and raw_desc != "-") else raw_desc
         expense_items.append({
             'date': exp.date,
             'category': cat_disp,
@@ -1393,7 +1395,8 @@ def export_monthly_pdf(request, year=None, month=None):
         cat_disp = "امام کی تنخواہ" if is_urdu else "Imam Salary"
         if is_urdu:
             sm_name = URDU_MONTH_NAMES.get(sal.salary_record.month_year.month, '')
-            desc_disp = f"قسط: {translate_user_input_to_urdu(sal.salary_record.imam_name)} ({sm_name} {sal.salary_record.month_year.year})"
+            notes_str = f" - {translate_user_input_to_urdu(sal.notes)}" if sal.notes else ""
+            desc_disp = f"قسط: {translate_user_input_to_urdu(sal.salary_record.imam_name)} ({sm_name} {sal.salary_record.month_year.year}){notes_str}"
         else:
             desc_disp = f"Installment: {sal.salary_record.imam_name} ({sal.salary_record.month_year.strftime('%b %Y')})"
         expense_items.append({
