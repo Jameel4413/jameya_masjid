@@ -1960,12 +1960,16 @@ def export_monthly_pdf(request, year=None, month=None):
                         card_val_style
                     )
                 card_rows.append([date_cell, amt_cell])
-            inst_end_idx = len(card_rows) - 1
 
             if not l.payments.exists():
                 no_lp_str = "کوئی قسط موصول نہیں ہوئی" if is_urdu else "No payments received"
                 no_lp_cell = Paragraph(f"<font color='#b45309'><b>{shape_ur(no_lp_str, is_urdu)}</b></font>", card_val_style)
                 card_rows.append([no_lp_cell, ""])
+
+            inst_end_idx = len(card_rows) - 1
+            if 'inst_ranges' not in locals():
+                inst_ranges = []
+            inst_ranges.append((inst_subhdr_idx, inst_start_idx, inst_end_idx))
 
     inner_table = Table(card_rows, colWidths=[42, 92])
     inner_table_style = [
@@ -1979,11 +1983,12 @@ def export_monthly_pdf(request, year=None, month=None):
         ('RIGHTPADDING', (0, 0), (-1, -1), 1.2),
     ]
 
-    if leases.exists() and 'inst_subhdr_idx' in locals():
-        inner_table_style.append(('BACKGROUND', (0, inst_subhdr_idx), (-1, inst_subhdr_idx), colors.HexColor("#065f46"))) # Forest Sub-Banner
-        if inst_end_idx >= inst_start_idx:
-            inner_table_style.append(('BACKGROUND', (0, inst_start_idx), (-1, inst_end_idx), colors.HexColor("#f0fdf4"))) # Soft Mint Tint
-            inner_table_style.append(('GRID', (0, inst_start_idx), (-1, inst_end_idx), 0.3, colors.HexColor("#bbf7d0"))) # Mint Grid Lines!
+    if 'inst_ranges' in locals():
+        for s_idx, start_i, end_i in inst_ranges:
+            inner_table_style.append(('BACKGROUND', (0, s_idx), (-1, s_idx), colors.HexColor("#065f46"))) # Forest Sub-Banner
+            if end_i >= start_i:
+                inner_table_style.append(('BACKGROUND', (0, start_i), (-1, end_i), colors.HexColor("#f0fdf4"))) # Soft Mint Tint
+                inner_table_style.append(('GRID', (0, start_i), (-1, end_i), 0.3, colors.HexColor("#bbf7d0"))) # Mint Grid Lines!
 
     for idx, row_item in enumerate(card_rows):
         if len(row_item) > 1 and row_item[1] == "":
