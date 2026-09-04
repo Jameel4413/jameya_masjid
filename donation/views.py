@@ -1278,9 +1278,12 @@ def export_monthly_pdf(request, year=None, month=None):
 
     font_bism = 'UrduNaskh-Bold' if 'UrduNaskh-Bold' in registered_fonts else ('UrduFont-Bold' if 'UrduFont-Bold' in registered_fonts else 'Helvetica-Bold')
 
+    urdu_font_normal = 'UrduNastaliq' if 'UrduNastaliq' in registered_fonts else ('UrduFont' if 'UrduFont' in registered_fonts else 'Helvetica')
+    urdu_font_bold = 'UrduNastaliq' if 'UrduNastaliq' in registered_fonts else ('UrduFont-Bold' if 'UrduFont-Bold' in registered_fonts else 'Helvetica-Bold')
+
     if is_urdu:
-        font_normal = 'UrduNastaliq' if 'UrduNastaliq' in registered_fonts else ('UrduFont' if 'UrduFont' in registered_fonts else 'Helvetica')
-        font_bold = 'UrduNastaliq' if 'UrduNastaliq' in registered_fonts else ('UrduFont-Bold' if 'UrduFont-Bold' in registered_fonts else 'Helvetica-Bold')
+        font_normal = urdu_font_normal
+        font_bold = urdu_font_bold
     else:
         font_normal = 'Helvetica'
         font_bold = 'Helvetica-Bold'
@@ -1860,7 +1863,7 @@ def export_monthly_pdf(request, year=None, month=None):
         'CardVal', parent=styles['Normal'], fontName=font_bold if is_urdu else font_normal, fontSize=card_font_size, leading=card_leading, textColor=colors.HexColor("#0f172a")
     )
     card_val_urdu_style = ParagraphStyle(
-        'CardValUr', parent=styles['Normal'], fontName=font_bold, fontSize=card_font_size, leading=card_leading, textColor=colors.HexColor("#0f172a")
+        'CardValUr', parent=styles['Normal'], fontName=urdu_font_bold, fontSize=card_font_size, leading=card_leading, textColor=colors.HexColor("#0f172a")
     )
     card_hdr_style = ParagraphStyle(
         'CardHdr', parent=styles['Normal'], fontName=font_bold, fontSize=card_hdr_size, leading=card_hdr_leading, textColor=colors.white, alignment=1
@@ -1948,11 +1951,25 @@ def export_monthly_pdf(request, year=None, month=None):
                 note_raw = p.notes.strip() if (p.notes and p.notes.strip()) else ""
                 date_cell = Paragraph(f"<font color='#047857'><b>{p.payment_date.strftime('%d-%b-%Y')}</b></font>", card_val_style)
                 
+                has_urdu_note = False
+                if note_raw:
+                    try:
+                        note_raw.encode('ascii')
+                    except UnicodeEncodeError:
+                        has_urdu_note = True
+
                 if is_urdu:
                     note_trans = translate_user_input_to_urdu(note_raw) if note_raw else "ٹھیکہ وصولی"
                     amt_cell = Paragraph(
                         f"<font color='#16a34a'><b>+RS {p.amount_received:,.0f}</b></font><br/>"
-                        f"<font color='#475569'><b>نوٹ: {shape_ur(note_trans, is_urdu)}</b></font>",
+                        f"<font color='#475569'><b>نوٹ: {shape_ur(note_trans, is_urdu=True)}</b></font>",
+                        card_val_urdu_style
+                    )
+                elif has_urdu_note:
+                    shaped_note = shape_ur(note_raw, is_urdu=True)
+                    amt_cell = Paragraph(
+                        f"<font color='#16a34a'><b>+RS {p.amount_received:,.0f}</b></font><br/>"
+                        f"<font color='#475569'>Note: {shaped_note}</font>",
                         card_val_urdu_style
                     )
                 else:
