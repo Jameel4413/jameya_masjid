@@ -1846,8 +1846,8 @@ def export_monthly_pdf(request, year=None, month=None):
         ])
     imam_table.setStyle(TableStyle(imam_table_style))
 
-    # 6B. Right: Ultra-Compact 3D Elevated Micro Card (Strict 140pt Width - Premium Decor & Scramble-Free Installment Notes)
-    lease_sec_title = "زرعی زمین کا ٹھیکہ" if is_urdu else "Agricultural Land Lease"
+    # 6B. Right: Ultra-Compact 3D Elevated Micro Card (Strict 140pt Width - Exact Original Titles Restored)
+    lease_sec_title = "زمین کا ٹھیکہ" if is_urdu else "Zameen Ka Theka"
     card_font_size = 4.8
     card_leading = 5.8
     card_hdr_size = 5.2
@@ -1868,18 +1868,18 @@ def export_monthly_pdf(request, year=None, month=None):
         hdr_total_str = f"RS {first_lease.total_agreed_amount:,.0f}"
         hdr_rem_str = f"RS {first_lease.remaining_lease_amount:,.0f}"
         if is_urdu:
-            hdr_content = f"<b>❖ {shape_ur(lease_sec_title, is_urdu)} ❖</b><br/><font size='4.0' color='#fef08a'><b>{shape_ur('طے:', is_urdu)} {hdr_total_str} | {shape_ur('بقایا:', is_urdu)} {hdr_rem_str}</b></font>"
+            hdr_content = f"<b>{shape_ur(lease_sec_title, is_urdu)}</b><br/><font size='4.0' color='#fef08a'><b>{shape_ur('طے:', is_urdu)} {hdr_total_str} | {shape_ur('بقایا:', is_urdu)} {hdr_rem_str}</b></font>"
         else:
-            hdr_content = f"<b>❖ {lease_sec_title} ❖</b><br/><font size='4.0' color='#fef08a'><b>Agreed: {hdr_total_str} | Rem: {hdr_rem_str}</b></font>"
+            hdr_content = f"<b>{lease_sec_title}</b><br/><font size='4.0' color='#fef08a'><b>Agreed: {hdr_total_str} | Rem: {hdr_rem_str}</b></font>"
     else:
-        hdr_content = f"<b>❖ {shape_ur(lease_sec_title, is_urdu)} ❖</b>"
+        hdr_content = f"<b>{shape_ur(lease_sec_title, is_urdu)}</b>"
 
     card_rows = [
         [Paragraph(hdr_content, card_hdr_style), ""]
     ]
 
     if not leases.exists():
-        no_lse_msg = "اس عرصے کے لیے کوئی فعال ٹھیکہ درج نہیں" if is_urdu else "No active leases recorded"
+        no_lse_msg = "اس عرصے کے لیے کوئی فعال ٹھیکہ نہیں" if is_urdu else "No active leases"
         card_rows.append([Paragraph(shape_ur(no_lse_msg, is_urdu), card_val_style), ""])
     else:
         for l in leases:
@@ -1930,8 +1930,8 @@ def export_monthly_pdf(request, year=None, month=None):
                 Paragraph(f"<font color='{rem_color}'><b>RS {l.remaining_lease_amount:,.0f}</b></font> ({shape_ur(status_text, is_urdu)})", card_val_style)
             ])
 
-            # Enhanced Installments Sub-Header Banner (Executive Gold Banner on Dark Forest)
-            inst_hdr = "❖ اقساط کا تفصیلی ریکارڈ ❖" if is_urdu else "❖ INSTALLMENTS LEDGER ❖"
+            # Installments Sub-Header Banner (Exact Original Title Restored)
+            inst_hdr = "اقساط کا ریکارڈ (INSTALLMENTS)" if is_urdu else "INSTALLMENTS RECORD"
             inst_hdr_style = ParagraphStyle(
                 'InstSubHdr', parent=styles['Normal'], fontName=font_bold, fontSize=4.8, leading=5.8, textColor=colors.HexColor("#fde047"), alignment=1
             )
