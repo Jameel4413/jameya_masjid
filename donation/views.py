@@ -1951,13 +1951,6 @@ def export_monthly_pdf(request, year=None, month=None):
                 note_raw = p.notes.strip() if (p.notes and p.notes.strip()) else ""
                 date_cell = Paragraph(f"<font color='#047857'><b>{p.payment_date.strftime('%d-%b-%Y')}</b></font>", card_val_style)
                 
-                has_urdu_note = False
-                if note_raw:
-                    try:
-                        note_raw.encode('ascii')
-                    except UnicodeEncodeError:
-                        has_urdu_note = True
-
                 if is_urdu:
                     note_trans = translate_user_input_to_urdu(note_raw) if note_raw else "ٹھیکہ وصولی"
                     amt_cell = Paragraph(
