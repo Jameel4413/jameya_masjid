@@ -1848,16 +1848,19 @@ def export_monthly_pdf(request, year=None, month=None):
 
     # 6B. Right: Ultra-Compact 3D Elevated Micro Card (Strict 140pt Width - Exact Original Titles Restored)
     lease_sec_title = "زمین کا ٹھیکہ" if is_urdu else "Zameen Ka Theka"
-    card_font_size = 4.8
-    card_leading = 5.8
-    card_hdr_size = 5.2
-    card_hdr_leading = 6.4
+    card_font_size = 5.0
+    card_leading = 6.0
+    card_hdr_size = 5.4
+    card_hdr_leading = 6.6
 
     card_lbl_style = ParagraphStyle(
-        'CardLbl', parent=styles['Normal'], fontName=font_bold if is_urdu else font_bold, fontSize=card_font_size, leading=card_leading, textColor=colors.HexColor("#78350f")
+        'CardLbl', parent=styles['Normal'], fontName=font_bold, fontSize=card_font_size, leading=card_leading, textColor=colors.HexColor("#065f46")
     )
     card_val_style = ParagraphStyle(
         'CardVal', parent=styles['Normal'], fontName=font_bold if is_urdu else font_normal, fontSize=card_font_size, leading=card_leading, textColor=colors.HexColor("#0f172a")
+    )
+    card_val_urdu_style = ParagraphStyle(
+        'CardValUr', parent=styles['Normal'], fontName=font_bold, fontSize=card_font_size, leading=card_leading, textColor=colors.HexColor("#0f172a")
     )
     card_hdr_style = ParagraphStyle(
         'CardHdr', parent=styles['Normal'], fontName=font_bold, fontSize=card_hdr_size, leading=card_hdr_leading, textColor=colors.white, alignment=1
@@ -1868,9 +1871,9 @@ def export_monthly_pdf(request, year=None, month=None):
         hdr_total_str = f"RS {first_lease.total_agreed_amount:,.0f}"
         hdr_rem_str = f"RS {first_lease.remaining_lease_amount:,.0f}"
         if is_urdu:
-            hdr_content = f"<b>{shape_ur(lease_sec_title, is_urdu)}</b><br/><font size='4.0' color='#fef08a'><b>{shape_ur('طے:', is_urdu)} {hdr_total_str} | {shape_ur('بقایا:', is_urdu)} {hdr_rem_str}</b></font>"
+            hdr_content = f"<b>{shape_ur(lease_sec_title, is_urdu)}</b><br/><font size='4.2' color='#fef08a'><b>{shape_ur('طے:', is_urdu)} {hdr_total_str} | {shape_ur('بقایا:', is_urdu)} {hdr_rem_str}</b></font>"
         else:
-            hdr_content = f"<b>{lease_sec_title}</b><br/><font size='4.0' color='#fef08a'><b>Agreed: {hdr_total_str} | Rem: {hdr_rem_str}</b></font>"
+            hdr_content = f"<b>{lease_sec_title}</b><br/><font size='4.2' color='#fef08a'><b>Agreed: {hdr_total_str} | Rem: {hdr_rem_str}</b></font>"
     else:
         hdr_content = f"<b>{shape_ur(lease_sec_title, is_urdu)}</b>"
 
@@ -1891,7 +1894,7 @@ def export_monthly_pdf(request, year=None, month=None):
             start_str = l.start_date.strftime('%d-%b-%Y') if l.start_date else ""
             end_str = l.end_date.strftime('%d-%b-%Y') if l.end_date else ""
             dur_str = f"{start_str} تا {end_str}" if is_urdu else f"{start_str} to {end_str}"
-            rem_color = "#15803d" if l.remaining_lease_amount <= 0 else "#b91c1c"
+            rem_color = "#16a34a" if l.remaining_lease_amount <= 0 else "#dc2626"
 
             lbl_thk = "ٹھیکیدار:" if is_urdu else "Tenant:"
             lbl_cnt = "رابطہ:" if is_urdu else "Phone:"
@@ -1903,37 +1906,37 @@ def export_monthly_pdf(request, year=None, month=None):
 
             card_rows.append([
                 Paragraph(f"<b>{shape_ur(lbl_thk, is_urdu)}</b>", card_lbl_style),
-                Paragraph(shape_ur(tenant_disp, is_urdu), card_val_style)
+                Paragraph(shape_ur(tenant_disp, is_urdu), card_val_urdu_style if is_urdu else card_val_style)
             ])
             card_rows.append([
                 Paragraph(f"<b>{shape_ur(lbl_cnt, is_urdu)}</b>", card_lbl_style),
-                Paragraph(phone_disp, card_val_style)
+                Paragraph(f"<font color='#1e40af'><b>{phone_disp}</b></font>", card_val_style)
             ])
             card_rows.append([
                 Paragraph(f"<b>{shape_ur(lbl_ara, is_urdu)}</b>", card_lbl_style),
-                Paragraph(shape_ur(area_disp, is_urdu), card_val_style)
+                Paragraph(shape_ur(area_disp, is_urdu), card_val_urdu_style if is_urdu else card_val_style)
             ])
             card_rows.append([
                 Paragraph(f"<b>{shape_ur(lbl_dur, is_urdu)}</b>", card_lbl_style),
-                Paragraph(shape_ur(dur_str, is_urdu), card_val_style)
+                Paragraph(shape_ur(dur_str, is_urdu), card_val_urdu_style if is_urdu else card_val_style)
             ])
             card_rows.append([
                 Paragraph(f"<b>{shape_ur(lbl_ta, is_urdu)}</b>", card_lbl_style),
-                Paragraph(f"RS {l.total_agreed_amount:,.0f}", card_val_style)
+                Paragraph(f"<b>RS {l.total_agreed_amount:,.0f}</b>", card_val_style)
             ])
             card_rows.append([
                 Paragraph(f"<b>{shape_ur(lbl_tr_l, is_urdu)}</b>", card_lbl_style),
-                Paragraph(f"<font color='#15803d'><b>RS {l.total_received:,.0f}</b></font>", card_val_style)
+                Paragraph(f"<font color='#16a34a'><b>RS {l.total_received:,.0f}</b></font>", card_val_style)
             ])
             card_rows.append([
                 Paragraph(f"<b>{shape_ur(lbl_rem_l, is_urdu)}</b>", card_lbl_style),
-                Paragraph(f"<font color='{rem_color}'><b>RS {l.remaining_lease_amount:,.0f}</b></font> ({shape_ur(status_text, is_urdu)})", card_val_style)
+                Paragraph(f"<font color='{rem_color}'><b>RS {l.remaining_lease_amount:,.0f}</b></font> ({shape_ur(status_text, is_urdu)})", card_val_urdu_style if is_urdu else card_val_style)
             ])
 
             # Installments Sub-Header Banner (Exact Original Title Restored)
             inst_hdr = "اقساط کا ریکارڈ (INSTALLMENTS)" if is_urdu else "INSTALLMENTS RECORD"
             inst_hdr_style = ParagraphStyle(
-                'InstSubHdr', parent=styles['Normal'], fontName=font_bold, fontSize=4.8, leading=5.8, textColor=colors.HexColor("#fde047"), alignment=1
+                'InstSubHdr', parent=styles['Normal'], fontName=font_bold, fontSize=5.0, leading=6.0, textColor=colors.HexColor("#fde047"), alignment=1
             )
             inst_subhdr_idx = len(card_rows)
             card_rows.append([
@@ -1942,21 +1945,21 @@ def export_monthly_pdf(request, year=None, month=None):
 
             inst_start_idx = len(card_rows)
             for p in l.payments.all().order_by('payment_date'):
-                note_raw = p.notes.strip() if p.notes else ""
-                note_trans = translate_user_input_to_urdu(note_raw) if note_raw else ("ٹھیکہ وصولی" if is_urdu else "Lease Payment")
-                
+                note_raw = p.notes.strip() if (p.notes and p.notes.strip()) else ""
                 date_cell = Paragraph(f"<font color='#047857'><b>{p.payment_date.strftime('%d-%b-%Y')}</b></font>", card_val_style)
                 
                 if is_urdu:
+                    note_trans = translate_user_input_to_urdu(note_raw) if note_raw else "ٹھیکہ وصولی"
                     amt_cell = Paragraph(
-                        f"<font color='#15803d'><b>+RS {p.amount_received:,.0f}</b></font><br/>"
+                        f"<font color='#16a34a'><b>+RS {p.amount_received:,.0f}</b></font><br/>"
                         f"<font color='#475569'><b>نوٹ: {shape_ur(note_trans, is_urdu)}</b></font>",
-                        card_val_style
+                        card_val_urdu_style
                     )
                 else:
+                    note_eng = note_raw if note_raw else "Lease Payment"
                     amt_cell = Paragraph(
-                        f"<font color='#15803d'><b>+RS {p.amount_received:,.0f}</b></font><br/>"
-                        f"<font color='#475569'>Note: {note_trans}</font>",
+                        f"<font color='#16a34a'><b>+RS {p.amount_received:,.0f}</b></font><br/>"
+                        f"<font color='#475569'>Note: {note_eng}</font>",
                         card_val_style
                     )
                 card_rows.append([date_cell, amt_cell])
@@ -1974,21 +1977,26 @@ def export_monthly_pdf(request, year=None, month=None):
     inner_table = Table(card_rows, colWidths=[42, 92])
     inner_table_style = [
         ('SPAN', (0, 0), (-1, 0)),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#047857")), # Emerald Main Banner
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#022c22")), # Deep Rich Velvet Emerald Banner
+        ('LINEBELOW', (0, 0), (-1, 0), 1.0, colors.HexColor("#c59b27")), # Metallic Gold Line Below Header
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor("#fffdf5")), # Soft Ivory
-        ('TOPPADDING', (0, 0), (-1, -1), 0.5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 0.5),
-        ('LEFTPADDING', (0, 0), (-1, -1), 1.2),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 1.2),
+        ('TOPPADDING', (0, 0), (-1, -1), 0.6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0.6),
+        ('LEFTPADDING', (0, 0), (-1, -1), 1.5),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 1.5),
     ]
+
+    # Alternating row colors for metadata rows (Rows 1 to 7)
+    for r_i in range(1, min(8, len(card_rows))):
+        bg_col = colors.HexColor("#f8fafc") if r_i % 2 == 1 else colors.HexColor("#ffffff")
+        inner_table_style.append(('BACKGROUND', (0, r_i), (-1, r_i), bg_col))
 
     if 'inst_ranges' in locals():
         for s_idx, start_i, end_i in inst_ranges:
-            inner_table_style.append(('BACKGROUND', (0, s_idx), (-1, s_idx), colors.HexColor("#065f46"))) # Forest Sub-Banner
+            inner_table_style.append(('BACKGROUND', (0, s_idx), (-1, s_idx), colors.HexColor("#044e3a"))) # Forest Sub-Banner
             if end_i >= start_i:
                 inner_table_style.append(('BACKGROUND', (0, start_i), (-1, end_i), colors.HexColor("#f0fdf4"))) # Soft Mint Tint
-                inner_table_style.append(('GRID', (0, start_i), (-1, end_i), 0.3, colors.HexColor("#bbf7d0"))) # Mint Grid Lines!
+                inner_table_style.append(('GRID', (0, start_i), (-1, end_i), 0.3, colors.HexColor("#a7f3d0"))) # Mint Grid Lines!
 
     for idx, row_item in enumerate(card_rows):
         if len(row_item) > 1 and row_item[1] == "":
