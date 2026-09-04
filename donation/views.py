@@ -1846,28 +1846,27 @@ def export_monthly_pdf(request, year=None, month=None):
         ])
     imam_table.setStyle(TableStyle(imam_table_style))
 
-    # 6B. Right: Ultra-Mini 4-Row Land Lease Micro Tile Card (190pt Width - Super Compact & Zero Glyph Errors)
-    lease_sec_title = "زمین کے ٹھیکے کا خلاصہ (LAND LEASE)" if is_urdu else "LAND LEASE SUMMARY"
-    tile_font_size = 4.8
-    tile_leading = 5.8
-    tile_hdr_size = 5.2
-    tile_hdr_leading = 6.2
-    tile_pad_v = 0.2
+    # 6B. Right: Unified Executive Micro Audit Card (190pt Width - Zero Inner Grid Lines, Clean Card Look)
+    lease_sec_title = "زمین کے ٹھیکے کا رکارڈ (LAND LEASE CARD)" if is_urdu else "LAND LEASE AUDIT CARD"
+    card_font_size = 5.2
+    card_leading = 6.8
+    card_hdr_size = 5.8
+    card_hdr_leading = 7.2
 
-    tile_text_style = ParagraphStyle(
-        'TileTxt', parent=styles['Normal'], fontName=font_bold if is_urdu else font_normal, fontSize=tile_font_size, leading=tile_leading, textColor=colors.HexColor("#0f172a")
+    card_text_style = ParagraphStyle(
+        'CardTxt', parent=styles['Normal'], fontName=font_bold if is_urdu else font_normal, fontSize=card_font_size, leading=card_leading, textColor=colors.HexColor("#0f172a")
     )
-    tile_hdr_style = ParagraphStyle(
-        'TileHdr', parent=styles['Normal'], fontName=font_bold, fontSize=tile_hdr_size, leading=tile_hdr_leading, textColor=colors.white
+    card_hdr_style = ParagraphStyle(
+        'CardHdr', parent=styles['Normal'], fontName=font_bold, fontSize=card_hdr_size, leading=card_hdr_leading, textColor=colors.white
     )
 
-    lease_card_rows = [
-        [Paragraph(f"<b>{shape_ur(lease_sec_title, is_urdu)}</b>", sec_title_style)]
+    card_elements = [
+        Paragraph(f"<b>{shape_ur(lease_sec_title, is_urdu)}</b>", card_hdr_style)
     ]
 
     if not leases.exists():
-        no_lse_msg = "اس عرصے کے لیے کوئی فعال ٹھیکہ نہیں۔" if is_urdu else "No active leases."
-        lease_card_rows.append([Paragraph(shape_ur(no_lse_msg, is_urdu), tile_text_style)])
+        no_lse_msg = "اس عرصے کے لیے کوئی فعال ٹھیکہ نہیں۔" if is_urdu else "No active leases recorded."
+        card_elements.append(Paragraph(shape_ur(no_lse_msg, is_urdu), card_text_style))
     else:
         for l in leases:
             status_text = ("مکمل ادا" if l.remaining_lease_amount <= 0 else "فعال ٹھیکہ") if is_urdu else ("PAID" if l.remaining_lease_amount <= 0 else "ACTIVE")
@@ -1878,56 +1877,51 @@ def export_monthly_pdf(request, year=None, month=None):
             start_str = l.start_date.strftime('%d-%b-%Y') if l.start_date else ""
             end_str = l.end_date.strftime('%d-%b-%Y') if l.end_date else ""
             dur_str = f"{start_str} تا {end_str}" if is_urdu else f"{start_str} to {end_str}"
-            rem_color = "#1b5e20" if l.remaining_lease_amount <= 0 else "#991b1b"
+            rem_color = "#166534" if l.remaining_lease_amount <= 0 else "#991b1b"
 
             if is_urdu:
-                meta_line = f"<b>ٹھیکیدار:</b> {shape_ur(tenant_disp, True)} ({phone_disp})  |  <b>رقبہ:</b> {shape_ur(area_disp, True)}"
-                fin_line = f"<b>مدت:</b> {dur_str}  |  <b>طے:</b> RS {l.total_agreed_amount:,.0f}  |  <b>وصول:</b> <font color='#1b5e20'>RS {l.total_received:,.0f}</font>  |  <b>بقایا:</b> <font color='{rem_color}'>RS {l.remaining_lease_amount:,.0f}</font> ({shape_ur(status_text, True)})"
+                line1 = f"<b>ٹھیکیدار:</b> {shape_ur(tenant_disp, True)}  |  <b>رابطہ:</b> {phone_disp}"
+                line2 = f"<b>رقبہ:</b> {shape_ur(area_disp, True)}  |  <b>مدت:</b> {dur_str}"
+                line3 = f"<b>طے:</b> RS {l.total_agreed_amount:,.0f}  |  <b>وصول:</b> <font color='#166534'><b>RS {l.total_received:,.0f}</b></font>  |  <b>بقایا:</b> <font color='{rem_color}'><b>RS {l.remaining_lease_amount:,.0f}</b></font> ({shape_ur(status_text, True)})"
             else:
-                meta_line = f"<b>Thekedar:</b> {tenant_disp} ({phone_disp})  |  <b>Area:</b> {area_disp}"
-                fin_line = f"<b>Period:</b> {dur_str}  |  <b>Agreed:</b> RS {l.total_agreed_amount:,.0f}  |  <b>Recd:</b> <font color='#1b5e20'>RS {l.total_received:,.0f}</font>  |  <b>Rem:</b> <font color='{rem_color}'>RS {l.remaining_lease_amount:,.0f}</font> ({status_text})"
+                line1 = f"<b>Thekedar:</b> {tenant_disp}  |  <b>Phone:</b> {phone_disp}"
+                line2 = f"<b>Area:</b> {area_disp}  |  <b>Period:</b> {dur_str}"
+                line3 = f"<b>Agreed:</b> RS {l.total_agreed_amount:,.0f}  |  <b>Recd:</b> <font color='#166534'><b>RS {l.total_received:,.0f}</b></font>  |  <b>Rem:</b> <font color='{rem_color}'><b>RS {l.remaining_lease_amount:,.0f}</b></font> ({status_text})"
 
-            lease_card_rows.append([Paragraph(meta_line, tile_text_style)])
-            lease_card_rows.append([Paragraph(fin_line, tile_text_style)])
+            card_elements.append(Paragraph(line1, card_text_style))
+            card_elements.append(Paragraph(line2, card_text_style))
+            card_elements.append(Paragraph(line3, card_text_style))
 
-            # Sub-Header for Installments
-            inst_hdr = "اقساط کی تفصیلات (INSTALLMENTS)" if is_urdu else "INSTALLMENT PAYMENTS"
-            lease_card_rows.append([Paragraph(f"<b>{shape_ur(inst_hdr, is_urdu)}</b>", tile_hdr_style)])
+            # Installment Details
+            inst_hdr = "اقساط کی تفصیلات:" if is_urdu else "INSTALLMENTS:"
+            card_elements.append(Paragraph(f"<b><u>{shape_ur(inst_hdr, is_urdu)}</u></b>", card_text_style))
 
             for p in l.payments.all().order_by('payment_date'):
                 note_str = p.notes or ("ٹھیکہ وصولی" if is_urdu else "Lease Payment")
                 note_trans = translate_user_input_to_urdu(note_str) if is_urdu else note_str
                 if is_urdu:
-                    inst_line = f"• {p.payment_date.strftime('%d-%b-%Y')}: <font color='#1b5e20'><b>RS {p.amount_received:,.0f}</b></font> ({shape_ur(note_trans, True)})"
+                    inst_line = f"• {p.payment_date.strftime('%d-%b-%Y')}: <font color='#166534'><b>RS {p.amount_received:,.0f}</b></font> ({shape_ur(note_trans, True)})"
                 else:
-                    inst_line = f"• {p.payment_date.strftime('%d-%b-%Y')}: <font color='#1b5e20'><b>RS {p.amount_received:,.0f}</b></font> ({note_trans})"
-                lease_card_rows.append([Paragraph(inst_line, tile_text_style)])
+                    inst_line = f"• {p.payment_date.strftime('%d-%b-%Y')}: <font color='#166534'><b>RS {p.amount_received:,.0f}</b></font> ({note_trans})"
+                card_elements.append(Paragraph(inst_line, card_text_style))
 
             if not l.payments.exists():
                 no_lp_str = "کوئی ادائیگی موصول نہیں ہوئی" if is_urdu else "No payments received"
-                lease_card_rows.append([Paragraph(shape_ur(no_lp_str, is_urdu), tile_text_style)])
+                card_elements.append(Paragraph(shape_ur(no_lp_str, is_urdu), card_text_style))
 
-    lease_table = Table(lease_card_rows, colWidths=[190])
+    # Construct single unified Card Table (1 Column, Multi-Row without any inner grid lines)
+    card_rows = [[el] for el in card_elements]
+    lease_table = Table(card_rows, colWidths=[190])
     lease_table_style = [
-        ('BACKGROUND', (0, 0), (0, 0), colors.HexColor("#78350f")),
+        ('BACKGROUND', (0, 0), (0, 0), colors.HexColor("#065f46")), # Emerald Header
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('BACKGROUND', (0, 1), (0, 2), colors.HexColor("#fff8e7")),
-        ('GRID', (0, 1), (0, 2), 0.3, colors.HexColor("#fef3c7")),
-        ('BACKGROUND', (0, 3), (0, 3), colors.HexColor("#1f2937")),
-        ('GRID', (0, 4), (-1, -1), 0.3, colors.HexColor("#b45309")),
-        ('BOX', (0, 0), (-1, -1), 0.8, colors.HexColor("#78350f")),
-        ('TOPPADDING', (0, 0), (-1, -1), tile_pad_v),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), tile_pad_v),
-        ('LEFTPADDING', (0, 0), (-1, -1), 1.0),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 1.0),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor("#fffdf5")), # Soft Ivory Card Body
+        ('BOX', (0, 0), (-1, -1), 1.0, colors.HexColor("#065f46")), # Clean Card Border
+        ('TOPPADDING', (0, 0), (-1, -1), 0.8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0.8),
+        ('LEFTPADDING', (0, 0), (-1, -1), 2.5),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 2.5),
     ]
-
-    if not leases.exists():
-        lease_table_style = [
-            ('BACKGROUND', (0, 0), (0, 0), colors.HexColor("#78350f")),
-            ('BACKGROUND', (0, 1), (0, 1), colors.HexColor("#fff8e7")),
-            ('BOX', (0, 0), (-1, -1), 0.8, colors.HexColor("#78350f")),
-        ]
 
     lease_table.setStyle(TableStyle(lease_table_style))
 
