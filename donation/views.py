@@ -1448,8 +1448,15 @@ def export_monthly_pdf(request, year=None, month=None):
     styles = getSampleStyleSheet()
 
     # Authentic Arabic Bismillah Text
+   # 1. Arabic, Urdu Tarjuma Aur Hadees Text
     bismillah_exact_text = "بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ"
     bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
+
+    bismillah_tarjuma = "اللہ کے نام سے شروع جو بڑا مہربان نہایت رحم والا ہے"
+    tarjuma_str = shape_ur(bismillah_tarjuma, is_urdu=True)
+
+    hadees_text = "بے شک جو امانت دار نہیں اس کا کوئی دین نہیں۔"
+    hadees_str = shape_ur(hadees_text, is_urdu=True)
 
     kaaba_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'kaaba.png')
     if not os.path.exists(kaaba_img_path):
@@ -1463,14 +1470,66 @@ def export_monthly_pdf(request, year=None, month=None):
     img_gumbad = RLImage(gumbad_img_path, width=54, height=72) if os.path.exists(gumbad_img_path) else dummy_p
     img_kaaba = RLImage(kaaba_img_path, width=70, height=72) if os.path.exists(kaaba_img_path) else dummy_p
 
+    actual_urdu_font = font_urdu if 'font_urdu' in locals() or 'font_urdu' in globals() else font_bism
+
+    # 1. Arabic Style
     bism_center_style = ParagraphStyle(
-        'BismCenterM3', parent=styles['Normal'], fontName=font_bism, fontSize=20, leading=23,
+        'BismCenterM3', parent=styles['Normal'], fontName=font_bism, fontSize=15, leading=16,
         textColor=colors.HexColor("#fde047"), alignment=1
     )
-    p_center = Paragraph(bismillah_str, bism_center_style)
+    p_arabic = Paragraph(bismillah_str, bism_center_style)
 
-    # 1. RESTORED BISMILLAH BOX (Width = 552pt)
-    bism_box = Table([[img_gumbad, p_center, img_kaaba]], colWidths=[90, 372, 90])
+    # 2. Urdu Tarjuma Style
+    bism_tarjuma_style = ParagraphStyle(
+        'BismTarjumaM3', parent=styles['Normal'], fontName=actual_urdu_font, fontSize=9.5, leading=11,
+        textColor=colors.HexColor("#ffffff"), alignment=1
+    )
+    p_tarjuma = Paragraph(tarjuma_str, bism_tarjuma_style)
+
+    # 3. RESTORED ORIGINAL HADEES TEXT STYLE
+    hadees_style = ParagraphStyle(
+        'HadeesTextM3', parent=styles['Normal'], fontName=actual_urdu_font, fontSize=8.5, leading=10,
+        textColor=colors.HexColor("#7f1d1d"), alignment=1
+    )
+    p_hadees = Paragraph(f"<b>{hadees_str}</b>", hadees_style)
+
+    # GOLDEN RIBBON BOX -> Islamic golden theme: emerald-green outer border + thin gold inner accent
+    hadees_box = Table([[p_hadees]], colWidths=[220])
+    hadees_box.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#fde047")),
+        ('BOX', (0, 0), (-1, -1), 2.0, colors.HexColor("#0b5e42")),
+        ('LINEABOVE', (0, 0), (-1, -1), 0.8, colors.HexColor("#c59b27"), None, None, None, None),
+        ('LINEBELOW', (0, 0), (-1, -1), 0.8, colors.HexColor("#c59b27"), None, None, None, None),
+        ('LINEBEFORE', (0, 0), (-1, -1), 0.8, colors.HexColor("#c59b27"), None, None, None, None),
+        ('LINEAFTER', (0, 0), (-1, -1), 0.8, colors.HexColor("#c59b27"), None, None, None, None),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+    ]))
+
+    # Bismillah combo for exact middle positioning
+    bism_combo = [p_arabic, Spacer(1, 1), p_tarjuma]
+
+    center_table_data = [
+        [bism_combo],
+        [hadees_box]
+    ]
+
+    # EXACT ORIGINAL HEIGHT & ROW MAPPING RESTORED -> total 72 (52+20) same as images.
+    center_table = Table(center_table_data, colWidths=[372], rowHeights=[52, 20])
+    center_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (0, 0), 'MIDDLE'),    # Bismillah & Tarjuma exact center
+        ('VALIGN', (0, 1), (0, 1), 'MIDDLE'),    # Hadees box row ke beech mein -> outer border se gap
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+    ]))
+
+    # MAIN BISMILLAH BOX (Width = 552pt)
+    bism_box = Table([[img_gumbad, center_table, img_kaaba]], colWidths=[90, 372, 90])
     bism_box.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#022c22")),
         ('BOX', (0, 0), (-1, -1), 2.2, colors.HexColor("#c59b27")),
@@ -1486,35 +1545,6 @@ def export_monthly_pdf(request, year=None, month=None):
         ('RIGHTPADDING', (2, 0), (2, 0), 2),
     ]))
     story.append(bism_box)
-    story.append(Spacer(1, 4))
-
-    # 2. RESTORED TITLE BANNER BOX (Width = 552pt)
-    hdr_title = "جامع مسجد نور مالیاتی رپورٹ" if is_urdu else "JAMEYA MASJID NOOR FINANCIAL REPORT"
-    hdr_sub = f"تفصیلی اسٹیٹمنٹ برائے {month_name}" if is_urdu else f"Detailed Statement for {month_name}"
-    
-    title_box_style = ParagraphStyle(
-        'RepTitleBox3', parent=styles['Heading1'], fontName=font_bold, fontSize=15 if is_urdu else 16, leading=19,
-        textColor=colors.HexColor("#fef08a"), alignment=1
-    )
-    subtitle_box_style = ParagraphStyle(
-        'RepSubtitleBox3', parent=styles['Normal'], fontName=font_bold, fontSize=10, leading=13,
-        textColor=colors.white, alignment=1
-    )
-
-    p_title = Paragraph(f"<b>{shape_ur(hdr_title, is_urdu)}</b>", title_box_style)
-    p_sub = Paragraph(shape_ur(hdr_sub, is_urdu), subtitle_box_style)
-
-    header_banner_table = Table([[p_title], [p_sub]], colWidths=[552])
-    header_banner_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")),
-        ('BOX', (0, 0), (-1, -1), 1.8, colors.HexColor("#c59b27")),
-        ('LINEBELOW', (0, 0), (-1, 0), 0.8, colors.HexColor("#c59b27")),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 3),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-    ]))
-    story.append(header_banner_table)
     story.append(Spacer(1, 4))
 
     # 3. EXECUTIVE SUMMARY 3-STAT STRIP (Width = 552pt, 184pt per cell, Previous Balance REMOVED)
