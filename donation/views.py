@@ -1447,12 +1447,16 @@ def export_monthly_pdf(request, year=None, month=None):
     story = []
     styles = getSampleStyleSheet()
 
-   # 1. Authentic Arabic Bismillah Text & Updated Urdu Translation
+   # Authentic Arabic Bismillah Text
     bismillah_exact_text = "بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ"
-    bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
-
-    bismillah_ur_tarjuma = "اللہ کے نام سے شروع جو بڑا مہربان نہایت رحم والا ہے"
-    bismillah_ur_str = shape_ur(bismillah_ur_tarjuma, is_urdu=True)
+    
+    # 1. ADDED TARJUMA STRING
+    bismillah_tarjuma = "اللہ کے نام سے شروع جو بڑا مہربان نہایت رحم والا ہے"
+    
+    # 2. CONCATENATED WITH BR TAG BEFORE SHAPING
+    bismillah_full = f"{bismillah_exact_text}<br/>{bismillah_tarjuma}"
+    
+    bismillah_str = shape_ur(bismillah_full, is_urdu=True)
 
     kaaba_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'kaaba.png')
     if not os.path.exists(kaaba_img_path):
@@ -1466,15 +1470,11 @@ def export_monthly_pdf(request, year=None, month=None):
     img_gumbad = RLImage(gumbad_img_path, width=54, height=72) if os.path.exists(gumbad_img_path) else dummy_p
     img_kaaba = RLImage(kaaba_img_path, width=70, height=72) if os.path.exists(kaaba_img_path) else dummy_p
 
-    # Arabic + Urdu Single Paragraph Style (Hex colors inline in HTML tag)
-    bism_combined_style = ParagraphStyle(
-        'BismCombinedM3', parent=styles['Normal'], fontName=font_bism, fontSize=17, leading=20,
+    bism_center_style = ParagraphStyle(
+        'BismCenterM3', parent=styles['Normal'], fontName=font_bism, fontSize=20, leading=23,
         textColor=colors.HexColor("#fde047"), alignment=1
     )
-
-    # HTML formatted combined text with font size & color adjustment for Urdu
-    combined_html = f"{bismillah_str}<br/><font fontName='{font_urdu}' size='9.5' color='#ffffff'>{bismillah_ur_str}</font>"
-    p_center = Paragraph(combined_html, bism_combined_style)
+    p_center = Paragraph(bismillah_str, bism_center_style)
 
     # 1. RESTORED BISMILLAH BOX (Width = 552pt)
     bism_box = Table([[img_gumbad, p_center, img_kaaba]], colWidths=[90, 372, 90])
@@ -1487,8 +1487,8 @@ def export_monthly_pdf(request, year=None, month=None):
         ('ALIGN', (1, 0), (1, 0), 'CENTER'),
         ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 2),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ('LEFTPADDING', (0, 0), (0, 0), 2),
         ('RIGHTPADDING', (2, 0), (2, 0), 2),
     ]))
