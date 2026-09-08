@@ -1447,9 +1447,13 @@ def export_monthly_pdf(request, year=None, month=None):
     story = []
     styles = getSampleStyleSheet()
 
-    # Authentic Arabic Bismillah Text
+   # 1. Authentic Arabic Bismillah Text & Urdu Translation
     bismillah_exact_text = "بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ"
     bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
+
+    # Urdu Translation Text
+    bismillah_ur_tarjuma = "اللہ کے نام سے شروع جو بڑا مہربان نہایت رحم والا ہے"  
+    bismillah_ur_str = shape_ur(bismillah_ur_tarjuma, is_urdu=True)
 
     kaaba_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'kaaba.png')
     if not os.path.exists(kaaba_img_path):
@@ -1463,14 +1467,27 @@ def export_monthly_pdf(request, year=None, month=None):
     img_gumbad = RLImage(gumbad_img_path, width=54, height=72) if os.path.exists(gumbad_img_path) else dummy_p
     img_kaaba = RLImage(kaaba_img_path, width=70, height=72) if os.path.exists(kaaba_img_path) else dummy_p
 
+    # Arabic Style
     bism_center_style = ParagraphStyle(
-        'BismCenterM3', parent=styles['Normal'], fontName=font_bism, fontSize=20, leading=23,
+        'BismCenterM3', parent=styles['Normal'], fontName=font_bism, fontSize=18, leading=21,
         textColor=colors.HexColor("#fde047"), alignment=1
     )
-    p_center = Paragraph(bismillah_str, bism_center_style)
+
+    # Urdu Translation Style (Font size thoda chota rakha hai taake box ki height balance rahe)
+    bism_tarjuma_style = ParagraphStyle(
+        'BismTarjumaM3', parent=styles['Normal'], fontName=font_urdu, fontSize=10, leading=13,
+        textColor=colors.HexColor("#ffffff"), alignment=1
+    )
+
+    # Combined Paragraph (Arabic + Urdu Tarjuma)
+    p_arabic = Paragraph(bismillah_str, bism_center_style)
+    p_ur_tarjuma = Paragraph(bismillah_ur_str, bism_tarjuma_style)
+    
+    # Text container to hold both Paragraphs vertically centered
+    center_content = [p_arabic, Spacer(1, 2), p_ur_tarjuma]
 
     # 1. RESTORED BISMILLAH BOX (Width = 552pt)
-    bism_box = Table([[img_gumbad, p_center, img_kaaba]], colWidths=[90, 372, 90])
+    bism_box = Table([[img_gumbad, center_content, img_kaaba]], colWidths=[90, 372, 90])
     bism_box.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#022c22")),
         ('BOX', (0, 0), (-1, -1), 2.2, colors.HexColor("#c59b27")),
@@ -1480,14 +1497,13 @@ def export_monthly_pdf(request, year=None, month=None):
         ('ALIGN', (1, 0), (1, 0), 'CENTER'),
         ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 0),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
         ('LEFTPADDING', (0, 0), (0, 0), 2),
         ('RIGHTPADDING', (2, 0), (2, 0), 2),
     ]))
     story.append(bism_box)
     story.append(Spacer(1, 4))
-
     # 2. RESTORED TITLE BANNER BOX (Width = 552pt)
     hdr_title = "جامع مسجد نور مالیاتی رپورٹ" if is_urdu else "JAMEYA MASJID NOOR FINANCIAL REPORT"
     hdr_sub = f"تفصیلی اسٹیٹمنٹ برائے {month_name}" if is_urdu else f"Detailed Statement for {month_name}"
