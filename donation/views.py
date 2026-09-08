@@ -1447,16 +1447,9 @@ def export_monthly_pdf(request, year=None, month=None):
     story = []
     styles = getSampleStyleSheet()
 
-   # Authentic Arabic Bismillah Text
+    # Authentic Arabic Bismillah Text
     bismillah_exact_text = "بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ"
-    
-    # 1. ADDED TARJUMA STRING
-    bismillah_tarjuma = "اللہ کے نام سے شروع جو بڑا مہربان نہایت رحم والا ہے"
-    
-    # 2. CONCATENATED WITH BR TAG BEFORE SHAPING
-    bismillah_full = f"{bismillah_exact_text}<br/>{bismillah_tarjuma}"
-    
-    bismillah_str = shape_ur(bismillah_full, is_urdu=True)
+    bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
 
     kaaba_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'kaaba.png')
     if not os.path.exists(kaaba_img_path):
@@ -1494,6 +1487,7 @@ def export_monthly_pdf(request, year=None, month=None):
     ]))
     story.append(bism_box)
     story.append(Spacer(1, 4))
+
     # 2. RESTORED TITLE BANNER BOX (Width = 552pt)
     hdr_title = "جامع مسجد نور مالیاتی رپورٹ" if is_urdu else "JAMEYA MASJID NOOR FINANCIAL REPORT"
     hdr_sub = f"تفصیلی اسٹیٹمنٹ برائے {month_name}" if is_urdu else f"Detailed Statement for {month_name}"
