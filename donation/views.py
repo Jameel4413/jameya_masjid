@@ -1447,12 +1447,11 @@ def export_monthly_pdf(request, year=None, month=None):
     story = []
     styles = getSampleStyleSheet()
 
-   # 1. Authentic Arabic Bismillah Text & Urdu Translation
+   # 1. Authentic Arabic Bismillah Text & Updated Urdu Translation
     bismillah_exact_text = "بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ"
     bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
 
-    # Urdu Translation Text
-    bismillah_ur_tarjuma = "اللہ کے نام سے شروع جو بڑا مہربان نہایت رحم والا ہے"  
+    bismillah_ur_tarjuma = "اللہ کے نام سے شروع جو بڑا مہربان نہایت رحم والا ہے"
     bismillah_ur_str = shape_ur(bismillah_ur_tarjuma, is_urdu=True)
 
     kaaba_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'kaaba.png')
@@ -1467,27 +1466,18 @@ def export_monthly_pdf(request, year=None, month=None):
     img_gumbad = RLImage(gumbad_img_path, width=54, height=72) if os.path.exists(gumbad_img_path) else dummy_p
     img_kaaba = RLImage(kaaba_img_path, width=70, height=72) if os.path.exists(kaaba_img_path) else dummy_p
 
-    # Arabic Style
-    bism_center_style = ParagraphStyle(
-        'BismCenterM3', parent=styles['Normal'], fontName=font_bism, fontSize=18, leading=21,
+    # Arabic + Urdu Single Paragraph Style (Hex colors inline in HTML tag)
+    bism_combined_style = ParagraphStyle(
+        'BismCombinedM3', parent=styles['Normal'], fontName=font_bism, fontSize=17, leading=20,
         textColor=colors.HexColor("#fde047"), alignment=1
     )
 
-    # Urdu Translation Style (Font size thoda chota rakha hai taake box ki height balance rahe)
-    bism_tarjuma_style = ParagraphStyle(
-        'BismTarjumaM3', parent=styles['Normal'], fontName=font_urdu, fontSize=10, leading=13,
-        textColor=colors.HexColor("#ffffff"), alignment=1
-    )
-
-    # Combined Paragraph (Arabic + Urdu Tarjuma)
-    p_arabic = Paragraph(bismillah_str, bism_center_style)
-    p_ur_tarjuma = Paragraph(bismillah_ur_str, bism_tarjuma_style)
-    
-    # Text container to hold both Paragraphs vertically centered
-    center_content = [p_arabic, Spacer(1, 2), p_ur_tarjuma]
+    # HTML formatted combined text with font size & color adjustment for Urdu
+    combined_html = f"{bismillah_str}<br/><font fontName='{font_urdu}' size='9.5' color='#ffffff'>{bismillah_ur_str}</font>"
+    p_center = Paragraph(combined_html, bism_combined_style)
 
     # 1. RESTORED BISMILLAH BOX (Width = 552pt)
-    bism_box = Table([[img_gumbad, center_content, img_kaaba]], colWidths=[90, 372, 90])
+    bism_box = Table([[img_gumbad, p_center, img_kaaba]], colWidths=[90, 372, 90])
     bism_box.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#022c22")),
         ('BOX', (0, 0), (-1, -1), 2.2, colors.HexColor("#c59b27")),
