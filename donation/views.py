@@ -153,7 +153,9 @@ def shape_ur(text, is_urdu=False):
     str_text = translate_user_input_to_urdu(str_text)
     register_urdu_fonts()
     reshaped = _ARABIC_RESHAPER_PRESERVE_HARAKAT.reshape(str_text)
-    return get_display(reshaped)
+    display_txt = get_display(reshaped)
+    # Strip Bidi directional formatting/control characters (0x200e-0x200f, 0x202a-0x202e, 0x2060-0x206f) that draw black box symbols in ReportLab
+    return "".join([c for c in display_txt if not (0x200E <= ord(c) <= 0x200F or 0x202A <= ord(c) <= 0x202E or 0x2060 <= ord(c) <= 0x206F)])
 
 def set_language(request):
     lang = request.GET.get('lang', 'en')
@@ -1951,25 +1953,32 @@ def export_monthly_pdf(request, year=None, month=None):
                 note_raw = p.notes.strip() if (p.notes and p.notes.strip()) else ""
                 date_cell = Paragraph(f"<font color='#047857'><b>{p.payment_date.strftime('%d-%b-%Y')}</b></font>", card_val_style)
                 
+                has_urdu_note = False
+                if note_raw:
+                    try:
+                        note_raw.encode('ascii')
+                    except UnicodeEncodeError:
+                        has_urdu_note = True
+
                 if is_urdu:
                     note_trans = translate_user_input_to_urdu(note_raw) if note_raw else "ٹھیکہ وصولی"
                     amt_cell = Paragraph(
                         f"<font color='#15803d'><b>+RS {p.amount_received:,.0f}</b></font><br/>"
-                        f"<font color='#475569'><i><b>نوٹ: {shape_ur(note_trans, is_urdu=True)}</b></i></font>",
+                        f"<font color='#475569'><b>نوٹ: {shape_ur(note_trans, is_urdu=True)}</b></font>",
                         card_val_urdu_style
                     )
                 elif has_urdu_note:
                     shaped_note = shape_ur(note_raw, is_urdu=True)
                     amt_cell = Paragraph(
                         f"<font color='#15803d'><b>+RS {p.amount_received:,.0f}</b></font><br/>"
-                        f"<font color='#475569'><i>Note: {shaped_note}</i></font>",
+                        f"<font color='#475569'>Note: {shaped_note}</font>",
                         card_val_urdu_style
                     )
                 else:
                     note_eng = note_raw if note_raw else "Lease Payment"
                     amt_cell = Paragraph(
                         f"<font color='#15803d'><b>+RS {p.amount_received:,.0f}</b></font><br/>"
-                        f"<font color='#475569'><i>Note: {note_eng}</i></font>",
+                        f"<font color='#475569'>Note: {note_eng}</font>",
                         card_val_style
                     )
                 card_rows.append([date_cell, amt_cell])
