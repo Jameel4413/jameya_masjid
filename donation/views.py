@@ -1545,7 +1545,40 @@ def export_monthly_pdf(request, year=None, month=None):
         ('RIGHTPADDING', (2, 0), (2, 0), 2),
     ]))
     story.append(bism_box)
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 3))
+
+    # 2. EXECUTIVE MONTH / PERIOD BANNER STRIP (Width = 552pt)
+    if is_annual:
+        month_banner_text = f"سالانہ مالیاتی گوشوارہ برائے {month_name}" if is_urdu else f"ANNUAL FINANCIAL STATEMENT — {month_name.upper()}"
+    else:
+        month_banner_text = f"ماہانہ مالیاتی گوشوارہ برائے {month_name}" if is_urdu else f"MONTHLY FINANCIAL STATEMENT — {month_name.upper()}"
+
+    month_banner_style = ParagraphStyle(
+        'MonthBannerS3',
+        parent=styles['Normal'],
+        fontName=font_bold,
+        fontSize=10.5 if is_urdu else 10.0,
+        leading=13.0,
+        textColor=colors.HexColor("#fef08a"),
+        alignment=1
+    )
+    p_month_banner = Paragraph(f"<b>{shape_ur(month_banner_text, is_urdu)}</b>", month_banner_style)
+
+    month_banner_table = Table([[p_month_banner]], colWidths=[552], rowHeights=[18])
+    month_banner_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")),
+        ('BOX', (0, 0), (-1, -1), 1.2, colors.HexColor("#c59b27")),
+        ('LINEABOVE', (0, 0), (-1, -1), 0.6, colors.HexColor("#fef08a")),
+        ('LINEBELOW', (0, 0), (-1, -1), 0.6, colors.HexColor("#fef08a")),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 1.5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1.5),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    story.append(month_banner_table)
+    story.append(Spacer(1, 3))
 
     # 3. EXECUTIVE SUMMARY 3-STAT STRIP (Width = 552pt, 184pt per cell, Previous Balance REMOVED)
     card_title_style = ParagraphStyle(
