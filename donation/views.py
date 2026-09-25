@@ -920,7 +920,7 @@ def export_imam_salary_pdf(request):
 
             row_year = [
                 Paragraph(f"<b>{shape_ur(lbl_y_tot, is_urdu)}:</b><br/>RS {s.effective_yearly_salary:,.0f}", card_footer_style),
-                Paragraph(f"<b>{shape_ur(lbl_y_paid, is_urdu)}:</b><br/><font color='#1b5e20'><b>RS {s.total_paid:,.0f}</b></font>", card_footer_style),
+                Paragraph(f"<b>{shape_ur(lbl_y_paid, is_urdu)}:</b><br/><font color='#1b5e20'><b>RS {s.total_paid_year:,.0f}</b></font>", card_footer_style),
                 Paragraph(f"<b>{shape_ur(lbl_y_rem, is_urdu)}:</b><br/><font color='{rem_y_color}'><b>RS {s.remaining_yearly_salary:,.0f}</b></font>", card_footer_style),
             ]
 

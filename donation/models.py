@@ -82,9 +82,24 @@ class ImamSalary(models.Model):
             return 0.0
 
     @property
+    def total_paid_year(self):
+        # Calculate total installments paid to this imam in this year (up to this month)
+        try:
+            from django.apps import apps
+            ImamSalaryInstallment = apps.get_model('donation', 'ImamSalaryInstallment')
+            paid = ImamSalaryInstallment.objects.filter(
+                salary_record__imam_name__iexact=self.imam_name,
+                salary_record__month_year__year=self.month_year.year,
+                salary_record__month_year__month__lte=self.month_year.month
+            ).aggregate(total=Sum('amount_paid'))['total']
+            return float(paid) if paid else 0.0
+        except Exception:
+            return self.total_paid
+
+    @property
     def remaining_yearly_salary(self):
         try:
-            return self.effective_yearly_salary - self.total_paid
+            return max(0.0, self.effective_yearly_salary - self.total_paid_year)
         except Exception:
             return 0.0
 
