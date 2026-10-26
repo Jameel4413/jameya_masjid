@@ -170,7 +170,7 @@ class EidCollection(models.Model):
 
     IMAM_TYPE_CHOICES = [
         ('Qari Abbas', 'Qari Abbas Imam (Jameya Masjid Ke Imam)'),
-        ('Hafiz Shehzab', 'Hafiz Shehzab Imam (Chhoti Masjid Ke Imam)'),
+        ('Hafiz Shehzad', 'Hafiz Shehzad Imam (Chhoti Masjid Ke Imam)'),
     ]
 
     eid_name = models.CharField(max_length=20, choices=EID_TYPE_CHOICES)

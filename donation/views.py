@@ -2143,3 +2143,316 @@ def export_monthly_pdf(request, year=None, month=None):
     return response
 
 
+
+
+
+
+import logging
+
+from django.contrib.auth import authenticate
+from django.db.models import Sum
+from rest_framework import status, viewsets
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.views import APIView
+
+from donation import views as web_views
+from donation.models import (
+    EidCollection,
+    Expense,
+    ImamSalary,
+    ImamSalaryInstallment,
+    LandLease,
+    LandLeasePayment,
+    WeeklyIncome,
+)
+
+from . import services
+from .serializers import (
+    ChangePasswordSerializer,
+    EidCollectionSerializer,
+    ExpenseBatchSerializer,
+    ExpenseSerializer,
+    ImamSalaryInstallmentSerializer,
+    ImamSalarySerializer,
+    IncomeBatchSerializer,
+    InstallmentCreateSerializer,
+    LandLeasePaymentSerializer,
+    LandLeaseSerializer,
+    LoginSerializer,
+    WeeklyIncomeSerializer,
+    user_payload,
+)
+
+logger = logging.getLogger(__name__)
+
+
+# ==========================================================================
+# Public helpers
+# ==========================================================================
+class PingView(APIView):
+    """Used by the app to test the server address before logging in."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response({"status": "ok", "app": "jameya_masjid", "api_version": 1})
+
+
+# ==========================================================================
+# Auth
+# ==========================================================================
+class LoginView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "login"
+
+    def post(self, request):
+        ser = LoginSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        user = authenticate(
+            request=request,
+            username=ser.validated_data["username"].strip(),
+            password=ser.validated_data["password"],
+        )
+        if user is None or not user.is_active:
+            return Response(
+                {"detail": "Username ya password ghalat hai."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        if not user.is_staff:
+            return Response(
+                {"detail": "Is account ko is app ke istemal ki ijazat nahi hai."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({"token": token.key, "user": user_payload(user)})
+
+
+class LogoutView(APIView):
+    def post(self, request):
+        Token.objects.filter(user=request.user).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MeView(APIView):
+    def get(self, request):
+        return Response(user_payload(request.user))
+
+
+class ChangePasswordView(APIView):
+    def post(self, request):
+        ser = ChangePasswordSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        data = ser.validated_data
+        user = request.user
+
+        if not user.check_password(data["old_password"]):
+            return Response(
+                {"detail": "Purana password sahi nahi hai."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        if data["new_password"] != data["confirm_password"]:
+            return Response(
+                {"detail": "Naya password dono jagah match nahi ho raha."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if len(data["new_password"]) < 6:
+            return Response(
+                {"detail": "Naya password kam az kam 6 characters ka hona chahiye."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        user.set_password(data["new_password"])
+        user.save()
+        # Old token is no longer trusted -> hand out a fresh one so this device stays logged in.
+        Token.objects.filter(user=user).delete()
+        token = Token.objects.create(user=user)
+        return Response({"detail": "Password kamyabi se badal diya gaya.", "token": token.key})
+
+
+# ==========================================================================
+# Meta (choices) + Dashboard
+# ==========================================================================
+class MetaView(APIView):
+    def get(self, request):
+        def pairs(choices):
+            return [{"value": v, "label": l} for v, l in choices]
+
+        return Response({
+            "day_types": pairs(WeeklyIncome.DAY_CHOICES),
+            "expense_categories": pairs(Expense.CATEGORY_CHOICES),
+            "eid_types": pairs(EidCollection.EID_TYPE_CHOICES),
+            "imam_types": pairs(EidCollection.IMAM_TYPE_CHOICES),
+        })
+
+
+class DashboardView(APIView):
+    def get(self, request):
+        period = services.parse_period(request.query_params)
+        data = services.dashboard_data(period)
+        data["recent_incomes"] = WeeklyIncomeSerializer(data["recent_incomes"], many=True).data
+        data["recent_expenses"] = ExpenseSerializer(data["recent_expenses"], many=True).data
+        return Response(data)
+
+
+# ==========================================================================
+# CRUD viewsets
+# ==========================================================================
+class WeeklyIncomeViewSet(viewsets.ModelViewSet):
+    queryset = WeeklyIncome.objects.all().order_by("-date", "-id")
+    serializer_class = WeeklyIncomeSerializer
+
+    def list(self, request, *args, **kwargs):
+        period = services.parse_period(request.query_params)
+        qs, summary = services.weekly_income_overview(period)
+        return Response({"results": self.get_serializer(qs, many=True).data, **summary})
+
+    @action(detail=False, methods=["post"], url_path="batch")
+    def batch(self, request):
+        ser = IncomeBatchSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        created = ser.save()
+        return Response(
+            {"created": len(created), "results": WeeklyIncomeSerializer(created, many=True).data},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class ExpenseViewSet(viewsets.ModelViewSet):
+    queryset = Expense.objects.all().order_by("-date", "-id")
+    serializer_class = ExpenseSerializer
+
+    def list(self, request, *args, **kwargs):
+        period = services.parse_period(request.query_params)
+        qs = services.filter_by_month_year(self.get_queryset(), "date", period)
+        category = request.query_params.get("category")
+        if category:
+            qs = qs.filter(category=category)
+        total = qs.aggregate(t=Sum("amount"))["t"] or 0
+        return Response({
+            "results": self.get_serializer(qs, many=True).data,
+            "total_expenses": total,
+        })
+
+    @action(detail=False, methods=["post"], url_path="batch")
+    def batch(self, request):
+        ser = ExpenseBatchSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        created = ser.save()
+        return Response(
+            {"created": len(created), "results": ExpenseSerializer(created, many=True).data},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class EidCollectionViewSet(viewsets.ModelViewSet):
+    queryset = EidCollection.objects.all().order_by("-date", "-id")
+    serializer_class = EidCollectionSerializer
+
+    def list(self, request, *args, **kwargs):
+        period = services.parse_period(request.query_params)
+        qs = services.filter_by_month_year(self.get_queryset(), "date", period)
+        imam_type = request.query_params.get("imam_type")
+        if imam_type:
+            qs = qs.filter(imam_type=imam_type)
+        total = qs.aggregate(t=Sum("amount_collected"))["t"] or 0
+        return Response({
+            "results": self.get_serializer(qs, many=True).data,
+            "total_collected": total,
+        })
+
+
+class LandLeaseViewSet(viewsets.ModelViewSet):
+    queryset = LandLease.objects.all().order_by("-start_date", "-id").prefetch_related("payments")
+    serializer_class = LandLeaseSerializer
+
+    def list(self, request, *args, **kwargs):
+        period = services.parse_period(request.query_params)
+        qs = services.filter_by_month_year(self.get_queryset(), "start_date", period)
+        leases = list(qs)
+        pending = sum(l.remaining_lease_amount for l in leases)
+        return Response({
+            "results": self.get_serializer(leases, many=True).data,
+            "total_pending_lease_amount": pending,
+        })
+
+
+class LandLeasePaymentViewSet(viewsets.ModelViewSet):
+    queryset = LandLeasePayment.objects.all().order_by("-payment_date", "-id")
+    serializer_class = LandLeasePaymentSerializer
+
+    def list(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        lease_id = request.query_params.get("lease")
+        if lease_id:
+            qs = qs.filter(lease_id=lease_id)
+        return Response({"results": self.get_serializer(qs, many=True).data})
+
+
+class ImamSalaryViewSet(viewsets.ModelViewSet):
+    queryset = ImamSalary.objects.all().order_by("-month_year", "-id").prefetch_related("installments")
+    serializer_class = ImamSalarySerializer
+
+    def list(self, request, *args, **kwargs):
+        salaries, summary = services.imam_salary_overview(request.query_params)
+        return Response({"results": self.get_serializer(salaries, many=True).data, **summary})
+
+
+class ImamSalaryInstallmentViewSet(viewsets.ModelViewSet):
+    queryset = ImamSalaryInstallment.objects.all().order_by("-payment_date", "-id")
+    serializer_class = ImamSalaryInstallmentSerializer
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return InstallmentCreateSerializer
+        return ImamSalaryInstallmentSerializer
+
+    def list(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        salary_id = request.query_params.get("salary")
+        if salary_id:
+            qs = qs.filter(salary_record_id=salary_id)
+        return Response({"results": ImamSalaryInstallmentSerializer(qs, many=True).data})
+
+    def create(self, request, *args, **kwargs):
+        ser = InstallmentCreateSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        installment = ser.save()
+        return Response(
+            ImamSalaryInstallmentSerializer(installment).data, status=status.HTTP_201_CREATED
+        )
+
+
+# ==========================================================================
+# PDF reports  (re-use the existing, already-tested PDF generators)
+# ==========================================================================
+class _PdfProxyView(APIView):
+    """
+    The PDF builders in donation/views.py are normal Django views protected by
+    @login_required.  DRF has already authenticated the token user and copied
+    it onto the underlying HttpRequest, so we can call them directly and get
+    exactly the same PDF as the website.
+    """
+
+    pdf_view = None
+
+    def get(self, request):
+        try:
+            return type(self).pdf_view(request._request)
+        except Exception:                                    # pragma: no cover
+            logger.exception("PDF generation failed")
+            return Response(
+                {"detail": "PDF banane mein masla aaya. Dobara koshish karein."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class MonthlyPdfView(_PdfProxyView):
+    pdf_view = staticmethod(web_views.export_monthly_pdf)
+
+
+class ImamSalaryPdfView(_PdfProxyView):
+    pdf_view = staticmethod(web_views.export_imam_salary_pdf)

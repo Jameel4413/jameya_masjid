@@ -1,5 +1,31 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from . import views
+
+router = DefaultRouter()
+router.register(r'incomes', views.WeeklyIncomeViewSet, basename='api-income')
+router.register(r'weekly-incomes', views.WeeklyIncomeViewSet, basename='api-weekly-income-alt')
+router.register(r'expenses', views.ExpenseViewSet, basename='api-expense')
+router.register(r'eid-collections', views.EidCollectionViewSet, basename='api-eid-collection')
+router.register(r'land-leases', views.LandLeaseViewSet, basename='api-land-lease')
+router.register(r'land-lease-payments', views.LandLeasePaymentViewSet, basename='api-land-lease-payment')
+router.register(r'lease-payments', views.LandLeasePaymentViewSet, basename='api-lease-payment-alt')
+router.register(r'imam-salaries', views.ImamSalaryViewSet, basename='api-imam-salary')
+router.register(r'imam-salary-installments', views.ImamSalaryInstallmentViewSet, basename='api-imam-salary-installment')
+router.register(r'imam-installments', views.ImamSalaryInstallmentViewSet, basename='api-imam-installment-alt')
+
+api_urlpatterns = [
+    path("ping/", views.PingView.as_view(), name="api-ping"),
+    path("auth/login/", views.LoginView.as_view(), name="api-login"),
+    path("auth/logout/", views.LogoutView.as_view(), name="api-logout"),
+    path("auth/me/", views.MeView.as_view(), name="api-me"),
+    path("auth/change-password/", views.ChangePasswordView.as_view(), name="api-change-password"),
+    path("meta/", views.MetaView.as_view(), name="api-meta"),
+    path("dashboard/", views.DashboardView.as_view(), name="api-dashboard"),
+    path("reports/monthly-pdf/", views.MonthlyPdfView.as_view(), name="api-monthly-pdf"),
+    path("reports/imam-salary-pdf/", views.ImamSalaryPdfView.as_view(), name="api-imam-salary-pdf"),
+    path("", include(router.urls)),
+]
 
 urlpatterns = [
     path('', views.dashboard_view, name='dashboard'),
@@ -49,4 +75,19 @@ urlpatterns = [
     # Reports
     path('export-pdf/', views.export_monthly_pdf, name='export_monthly_pdf'),
     path('export-pdf/<int:year>/<int:month>/', views.export_monthly_pdf, name='export_monthly_pdf_param'),
+
+
+    # REST API endpoints (/api/...)
+    path('api/', include(api_urlpatterns)),
+
+    path("ping/", views.PingView.as_view(), name="api-ping"),
+    path("auth/login/", views.LoginView.as_view(), name="api-login"),
+    path("auth/logout/", views.LogoutView.as_view(), name="api-logout"),
+    path("auth/me/", views.MeView.as_view(), name="api-me"),
+    path("auth/change-password/", views.ChangePasswordView.as_view(), name="api-change-password"),
+    path("meta/", views.MetaView.as_view(), name="api-meta"),
+    path("dashboard/", views.DashboardView.as_view(), name="api-dashboard"),
+    path("reports/monthly-pdf/", views.MonthlyPdfView.as_view(), name="api-monthly-pdf"),
+    path("reports/imam-salary-pdf/", views.ImamSalaryPdfView.as_view(), name="api-imam-salary-pdf"),
+    path("", include(router.urls)),
 ]
