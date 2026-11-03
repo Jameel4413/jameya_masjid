@@ -2052,7 +2052,7 @@ def export_monthly_pdf(request, year=None, month=None):
 
     if 'inst_ranges' in locals():
         for s_idx, start_i, end_i in inst_ranges:
-            inner_table_style.append(('BACKGROUND', (0, s_idx), (-1, s_idx), colors.HexColor("#044e3a"))
+            inner_table_style.append(('BACKGROUND', (0, s_idx), (-1, s_idx), colors.HexColor("#044e3a")))
             if end_i >= start_i:
                 inner_table_style.append(('BACKGROUND', (0, start_i), (-1, end_i), colors.HexColor("#f0fdf4")))
                 inner_table_style.append(('GRID', (0, start_i), (-1, end_i), 0.3, colors.HexColor("#a7f3d0")))
