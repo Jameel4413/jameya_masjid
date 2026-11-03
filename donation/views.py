@@ -38,14 +38,15 @@ def change_password_view(request):
 
 from django.conf import settings
 import arabic_reshaper
-from bidi.algorithm import get_display
-
+# from bidi.algorithm import get_display
+import arabic_reshaper
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage, Flowable
+from reportlab.platypus import SimpleDocTemplate, Spacer, Table, TableStyle, Image as RLImage, Flowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from .urdu_pdf import Paragraph
 
 from .models import (
     WeeklyIncome,
@@ -146,17 +147,10 @@ _ARABIC_RESHAPER_PRESERVE_HARAKAT = arabic_reshaper.ArabicReshaper({
 def shape_ur(text, is_urdu=False):
     if text is None:
         return ""
-    str_text = str(text)
-    if not is_urdu or not str_text.strip():
-        return str_text
-    
-    str_text = translate_user_input_to_urdu(str_text)
-    register_urdu_fonts()
-    reshaped = _ARABIC_RESHAPER_PRESERVE_HARAKAT.reshape(str_text)
-    display_txt = get_display(reshaped)
-    # Strip Bidi directional formatting/control characters (0x200e-0x200f, 0x202a-0x202e, 0x2060-0x206f) that draw black box symbols in ReportLab
-    return "".join([c for c in display_txt if not (0x200E <= ord(c) <= 0x200F or 0x202A <= ord(c) <= 0x202E or 0x2060 <= ord(c) <= 0x206F)])
-
+    s = str(text)
+    if not is_urdu or not s.strip():
+        return s
+    return translate_user_input_to_urdu(s)   # shaping ab urdu_pdf.Paragraph karta hai
 def set_language(request):
     lang = request.GET.get('lang', 'en')
     if lang in ['en', 'ur']:
