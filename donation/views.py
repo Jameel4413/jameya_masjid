@@ -47,6 +47,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from .urdu_pdf import Paragraph
+from reportlab.platypus import KeepInFrame
 
 from .models import (
     WeeklyIncome,
