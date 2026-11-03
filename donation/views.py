@@ -1260,6 +1260,7 @@ def delete_lease_payment_view(request, pk):
 # ==========================================
 
 @login_required(login_url='/admin/login/')
+
 def export_monthly_pdf(request, year=None, month=None):
     register_urdu_fonts()
     registered_fonts = pdfmetrics.getRegisteredFontNames()
@@ -1320,13 +1321,13 @@ def export_monthly_pdf(request, year=None, month=None):
             month_name = f"{URDU_MONTH_NAMES.get(selected_month, '')} {selected_year}"
         else:
             month_name = datetime(selected_year, selected_month, 1).strftime('%B %Y')
-            
+
         weekly_incomes = WeeklyIncome.objects.filter(date__year=selected_year, date__month=selected_month).order_by('date')
         expenses = Expense.objects.filter(date__year=selected_year, date__month=selected_month).order_by('date')
         lease_payments = LandLeasePayment.objects.filter(payment_date__year=selected_year, payment_date__month=selected_month).order_by('payment_date')
         salary_payments = ImamSalaryInstallment.objects.filter(payment_date__year=selected_year, payment_date__month=selected_month).order_by('payment_date')
         salaries = ImamSalary.objects.filter(month_year__year=selected_year, month_year__month=selected_month).order_by('month_year')
-        
+
         _, last_day = calendar.monthrange(selected_year, selected_month)
         first_date = datetime(selected_year, selected_month, 1).date()
         last_date = datetime(selected_year, selected_month, last_day).date()
@@ -1389,7 +1390,7 @@ def export_monthly_pdf(request, year=None, month=None):
             'description': desc_disp,
             'amount': exp.amount,
         })
-        
+
     for sal in salary_payments:
         cat_disp = "امام کی تنخواہ" if is_urdu else "Imam Salary"
         if is_urdu:
@@ -1442,7 +1443,7 @@ def export_monthly_pdf(request, year=None, month=None):
     styles = getSampleStyleSheet()
 
     # Authentic Arabic Bismillah Text
-   # 1. Arabic, Urdu Tarjuma Aur Hadees Text
+    # 1. Arabic, Urdu Tarjuma Aur Hadees Text
     bismillah_exact_text = "بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ"
     bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
 
@@ -1514,8 +1515,8 @@ def export_monthly_pdf(request, year=None, month=None):
     center_table = Table(center_table_data, colWidths=[372], rowHeights=[52, 20])
     center_table.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (0, 0), 'MIDDLE'),    # Bismillah & Tarjuma exact center
-        ('VALIGN', (0, 1), (0, 1), 'MIDDLE'),    # Hadees box row ke beech mein -> outer border se gap
+        ('VALIGN', (0, 0), (0, 0), 'MIDDLE'),
+        ('VALIGN', (0, 1), (0, 1), 'MIDDLE'),
         ('TOPPADDING', (0, 0), (-1, -1), 0),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ('LEFTPADDING', (0, 0), (-1, -1), 0),
@@ -1541,7 +1542,7 @@ def export_monthly_pdf(request, year=None, month=None):
     story.append(bism_box)
     story.append(Spacer(1, 3))
 
-    # 2. EXECUTIVE MONTH / PERIOD BANNER STRIP (Width = 552pt)
+    # 2. EXECUTIVE MONTH / PERIOD BANNER STRIP
     if is_annual:
         month_banner_text = f"سالانہ مالیاتی گوشوارہ برائے {month_name}" if is_urdu else f"ANNUAL FINANCIAL STATEMENT — {month_name.upper()}"
     else:
@@ -1574,7 +1575,7 @@ def export_monthly_pdf(request, year=None, month=None):
     story.append(month_banner_table)
     story.append(Spacer(1, 3))
 
-    # 3. EXECUTIVE SUMMARY 3-STAT STRIP (Width = 552pt, 184pt per cell, Previous Balance REMOVED)
+    # 3. EXECUTIVE SUMMARY 3-STAT STRIP
     card_title_style = ParagraphStyle(
         'CardT3', parent=styles['Normal'], fontName=font_bold, fontSize=9.0, leading=11,
         textColor=colors.white, alignment=1
@@ -1647,10 +1648,7 @@ def export_monthly_pdf(request, year=None, month=None):
         textColor=colors.HexColor("#b71c1c"), alignment=2
     )
 
-    # =========================================================================
-    # 4. FULL-WIDTH INCOME LEDGER TABLE (Width = 552pt)
-    # Dedicated Columns: Date (55pt) | Source (120pt) | Notes (277pt) | Amount (100pt)
-    # =========================================================================
+    # 4. FULL-WIDTH INCOME LEDGER TABLE
     inc_sec_title = "آمدنی کا مکمل گوشوارہ (INCOME LEDGER)" if is_urdu else "INCOME AUDIT LEDGER"
     h_date = "تاریخ" if is_urdu else "Date"
     h_src = "زمرہ / ذریعہ" if is_urdu else "Source / Type"
@@ -1701,7 +1699,6 @@ def export_monthly_pdf(request, year=None, month=None):
         ('RIGHTPADDING', (0, 0), (-1, -1), 2.5),
     ]
 
-    # Alternating row colors for clean audit reading
     for r_idx in range(2, len(inc_rows) - (0 if not income_items else 1)):
         if r_idx % 2 == 1:
             inc_table_style.append(('BACKGROUND', (0, r_idx), (-1, r_idx), colors.HexColor("#f8fafc")))
@@ -1717,11 +1714,7 @@ def export_monthly_pdf(request, year=None, month=None):
     story.append(inc_table)
     story.append(Spacer(1, 4))
 
-    # =========================================================================
-    # 5. FULL-WIDTH EXPENSE LEDGER TABLE (Width = 552pt)
-    # Dedicated Columns: Date (55pt) | Category (110pt) | Description (287pt) | Amount (100pt)
-    # ZERO Merged Strings! High Readability!
-    # =========================================================================
+    # 5. FULL-WIDTH EXPENSE LEDGER TABLE
     exp_sec_title = "اخراجات کا مکمل گوشوارہ (EXPENSE LEDGER)" if is_urdu else "EXPENSE AUDIT LEDGER"
     h_cat = "زمرہ (Category)" if is_urdu else "Category"
     h_desc = "تفصیل / نوٹس (Description)" if is_urdu else "Description / Details"
@@ -1770,7 +1763,6 @@ def export_monthly_pdf(request, year=None, month=None):
         ('RIGHTPADDING', (0, 0), (-1, -1), 2.5),
     ]
 
-    # Alternating row colors for clean audit reading
     for r_idx in range(2, len(exp_rows) - (0 if not expense_items else 1)):
         if r_idx % 2 == 1:
             exp_table_style.append(('BACKGROUND', (0, r_idx), (-1, r_idx), colors.HexColor("#fef2f2")))
@@ -1786,12 +1778,7 @@ def export_monthly_pdf(request, year=None, month=None):
     story.append(exp_table)
     story.append(Spacer(1, 4))
 
-    # =========================================================================
-    # 6. ROW 3: EXPANDED IMAM SALARY CARD (Left, 352pt) & COMPACT LAND LEASE CARD (Right, 190pt)
-    # Total combined width = 352 + 10 (gap) + 190 = 552pt!
-    # =========================================================================
-
-    # 6A. Left: Expanded Imam Salary Table (352pt Width)
+    # 6A. Left: Expanded Imam Salary Table
     imam_sec_title = "امام کی تنخواہ کا ریکارڈ (IMAM SALARY RECORD)" if is_urdu else "IMAM SALARY RECORD"
     imam_card_rows = [
         [Paragraph(f"<b>{shape_ur(imam_sec_title, is_urdu)}</b>", sec_title_style), "", ""]
@@ -1866,14 +1853,12 @@ def export_monthly_pdf(request, year=None, month=None):
                 'DarkBarYRem', parent=styles['Normal'], fontName=font_bold, fontSize=bar_font_size, leading=bar_leading, textColor=colors.HexColor(rem_y_color), alignment=2
             )
 
-            # Full-Width Dark Highlight Row 1: Monthly Breakdown Bar (Dark Emerald Green Background)
             imam_card_rows.append([
                 Paragraph(f"<b>{shape_ur(lbl_m_tot, is_urdu)}: RS {s.total_salary:,.0f}</b>", dark_bar_white),
                 Paragraph(f"<b>{shape_ur(lbl_m_paid, is_urdu)}: RS {s.total_paid:,.0f}</b>", dark_bar_paid),
                 Paragraph(f"<b>{shape_ur(lbl_m_rem, is_urdu)}: RS {s.remaining_salary:,.0f}</b>", dark_bar_m_rem),
             ])
 
-            # Full-Width Dark Highlight Row 2: Yearly Breakdown Bar (Dark Slate Navy Background)
             imam_card_rows.append([
                 Paragraph(f"<b>{shape_ur(lbl_y_tot, is_urdu)}: RS {s.effective_yearly_salary:,.0f}</b>", dark_bar_white),
                 "",
@@ -1908,7 +1893,7 @@ def export_monthly_pdf(request, year=None, month=None):
         ])
     imam_table.setStyle(TableStyle(imam_table_style))
 
-    # 6B. Right: Ultra-Compact 3D Elevated Micro Card (Strict 140pt Width - Exact Original Titles Restored)
+    # 6B. Right: Ultra-Compact 3D Elevated Micro Card
     lease_sec_title = "زمین کا ٹھیکہ" if is_urdu else "Zameen Ka Theka"
     card_font_size = 5.2
     card_leading = 6.2
@@ -1995,7 +1980,6 @@ def export_monthly_pdf(request, year=None, month=None):
                 Paragraph(f"<font color='{rem_color}'><b>RS {l.remaining_lease_amount:,.0f}</b></font> ({shape_ur(status_text, is_urdu)})", card_val_urdu_style if is_urdu else card_val_style)
             ])
 
-            # Installments Sub-Header Banner (Exact Original Title Restored)
             inst_hdr = "اقساط کا ریکارڈ (INSTALLMENTS)" if is_urdu else "INSTALLMENTS RECORD"
             inst_hdr_style = ParagraphStyle(
                 'InstSubHdr', parent=styles['Normal'], fontName=font_bold, fontSize=5.2, leading=6.2, textColor=colors.HexColor("#fde047"), alignment=1
@@ -2009,7 +1993,7 @@ def export_monthly_pdf(request, year=None, month=None):
             for p in l.payments.all().order_by('payment_date'):
                 note_raw = p.notes.strip() if (p.notes and p.notes.strip()) else ""
                 date_cell = Paragraph(f"<font color='#047857'><b>{p.payment_date.strftime('%d-%b-%Y')}</b></font>", card_val_style)
-                
+
                 has_urdu_note = False
                 if note_raw:
                     try:
@@ -2053,8 +2037,8 @@ def export_monthly_pdf(request, year=None, month=None):
     inner_table = Table(card_rows, colWidths=[42, 92])
     inner_table_style = [
         ('SPAN', (0, 0), (-1, 0)),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#022c22")), # Deep Rich Velvet Emerald Banner
-        ('LINEBELOW', (0, 0), (-1, 0), 1.0, colors.HexColor("#c59b27")), # Metallic Gold Line Below Header
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#022c22")),
+        ('LINEBELOW', (0, 0), (-1, 0), 1.0, colors.HexColor("#c59b27")),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('TOPPADDING', (0, 0), (-1, -1), 0.6),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0.6),
@@ -2062,17 +2046,16 @@ def export_monthly_pdf(request, year=None, month=None):
         ('RIGHTPADDING', (0, 0), (-1, -1), 1.5),
     ]
 
-    # Alternating row colors for metadata rows (Rows 1 to 7)
     for r_i in range(1, min(8, len(card_rows))):
         bg_col = colors.HexColor("#f8fafc") if r_i % 2 == 1 else colors.HexColor("#ffffff")
         inner_table_style.append(('BACKGROUND', (0, r_i), (-1, r_i), bg_col))
 
     if 'inst_ranges' in locals():
         for s_idx, start_i, end_i in inst_ranges:
-            inner_table_style.append(('BACKGROUND', (0, s_idx), (-1, s_idx), colors.HexColor("#044e3a"))) # Forest Sub-Banner
+            inner_table_style.append(('BACKGROUND', (0, s_idx), (-1, s_idx), colors.HexColor("#044e3a"))
             if end_i >= start_i:
-                inner_table_style.append(('BACKGROUND', (0, start_i), (-1, end_i), colors.HexColor("#f0fdf4"))) # Soft Mint Tint
-                inner_table_style.append(('GRID', (0, start_i), (-1, end_i), 0.3, colors.HexColor("#a7f3d0"))) # Mint Grid Lines!
+                inner_table_style.append(('BACKGROUND', (0, start_i), (-1, end_i), colors.HexColor("#f0fdf4")))
+                inner_table_style.append(('GRID', (0, start_i), (-1, end_i), 0.3, colors.HexColor("#a7f3d0")))
 
     for idx, row_item in enumerate(card_rows):
         if len(row_item) > 1 and row_item[1] == "":
@@ -2080,7 +2063,7 @@ def export_monthly_pdf(request, year=None, month=None):
 
     inner_table.setStyle(TableStyle(inner_table_style))
 
-    # Wrap in custom 3D Rounded Elevated Card Container (Strict 140pt Width Restored)
+    # Wrap in custom 3D Rounded Elevated Card Container
     class ThreeDRoundedCard(Flowable):
         def __init__(self, content_table, width=140):
             super().__init__()
@@ -2099,22 +2082,18 @@ def export_monthly_pdf(request, year=None, month=None):
             h = self.height
             r = 5.0
 
-            # 1. 3D Drop Shadow Effect
             c.setFillColor(colors.HexColor("#cbd5e1"))
             c.roundRect(2.5, -2.5, w - 2.5, h - 2.5, r, fill=1, stroke=0)
 
-            # 2. Card Outer Frame (Soft Ivory background, Emerald Green stroke)
             c.setFillColor(colors.HexColor("#fffdf5"))
             c.setStrokeColor(colors.HexColor("#047857"))
             c.setLineWidth(1.0)
             c.roundRect(0, 0, w - 2.5, h - 2.5, r, fill=1, stroke=1)
 
-            # 3. Draw inner table
             self.content_table.drawOn(c, 1.5, 1.5)
 
     lease_table = ThreeDRoundedCard(inner_table, width=140)
 
-    # 397pt Imam Table + 15pt Gap + 140pt Land Lease Card = 552pt Printable Width
     row3_container = Table([[imam_table, "", lease_table]], colWidths=[397, 15, 140])
     row3_container.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
@@ -2125,7 +2104,22 @@ def export_monthly_pdf(request, year=None, month=None):
     ]))
     story.append(row3_container)
 
-    doc.build(story, onFirstPage=draw_islamic_pdf_background, onLaterPages=draw_islamic_pdf_background)
+    # Keep the complete PDF content on exactly one page.
+    # If content is too tall, ReportLab proportionally shrinks it to fit.
+    single_page_content = KeepInFrame(
+        maxWidth=doc.width,
+        maxHeight=doc.height,
+        content=story,
+        mode='shrink',
+        hAlign='LEFT',
+        vAlign='TOP'
+    )
+
+    doc.build(
+        [single_page_content],
+        onFirstPage=draw_islamic_pdf_background,
+        onLaterPages=draw_islamic_pdf_background
+    )
     buffer.seek(0)
 
     response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
