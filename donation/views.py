@@ -47,7 +47,6 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from .urdu_pdf import Paragraph
-from reportlab.platypus import KeepInFrame
 
 from .models import (
     WeeklyIncome,
@@ -1261,23 +1260,58 @@ def delete_lease_payment_view(request, pk):
 # ==========================================
 
 @login_required(login_url='/admin/login/')
-
 def export_monthly_pdf(request, year=None, month=None):
     register_urdu_fonts()
     registered_fonts = pdfmetrics.getRegisteredFontNames()
     import calendar
+
     now = timezone.now()
 
     # Get from GET query parameter or argument
     get_year = request.GET.get('year')
     get_month = request.GET.get('month')
-    pdf_lang = request.GET.get('lang') or request.GET.get('pdf_lang') or (request.session.get('lang', 'en') if hasattr(request, 'session') and request.session is not None else 'en')
+
+    pdf_lang = (
+        request.GET.get('lang')
+        or request.GET.get('pdf_lang')
+        or (
+            request.session.get('lang', 'en')
+            if hasattr(request, 'session') and request.session is not None
+            else 'en'
+        )
+    )
+
     is_urdu = (pdf_lang == 'ur')
 
-    font_bism = 'UrduNaskh-Bold' if 'UrduNaskh-Bold' in registered_fonts else ('UrduFont-Bold' if 'UrduFont-Bold' in registered_fonts else 'Helvetica-Bold')
+    font_bism = (
+        'UrduNaskh-Bold'
+        if 'UrduNaskh-Bold' in registered_fonts
+        else (
+            'UrduFont-Bold'
+            if 'UrduFont-Bold' in registered_fonts
+            else 'Helvetica-Bold'
+        )
+    )
 
-    urdu_font_normal = 'UrduNastaliq' if 'UrduNastaliq' in registered_fonts else ('UrduFont' if 'UrduFont' in registered_fonts else 'Helvetica')
-    urdu_font_bold = 'UrduNastaliq' if 'UrduNastaliq' in registered_fonts else ('UrduFont-Bold' if 'UrduFont-Bold' in registered_fonts else 'Helvetica-Bold')
+    urdu_font_normal = (
+        'UrduNastaliq'
+        if 'UrduNastaliq' in registered_fonts
+        else (
+            'UrduFont'
+            if 'UrduFont' in registered_fonts
+            else 'Helvetica'
+        )
+    )
+
+    urdu_font_bold = (
+        'UrduNastaliq'
+        if 'UrduNastaliq' in registered_fonts
+        else (
+            'UrduFont-Bold'
+            if 'UrduFont-Bold' in registered_fonts
+            else 'Helvetica-Bold'
+        )
+    )
 
     if is_urdu:
         font_normal = urdu_font_normal
@@ -1286,15 +1320,23 @@ def export_monthly_pdf(request, year=None, month=None):
         font_normal = 'Helvetica'
         font_bold = 'Helvetica-Bold'
 
-    selected_year = year or (int(get_year) if get_year and get_year.isdigit() else None) or now.year
+    selected_year = (
+        year
+        or (int(get_year) if get_year and get_year.isdigit() else None)
+        or now.year
+    )
+
     raw_month = month or get_month
 
     is_annual = False
+
     if raw_month and str(raw_month).lower() in ['all', 'annual']:
         is_annual = True
         selected_month = None
+
     elif not raw_month or str(raw_month).lower() in ['', 'none']:
         selected_month = now.month
+
     else:
         if isinstance(raw_month, str) and raw_month.isdigit():
             selected_month = int(raw_month)
@@ -1306,85 +1348,258 @@ def export_monthly_pdf(request, year=None, month=None):
     selected_year = int(selected_year)
 
     if is_annual:
-        month_name = f"سال {selected_year}" if is_urdu else f"Year {selected_year}"
-        weekly_incomes = WeeklyIncome.objects.filter(date__year=selected_year).order_by('date')
-        expenses = Expense.objects.filter(date__year=selected_year).order_by('date')
-        lease_payments = LandLeasePayment.objects.filter(payment_date__year=selected_year).order_by('payment_date')
-        salary_payments = ImamSalaryInstallment.objects.filter(payment_date__year=selected_year).order_by('payment_date')
-        salaries = ImamSalary.objects.filter(month_year__year=selected_year).order_by('month_year')
+
+        month_name = (
+            f"سال {selected_year}"
+            if is_urdu
+            else f"Year {selected_year}"
+        )
+
+        weekly_incomes = WeeklyIncome.objects.filter(
+            date__year=selected_year
+        ).order_by('date')
+
+        expenses = Expense.objects.filter(
+            date__year=selected_year
+        ).order_by('date')
+
+        lease_payments = LandLeasePayment.objects.filter(
+            payment_date__year=selected_year
+        ).order_by('payment_date')
+
+        salary_payments = ImamSalaryInstallment.objects.filter(
+            payment_date__year=selected_year
+        ).order_by('payment_date')
+
+        salaries = ImamSalary.objects.filter(
+            month_year__year=selected_year
+        ).order_by('month_year')
+
         leases = LandLease.objects.filter(
             start_date__year__lte=selected_year,
             end_date__year__gte=selected_year
         ).order_by('start_date')
+
     else:
+
         selected_month = int(selected_month)
+
+        if not 1 <= selected_month <= 12:
+            selected_month = now.month
+
         if is_urdu:
-            month_name = f"{URDU_MONTH_NAMES.get(selected_month, '')} {selected_year}"
+            month_name = (
+                f"{URDU_MONTH_NAMES.get(selected_month, '')} "
+                f"{selected_year}"
+            )
         else:
-            month_name = datetime(selected_year, selected_month, 1).strftime('%B %Y')
+            month_name = datetime(
+                selected_year,
+                selected_month,
+                1
+            ).strftime('%B %Y')
 
-        weekly_incomes = WeeklyIncome.objects.filter(date__year=selected_year, date__month=selected_month).order_by('date')
-        expenses = Expense.objects.filter(date__year=selected_year, date__month=selected_month).order_by('date')
-        lease_payments = LandLeasePayment.objects.filter(payment_date__year=selected_year, payment_date__month=selected_month).order_by('payment_date')
-        salary_payments = ImamSalaryInstallment.objects.filter(payment_date__year=selected_year, payment_date__month=selected_month).order_by('payment_date')
-        salaries = ImamSalary.objects.filter(month_year__year=selected_year, month_year__month=selected_month).order_by('month_year')
+        weekly_incomes = WeeklyIncome.objects.filter(
+            date__year=selected_year,
+            date__month=selected_month
+        ).order_by('date')
 
-        _, last_day = calendar.monthrange(selected_year, selected_month)
-        first_date = datetime(selected_year, selected_month, 1).date()
-        last_date = datetime(selected_year, selected_month, last_day).date()
+        expenses = Expense.objects.filter(
+            date__year=selected_year,
+            date__month=selected_month
+        ).order_by('date')
+
+        lease_payments = LandLeasePayment.objects.filter(
+            payment_date__year=selected_year,
+            payment_date__month=selected_month
+        ).order_by('payment_date')
+
+        salary_payments = ImamSalaryInstallment.objects.filter(
+            payment_date__year=selected_year,
+            payment_date__month=selected_month
+        ).order_by('payment_date')
+
+        salaries = ImamSalary.objects.filter(
+            month_year__year=selected_year,
+            month_year__month=selected_month
+        ).order_by('month_year')
+
+        _, last_day = calendar.monthrange(
+            selected_year,
+            selected_month
+        )
+
+        first_date = datetime(
+            selected_year,
+            selected_month,
+            1
+        ).date()
+
+        last_date = datetime(
+            selected_year,
+            selected_month,
+            last_day
+        ).date()
+
         leases = LandLease.objects.filter(
             start_date__lte=last_date,
             end_date__gte=first_date
         ).order_by('start_date')
 
-    # Calculate Totals & Carried-Forward Balance
-    total_weekly = weekly_incomes.aggregate(total=Sum('amount'))['total'] or 0
+    # ============================================================
+    # CALCULATE TOTALS AND CARRIED-FORWARD BALANCE
+    # ============================================================
+
+    total_weekly = (
+        weekly_incomes.aggregate(total=Sum('amount'))['total'] or 0
+    )
+
     prev_months_remaining = 0
 
     if not is_annual:
-        start_date_of_month = datetime(selected_year, selected_month, 1).date()
-        prev_inc = WeeklyIncome.objects.filter(date__lt=start_date_of_month).aggregate(t=Sum('amount'))['t'] or 0
-        prev_exp = (Expense.objects.filter(date__lt=start_date_of_month).aggregate(t=Sum('amount'))['t'] or 0) + \
-                   (ImamSalaryInstallment.objects.filter(payment_date__lt=start_date_of_month).aggregate(t=Sum('amount_paid'))['t'] or 0)
+
+        start_date_of_month = datetime(
+            selected_year,
+            selected_month,
+            1
+        ).date()
+
+        prev_inc = (
+            WeeklyIncome.objects.filter(
+                date__lt=start_date_of_month
+            ).aggregate(t=Sum('amount'))['t'] or 0
+        )
+
+        prev_exp = (
+            Expense.objects.filter(
+                date__lt=start_date_of_month
+            ).aggregate(t=Sum('amount'))['t'] or 0
+        ) + (
+            ImamSalaryInstallment.objects.filter(
+                payment_date__lt=start_date_of_month
+            ).aggregate(t=Sum('amount_paid'))['t'] or 0
+        )
+
         prev_months_remaining = prev_inc - prev_exp
 
-    month_total_income = (prev_months_remaining if not is_annual else 0) + total_weekly
+    month_total_income = (
+        (prev_months_remaining if not is_annual else 0)
+        + total_weekly
+    )
 
-    total_gen_expense = expenses.aggregate(total=Sum('amount'))['total'] or 0
-    total_salary_paid = salary_payments.aggregate(total=Sum('amount_paid'))['total'] or 0
-    month_total_expense = total_gen_expense + total_salary_paid
+    total_gen_expense = (
+        expenses.aggregate(total=Sum('amount'))['total'] or 0
+    )
 
-    net_monthly_balance = month_total_income - month_total_expense
+    total_salary_paid = (
+        salary_payments.aggregate(total=Sum('amount_paid'))['total'] or 0
+    )
 
-    # Combine ALL Income Items (100% full dataset, zero truncation)
+    month_total_expense = (
+        total_gen_expense + total_salary_paid
+    )
+
+    net_monthly_balance = (
+        month_total_income - month_total_expense
+    )
+
+    # ============================================================
+    # COMBINE ALL INCOME ITEMS
+    # ============================================================
+
     income_items = []
+
     if not is_annual and prev_months_remaining != 0:
-        opening_source = "سابقہ بقایا" if is_urdu else "Previous Balance"
-        opening_note = "پچھلے مہینے کا باقی ماندا بیلنس" if is_urdu else "Carried balance from previous period"
+
+        opening_source = (
+            "سابقہ بقایا"
+            if is_urdu
+            else "Previous Balance"
+        )
+
+        opening_note = (
+            "پچھلے مہینے کا باقی ماندا بیلنس"
+            if is_urdu
+            else "Carried balance from previous period"
+        )
+
         income_items.append({
-            'date': datetime(selected_year, selected_month, 1).date(),
+            'date': datetime(
+                selected_year,
+                selected_month,
+                1
+            ).date(),
             'source': opening_source,
             'notes': opening_note,
             'amount': prev_months_remaining,
         })
 
     for inc in weekly_incomes:
-        source_disp = DAY_TYPE_URDU.get(inc.get_day_type_display(), translate_user_input_to_urdu(inc.get_day_type_display())) if is_urdu else inc.get_day_type_display()
-        notes_disp = translate_user_input_to_urdu(inc.notes) if (is_urdu and inc.notes and inc.notes.strip() != "-") else (inc.notes or "-")
+
+        source_disp = (
+            DAY_TYPE_URDU.get(
+                inc.get_day_type_display(),
+                translate_user_input_to_urdu(
+                    inc.get_day_type_display()
+                )
+            )
+            if is_urdu
+            else inc.get_day_type_display()
+        )
+
+        notes_disp = (
+            translate_user_input_to_urdu(inc.notes)
+            if (
+                is_urdu
+                and inc.notes
+                and inc.notes.strip() != "-"
+            )
+            else (inc.notes or "-")
+        )
+
         income_items.append({
             'date': inc.date,
             'source': source_disp,
             'notes': notes_disp,
             'amount': inc.amount,
         })
+
     income_items.sort(key=lambda x: x['date'])
 
-    # Combine ALL Expense Items (100% full dataset in 4 distinct fields: Date, Category, Description, Amount)
+    # ============================================================
+    # COMBINE ALL EXPENSE ITEMS
+    # ============================================================
+
     expense_items = []
+
     for exp in expenses:
-        cat_disp = EXPENSE_CAT_URDU.get(exp.get_category_display(), translate_user_input_to_urdu(exp.get_category_display())) if is_urdu else exp.get_category_display()
-        raw_desc = exp.description if (exp.description and exp.description.strip() != "-") else "-"
-        desc_disp = translate_user_input_to_urdu(raw_desc) if (is_urdu and raw_desc != "-") else raw_desc
+
+        cat_disp = (
+            EXPENSE_CAT_URDU.get(
+                exp.get_category_display(),
+                translate_user_input_to_urdu(
+                    exp.get_category_display()
+                )
+            )
+            if is_urdu
+            else exp.get_category_display()
+        )
+
+        raw_desc = (
+            exp.description
+            if (
+                exp.description
+                and exp.description.strip() != "-"
+            )
+            else "-"
+        )
+
+        desc_disp = (
+            translate_user_input_to_urdu(raw_desc)
+            if is_urdu and raw_desc != "-"
+            else raw_desc
+        )
+
         expense_items.append({
             'date': exp.date,
             'category': cat_disp,
@@ -1393,161 +1608,320 @@ def export_monthly_pdf(request, year=None, month=None):
         })
 
     for sal in salary_payments:
-        cat_disp = "امام کی تنخواہ" if is_urdu else "Imam Salary"
+
+        cat_disp = (
+            "امام کی تنخواہ"
+            if is_urdu
+            else "Imam Salary"
+        )
+
         if is_urdu:
-            sm_name = URDU_MONTH_NAMES.get(sal.salary_record.month_year.month, '')
-            notes_str = f" - {translate_user_input_to_urdu(sal.notes)}" if sal.notes else ""
-            desc_disp = f"قسط: {translate_user_input_to_urdu(sal.salary_record.imam_name)} ({sm_name} {sal.salary_record.month_year.year}){notes_str}"
+
+            sm_name = URDU_MONTH_NAMES.get(
+                sal.salary_record.month_year.month,
+                ''
+            )
+
+            notes_str = (
+                f" - {translate_user_input_to_urdu(sal.notes)}"
+                if sal.notes
+                else ""
+            )
+
+            desc_disp = (
+                f"قسط: "
+                f"{translate_user_input_to_urdu(sal.salary_record.imam_name)} "
+                f"({sm_name} {sal.salary_record.month_year.year})"
+                f"{notes_str}"
+            )
+
         else:
-            desc_disp = f"Installment: {sal.salary_record.imam_name} ({sal.salary_record.month_year.strftime('%b %Y')})"
+
+            desc_disp = (
+                f"Installment: "
+                f"{sal.salary_record.imam_name} "
+                f"({sal.salary_record.month_year.strftime('%b %Y')})"
+            )
+
         expense_items.append({
             'date': sal.payment_date,
             'category': cat_disp,
             'description': desc_disp,
             'amount': sal.amount_paid,
         })
+
     expense_items.sort(key=lambda x: x['date'])
 
-    # Dynamic Micro-Font Scaling for Full-Width Audit Ledger
-    max_entries = max(len(expense_items), len(income_items))
+    # ============================================================
+    # DYNAMIC LEDGER TYPOGRAPHY
+    # ============================================================
+
+    max_entries = max(
+        len(expense_items),
+        len(income_items)
+    )
+
     if max_entries > 20:
+
         tbl_font_size = 6.0
         tbl_leading = 7.5
         tbl_pad_v = 0.8
         tbl_hdr_font = 7.0
         tbl_hdr_leading = 8.5
+
     elif max_entries > 12:
+
         tbl_font_size = 6.5
         tbl_leading = 8.2
         tbl_pad_v = 1.0
         tbl_hdr_font = 7.5
         tbl_hdr_leading = 9.0
+
     else:
+
         tbl_font_size = 7.0
         tbl_leading = 9.0
         tbl_pad_v = 1.5
         tbl_hdr_font = 8.0
         tbl_hdr_leading = 10.0
 
+    # ============================================================
+    # PDF INITIALIZATION
+    # Dynamic page height will be calculated at the end.
+    # ============================================================
+
     buffer = io.BytesIO()
-    # Printable width: 612 - 60 = 552 pt (30pt margins)
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=letter,
-        rightMargin=30,
-        leftMargin=30,
-        topMargin=26,
-        bottomMargin=26
-    )
 
     story = []
+
     styles = getSampleStyleSheet()
 
-    # Authentic Arabic Bismillah Text
-    # 1. Arabic, Urdu Tarjuma Aur Hadees Text
+    # ============================================================
+    # BISMILLAH AND HEADER
+    # ============================================================
+
     bismillah_exact_text = "بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ"
-    bismillah_str = shape_ur(bismillah_exact_text, is_urdu=True)
 
-    bismillah_tarjuma = "اللہ کے نام سے شروع جو بڑا مہربان نہایت رحم والا ہے"
-    tarjuma_str = shape_ur(bismillah_tarjuma, is_urdu=True)
+    bismillah_str = shape_ur(
+        bismillah_exact_text,
+        is_urdu=True
+    )
 
-    hadees_text = "بے شک جو امانت دار نہیں اس کا کوئی دین نہیں۔"
-    hadees_str = shape_ur(hadees_text, is_urdu=True)
+    bismillah_tarjuma = (
+        "اللہ کے نام سے شروع جو بڑا مہربان نہایت رحم والا ہے"
+    )
 
-    kaaba_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'kaaba.png')
+    tarjuma_str = shape_ur(
+        bismillah_tarjuma,
+        is_urdu=True
+    )
+
+    hadees_text = (
+        "بے شک جو امانت دار نہیں اس کا کوئی دین نہیں۔"
+    )
+
+    hadees_str = shape_ur(
+        hadees_text,
+        is_urdu=True
+    )
+
+    kaaba_img_path = os.path.join(
+        settings.BASE_DIR,
+        'static',
+        'images',
+        'kaaba.png'
+    )
+
     if not os.path.exists(kaaba_img_path):
-        kaaba_img_path = os.path.join(settings.STATIC_ROOT, 'images', 'kaaba.png')
+        kaaba_img_path = os.path.join(
+            settings.STATIC_ROOT,
+            'images',
+            'kaaba.png'
+        )
 
-    gumbad_img_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'gumbad.png')
+    gumbad_img_path = os.path.join(
+        settings.BASE_DIR,
+        'static',
+        'images',
+        'gumbad.png'
+    )
+
     if not os.path.exists(gumbad_img_path):
-        gumbad_img_path = os.path.join(settings.STATIC_ROOT, 'images', 'gumbad.png')
+        gumbad_img_path = os.path.join(
+            settings.STATIC_ROOT,
+            'images',
+            'gumbad.png'
+        )
 
-    dummy_p = Paragraph("", styles['Normal'])
-    img_gumbad = RLImage(gumbad_img_path, width=54, height=72) if os.path.exists(gumbad_img_path) else dummy_p
-    img_kaaba = RLImage(kaaba_img_path, width=70, height=72) if os.path.exists(kaaba_img_path) else dummy_p
+    dummy_p = Paragraph(
+        "",
+        styles['Normal']
+    )
 
-    actual_urdu_font = font_urdu if 'font_urdu' in locals() or 'font_urdu' in globals() else font_bism
+    img_gumbad = (
+        RLImage(
+            gumbad_img_path,
+            width=54,
+            height=72
+        )
+        if os.path.exists(gumbad_img_path)
+        else dummy_p
+    )
 
-    # 1. Arabic Style
+    img_kaaba = (
+        RLImage(
+            kaaba_img_path,
+            width=70,
+            height=72
+        )
+        if os.path.exists(kaaba_img_path)
+        else dummy_p
+    )
+
+    actual_urdu_font = (
+        font_urdu
+        if 'font_urdu' in locals() or 'font_urdu' in globals()
+        else font_bism
+    )
+
     bism_center_style = ParagraphStyle(
-        'BismCenterM3', parent=styles['Normal'], fontName=font_bism, fontSize=15, leading=16,
-        textColor=colors.HexColor("#fde047"), alignment=1
+        'BismCenterM3',
+        parent=styles['Normal'],
+        fontName=font_bism,
+        fontSize=15,
+        leading=16,
+        textColor=colors.HexColor("#fde047"),
+        alignment=1
     )
-    p_arabic = Paragraph(bismillah_str, bism_center_style)
 
-    # 2. Urdu Tarjuma Style
+    p_arabic = Paragraph(
+        bismillah_str,
+        bism_center_style
+    )
+
     bism_tarjuma_style = ParagraphStyle(
-        'BismTarjumaM3', parent=styles['Normal'], fontName=actual_urdu_font, fontSize=9.5, leading=11,
-        textColor=colors.HexColor("#ffffff"), alignment=1
+        'BismTarjumaM3',
+        parent=styles['Normal'],
+        fontName=actual_urdu_font,
+        fontSize=9.5,
+        leading=11,
+        textColor=colors.HexColor("#ffffff"),
+        alignment=1
     )
-    p_tarjuma = Paragraph(tarjuma_str, bism_tarjuma_style)
 
-    # 3. RESTORED ORIGINAL HADEES TEXT STYLE
+    p_tarjuma = Paragraph(
+        tarjuma_str,
+        bism_tarjuma_style
+    )
+
     hadees_style = ParagraphStyle(
-        'HadeesTextM3', parent=styles['Normal'], fontName=actual_urdu_font, fontSize=8.5, leading=10,
-        textColor=colors.HexColor("#7f1d1d"), alignment=1
+        'HadeesTextM3',
+        parent=styles['Normal'],
+        fontName=actual_urdu_font,
+        fontSize=8.5,
+        leading=10,
+        textColor=colors.HexColor("#7f1d1d"),
+        alignment=1
     )
-    p_hadees = Paragraph(f"<b>{hadees_str}</b>", hadees_style)
 
-    # GOLDEN RIBBON BOX -> Islamic golden theme: emerald-green outer border + thin gold inner accent
-    hadees_box = Table([[p_hadees]], colWidths=[220])
-    hadees_box.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#fde047")),
-        ('BOX', (0, 0), (-1, -1), 2.0, colors.HexColor("#0b5e42")),
-        ('LINEABOVE', (0, 0), (-1, -1), 0.8, colors.HexColor("#c59b27"), None, None, None, None),
-        ('LINEBELOW', (0, 0), (-1, -1), 0.8, colors.HexColor("#c59b27"), None, None, None, None),
-        ('LINEBEFORE', (0, 0), (-1, -1), 0.8, colors.HexColor("#c59b27"), None, None, None, None),
-        ('LINEAFTER', (0, 0), (-1, -1), 0.8, colors.HexColor("#c59b27"), None, None, None, None),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 2),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
-    ]))
+    p_hadees = Paragraph(
+        f"<b>{hadees_str}</b>",
+        hadees_style
+    )
 
-    # Bismillah combo for exact middle positioning
-    bism_combo = [p_arabic, Spacer(1, 1), p_tarjuma]
+    hadees_box = Table(
+        [[p_hadees]],
+        colWidths=[220]
+    )
+
+    hadees_box.setStyle(
+        TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#fde047")),
+            ('BOX', (0, 0), (-1, -1), 2.0, colors.HexColor("#0b5e42")),
+            ('LINEABOVE', (0, 0), (-1, -1), 0.8, colors.HexColor("#c59b27"), None, None, None, None),
+            ('LINEBELOW', (0, 0), (-1, -1), 0.8, colors.HexColor("#c59b27"), None, None, None, None),
+            ('LINEBEFORE', (0, 0), (-1, -1), 0.8, colors.HexColor("#c59b27"), None, None, None, None),
+            ('LINEAFTER', (0, 0), (-1, -1), 0.8, colors.HexColor("#c59b27"), None, None, None, None),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 2),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ])
+    )
+
+    bism_combo = [
+        p_arabic,
+        Spacer(1, 1),
+        p_tarjuma
+    ]
 
     center_table_data = [
         [bism_combo],
         [hadees_box]
     ]
 
-    # EXACT ORIGINAL HEIGHT & ROW MAPPING RESTORED -> total 72 (52+20) same as images.
-    center_table = Table(center_table_data, colWidths=[372], rowHeights=[52, 20])
-    center_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (0, 0), 'MIDDLE'),
-        ('VALIGN', (0, 1), (0, 1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 0),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-    ]))
+    center_table = Table(
+        center_table_data,
+        colWidths=[372],
+        rowHeights=[52, 20]
+    )
 
-    # MAIN BISMILLAH BOX (Width = 552pt)
-    bism_box = Table([[img_gumbad, center_table, img_kaaba]], colWidths=[90, 372, 90])
-    bism_box.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#022c22")),
-        ('BOX', (0, 0), (-1, -1), 2.2, colors.HexColor("#c59b27")),
-        ('LINEABOVE', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")),
-        ('LINEBELOW', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")),
-        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
-        ('ALIGN', (1, 0), (1, 0), 'CENTER'),
-        ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 0),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-        ('LEFTPADDING', (0, 0), (0, 0), 2),
-        ('RIGHTPADDING', (2, 0), (2, 0), 2),
-    ]))
+    center_table.setStyle(
+        TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (0, 0), 'MIDDLE'),
+            ('VALIGN', (0, 1), (0, 1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ])
+    )
+
+    bism_box = Table(
+        [[img_gumbad, center_table, img_kaaba]],
+        colWidths=[90, 372, 90]
+    )
+
+    bism_box.setStyle(
+        TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#022c22")),
+            ('BOX', (0, 0), (-1, -1), 2.2, colors.HexColor("#c59b27")),
+            ('LINEABOVE', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")),
+            ('LINEBELOW', (0, 0), (-1, -1), 1.0, colors.HexColor("#fef08a")),
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+            ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+            ('LEFTPADDING', (0, 0), (0, 0), 2),
+            ('RIGHTPADDING', (2, 0), (2, 0), 2),
+        ])
+    )
+
     story.append(bism_box)
     story.append(Spacer(1, 3))
 
-    # 2. EXECUTIVE MONTH / PERIOD BANNER STRIP
+    # ============================================================
+    # MONTH / PERIOD BANNER
+    # ============================================================
+
     if is_annual:
-        month_banner_text = f"سالانہ مالیاتی گوشوارہ برائے {month_name}" if is_urdu else f"ANNUAL FINANCIAL STATEMENT — {month_name.upper()}"
+
+        month_banner_text = (
+            f"سالانہ مالیاتی گوشوارہ برائے {month_name}"
+            if is_urdu
+            else f"ANNUAL FINANCIAL STATEMENT — {month_name.upper()}"
+        )
+
     else:
-        month_banner_text = f"ماہانہ مالیاتی گوشوارہ برائے {month_name}" if is_urdu else f"MONTHLY FINANCIAL STATEMENT — {month_name.upper()}"
+
+        month_banner_text = (
+            f"ماہانہ مالیاتی گوشوارہ برائے {month_name}"
+            if is_urdu
+            else f"MONTHLY FINANCIAL STATEMENT — {month_name.upper()}"
+        )
 
     month_banner_style = ParagraphStyle(
         'MonthBannerS3',
@@ -1558,40 +1932,82 @@ def export_monthly_pdf(request, year=None, month=None):
         textColor=colors.HexColor("#fef08a"),
         alignment=1
     )
-    p_month_banner = Paragraph(f"<b>{shape_ur(month_banner_text, is_urdu)}</b>", month_banner_style)
 
-    month_banner_table = Table([[p_month_banner]], colWidths=[552], rowHeights=[18])
-    month_banner_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")),
-        ('BOX', (0, 0), (-1, -1), 1.2, colors.HexColor("#c59b27")),
-        ('LINEABOVE', (0, 0), (-1, -1), 0.6, colors.HexColor("#fef08a")),
-        ('LINEBELOW', (0, 0), (-1, -1), 0.6, colors.HexColor("#fef08a")),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 1.5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 1.5),
-        ('LEFTPADDING', (0, 0), (-1, -1), 4),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
-    ]))
+    p_month_banner = Paragraph(
+        f"<b>{shape_ur(month_banner_text, is_urdu)}</b>",
+        month_banner_style
+    )
+
+    month_banner_table = Table(
+        [[p_month_banner]],
+        colWidths=[552],
+        rowHeights=[18]
+    )
+
+    month_banner_table.setStyle(
+        TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#044e3a")),
+            ('BOX', (0, 0), (-1, -1), 1.2, colors.HexColor("#c59b27")),
+            ('LINEABOVE', (0, 0), (-1, -1), 0.6, colors.HexColor("#fef08a")),
+            ('LINEBELOW', (0, 0), (-1, -1), 0.6, colors.HexColor("#fef08a")),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 1.5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 1.5),
+            ('LEFTPADDING', (0, 0), (-1, -1), 4),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ])
+    )
+
     story.append(month_banner_table)
     story.append(Spacer(1, 3))
 
-    # 3. EXECUTIVE SUMMARY 3-STAT STRIP
+    # ============================================================
+    # EXECUTIVE SUMMARY
+    # ============================================================
+
     card_title_style = ParagraphStyle(
-        'CardT3', parent=styles['Normal'], fontName=font_bold, fontSize=9.0, leading=11,
-        textColor=colors.white, alignment=1
+        'CardT3',
+        parent=styles['Normal'],
+        fontName=font_bold,
+        fontSize=9.0,
+        leading=11,
+        textColor=colors.white,
+        alignment=1
     )
+
     card_val_inc = ParagraphStyle(
-        'CardValInc3', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=14,
-        textColor=colors.HexColor("#fef08a"), alignment=1
+        'CardValInc3',
+        parent=styles['Normal'],
+        fontName=font_bold,
+        fontSize=11.5,
+        leading=14,
+        textColor=colors.HexColor("#fef08a"),
+        alignment=1
     )
+
     card_val_exp = ParagraphStyle(
-        'CardValExp3', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=14,
-        textColor=colors.HexColor("#fee2e2"), alignment=1
+        'CardValExp3',
+        parent=styles['Normal'],
+        fontName=font_bold,
+        fontSize=11.5,
+        leading=14,
+        textColor=colors.HexColor("#fee2e2"),
+        alignment=1
     )
+
     card_val_net = ParagraphStyle(
-        'CardValNet3', parent=styles['Normal'], fontName=font_bold, fontSize=11.5, leading=14,
-        textColor=colors.HexColor("#e0f2fe") if net_monthly_balance >= 0 else colors.HexColor("#fee2e2"), alignment=1
+        'CardValNet3',
+        parent=styles['Normal'],
+        fontName=font_bold,
+        fontSize=11.5,
+        leading=14,
+        textColor=(
+            colors.HexColor("#e0f2fe")
+            if net_monthly_balance >= 0
+            else colors.HexColor("#fee2e2")
+        ),
+        alignment=1
     )
 
     lbl_tot_inc = "کل آمدنی" if is_urdu else "TOTAL INCOME"
@@ -1610,54 +2026,108 @@ def export_monthly_pdf(request, year=None, month=None):
             Paragraph(f"RS {net_monthly_balance:,.0f}", card_val_net)
         ]
     ]
-    summary_table = Table(summary_data, colWidths=[184, 184, 184])
-    summary_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, 1), colors.HexColor("#044e3a")),
-        ('BACKGROUND', (1, 0), (1, 1), colors.HexColor("#991b1b")),
-        ('BACKGROUND', (2, 0), (2, 1), colors.HexColor("#0369a1") if net_monthly_balance >= 0 else colors.HexColor("#991b1b")),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('BOX', (0, 0), (0, -1), 1.2, colors.HexColor("#c59b27")),
-        ('BOX', (1, 0), (1, -1), 1.2, colors.HexColor("#b71c1c")),
-        ('BOX', (2, 0), (2, -1), 1.2, colors.HexColor("#0284c7")),
-        ('LINEBELOW', (0, 0), (-1, 0), 0.8, colors.HexColor("#fef08a")),
-        ('TOPPADDING', (0, 0), (-1, -1), 3.0),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3.0),
-    ]))
+
+    summary_table = Table(
+        summary_data,
+        colWidths=[184, 184, 184]
+    )
+
+    summary_table.setStyle(
+        TableStyle([
+            ('BACKGROUND', (0, 0), (0, 1), colors.HexColor("#044e3a")),
+            ('BACKGROUND', (1, 0), (1, 1), colors.HexColor("#991b1b")),
+            ('BACKGROUND', (2, 0), (2, 1), colors.HexColor("#0369a1") if net_monthly_balance >= 0 else colors.HexColor("#991b1b")),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('BOX', (0, 0), (0, -1), 1.2, colors.HexColor("#c59b27")),
+            ('BOX', (1, 0), (1, -1), 1.2, colors.HexColor("#b71c1c")),
+            ('BOX', (2, 0), (2, -1), 1.2, colors.HexColor("#0284c7")),
+            ('LINEBELOW', (0, 0), (-1, 0), 0.8, colors.HexColor("#fef08a")),
+            ('TOPPADDING', (0, 0), (-1, -1), 3.0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3.0),
+        ])
+    )
+
     story.append(summary_table)
     story.append(Spacer(1, 4))
 
-    # Cell Typography Styles for 4 Dedicated Columns
+    # ============================================================
+    # LEDGER TYPOGRAPHY
+    # ============================================================
+
     cell_style = ParagraphStyle(
-        'LedgerCell3', parent=styles['Normal'], fontName=font_bold, fontSize=tbl_font_size, leading=tbl_leading,
+        'LedgerCell3',
+        parent=styles['Normal'],
+        fontName=font_bold,
+        fontSize=tbl_font_size,
+        leading=tbl_leading,
         textColor=colors.HexColor("#0f172a")
     )
+
     cell_hdr_style = ParagraphStyle(
-        'LedgerHdr3', parent=styles['Normal'], fontName=font_bold, fontSize=tbl_hdr_font, leading=tbl_hdr_leading,
+        'LedgerHdr3',
+        parent=styles['Normal'],
+        fontName=font_bold,
+        fontSize=tbl_hdr_font,
+        leading=tbl_hdr_leading,
         textColor=colors.white
     )
+
     sec_title_style = ParagraphStyle(
-        'LedgerSecTitle3', parent=styles['Normal'], fontName=font_bold, fontSize=9.5 if is_urdu else 9.0, leading=12.0,
-        textColor=colors.HexColor("#fef08a"), alignment=1
-    )
-    amt_inc_style = ParagraphStyle(
-        'LedgerAmtInc3', parent=styles['Normal'], fontName=font_bold, fontSize=tbl_font_size, leading=tbl_leading,
-        textColor=colors.HexColor("#1b5e20"), alignment=2
-    )
-    amt_exp_style = ParagraphStyle(
-        'LedgerAmtExp3', parent=styles['Normal'], fontName=font_bold, fontSize=tbl_font_size, leading=tbl_leading,
-        textColor=colors.HexColor("#b71c1c"), alignment=2
+        'LedgerSecTitle3',
+        parent=styles['Normal'],
+        fontName=font_bold,
+        fontSize=9.5 if is_urdu else 9.0,
+        leading=12.0,
+        textColor=colors.HexColor("#fef08a"),
+        alignment=1
     )
 
-    # 4. FULL-WIDTH INCOME LEDGER TABLE
-    inc_sec_title = "آمدنی کا مکمل گوشوارہ (INCOME LEDGER)" if is_urdu else "INCOME AUDIT LEDGER"
+    amt_inc_style = ParagraphStyle(
+        'LedgerAmtInc3',
+        parent=styles['Normal'],
+        fontName=font_bold,
+        fontSize=tbl_font_size,
+        leading=tbl_leading,
+        textColor=colors.HexColor("#1b5e20"),
+        alignment=2
+    )
+
+    amt_exp_style = ParagraphStyle(
+        'LedgerAmtExp3',
+        parent=styles['Normal'],
+        fontName=font_bold,
+        fontSize=tbl_font_size,
+        leading=tbl_leading,
+        textColor=colors.HexColor("#b71c1c"),
+        alignment=2
+    )
+
+    # ============================================================
+    # INCOME LEDGER
+    # ============================================================
+
+    inc_sec_title = (
+        "آمدنی کا مکمل گوشوارہ (INCOME LEDGER)"
+        if is_urdu
+        else "INCOME AUDIT LEDGER"
+    )
+
     h_date = "تاریخ" if is_urdu else "Date"
     h_src = "زمرہ / ذریعہ" if is_urdu else "Source / Type"
     h_notes = "تفصیلات / نوٹس" if is_urdu else "Details / Notes"
     h_amt = "رقم (PKR)" if is_urdu else "Amount (PKR)"
 
     inc_rows = [
-        [Paragraph(f"<b>{shape_ur(inc_sec_title, is_urdu)}</b>", sec_title_style), "", "", ""],
+        [
+            Paragraph(
+                f"<b>{shape_ur(inc_sec_title, is_urdu)}</b>",
+                sec_title_style
+            ),
+            "",
+            "",
+            ""
+        ],
         [
             Paragraph(shape_ur(h_date, is_urdu), cell_hdr_style),
             Paragraph(shape_ur(h_src, is_urdu), cell_hdr_style),
@@ -1667,26 +2137,89 @@ def export_monthly_pdf(request, year=None, month=None):
     ]
 
     for item in income_items:
+
         inc_rows.append([
-            Paragraph(item['date'].strftime('%d-%b-%Y'), cell_style),
-            Paragraph(shape_ur(item['source'], is_urdu), cell_style),
-            Paragraph(shape_ur(item['notes'], is_urdu), cell_style),
-            Paragraph(f"{item['amount']:,.0f}", amt_inc_style)
+            Paragraph(
+                item['date'].strftime('%d-%b-%Y'),
+                cell_style
+            ),
+            Paragraph(
+                shape_ur(item['source'], is_urdu),
+                cell_style
+            ),
+            Paragraph(
+                shape_ur(item['notes'], is_urdu),
+                cell_style
+            ),
+            Paragraph(
+                f"{item['amount']:,.0f}",
+                amt_inc_style
+            )
         ])
 
     if not income_items:
-        no_inc_msg = "اس عرصے میں کوئی آمدنی کا ریکارڈ درج نہیں۔" if is_urdu else "No income recorded for this period."
-        inc_rows.append([Paragraph(shape_ur(no_inc_msg, is_urdu), cell_style), "", "", ""])
-    else:
-        tot_inc_lbl = "کل مجموعی آمدنی (TOTAL INCOME)" if is_urdu else "TOTAL INCOME"
-        tot_inc_style = ParagraphStyle('TIS3', parent=styles['Normal'], fontName=font_bold, fontSize=8.0, leading=10, textColor=colors.white)
-        tot_inc_val = ParagraphStyle('TIV3', parent=styles['Normal'], fontName=font_bold, fontSize=8.5, leading=10, textColor=colors.HexColor("#fef08a"), alignment=2)
+
+        no_inc_msg = (
+            "اس عرصے میں کوئی آمدنی کا ریکارڈ درج نہیں۔"
+            if is_urdu
+            else "No income recorded for this period."
+        )
+
         inc_rows.append([
-            Paragraph(f"<b>{shape_ur(tot_inc_lbl, is_urdu)}</b>", tot_inc_style), "", "",
-            Paragraph(f"RS {month_total_income:,.0f}", tot_inc_val)
+            Paragraph(
+                shape_ur(no_inc_msg, is_urdu),
+                cell_style
+            ),
+            "",
+            "",
+            ""
         ])
 
-    inc_table = Table(inc_rows, colWidths=[55, 120, 277, 100])
+    else:
+
+        tot_inc_lbl = (
+            "کل مجموعی آمدنی (TOTAL INCOME)"
+            if is_urdu
+            else "TOTAL INCOME"
+        )
+
+        tot_inc_style = ParagraphStyle(
+            'TIS3',
+            parent=styles['Normal'],
+            fontName=font_bold,
+            fontSize=8.0,
+            leading=10,
+            textColor=colors.white
+        )
+
+        tot_inc_val = ParagraphStyle(
+            'TIV3',
+            parent=styles['Normal'],
+            fontName=font_bold,
+            fontSize=8.5,
+            leading=10,
+            textColor=colors.HexColor("#fef08a"),
+            alignment=2
+        )
+
+        inc_rows.append([
+            Paragraph(
+                f"<b>{shape_ur(tot_inc_lbl, is_urdu)}</b>",
+                tot_inc_style
+            ),
+            "",
+            "",
+            Paragraph(
+                f"RS {month_total_income:,.0f}",
+                tot_inc_val
+            )
+        ])
+
+    inc_table = Table(
+        inc_rows,
+        colWidths=[55, 120, 277, 100]
+    )
+
     inc_table_style = [
         ('SPAN', (0, 0), (-1, 0)),
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#044e3a")),
@@ -1700,28 +2233,90 @@ def export_monthly_pdf(request, year=None, month=None):
         ('RIGHTPADDING', (0, 0), (-1, -1), 2.5),
     ]
 
-    for r_idx in range(2, len(inc_rows) - (0 if not income_items else 1)):
+    for r_idx in range(
+        2,
+        len(inc_rows) - (0 if not income_items else 1)
+    ):
+
         if r_idx % 2 == 1:
-            inc_table_style.append(('BACKGROUND', (0, r_idx), (-1, r_idx), colors.HexColor("#f8fafc")))
+
+            inc_table_style.append((
+                'BACKGROUND',
+                (0, r_idx),
+                (-1, r_idx),
+                colors.HexColor("#f8fafc")
+            ))
 
     if not income_items:
-        inc_table_style.append(('SPAN', (0, 2), (-1, 2)))
-    else:
-        inc_table_style.append(('SPAN', (0, -1), (2, -1)))
-        inc_table_style.append(('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#044e3a")))
-        inc_table_style.append(('LINEABOVE', (0, -1), (-1, -1), 1.0, colors.HexColor("#c59b27")))
 
-    inc_table.setStyle(TableStyle(inc_table_style))
+        inc_table_style.append((
+            'SPAN',
+            (0, 2),
+            (-1, 2)
+        ))
+
+    else:
+
+        inc_table_style.append((
+            'SPAN',
+            (0, -1),
+            (2, -1)
+        ))
+
+        inc_table_style.append((
+            'BACKGROUND',
+            (0, -1),
+            (-1, -1),
+            colors.HexColor("#044e3a")
+        ))
+
+        inc_table_style.append((
+            'LINEABOVE',
+            (0, -1),
+            (-1, -1),
+            1.0,
+            colors.HexColor("#c59b27")
+        ))
+
+    inc_table.setStyle(
+        TableStyle(inc_table_style)
+    )
+
     story.append(inc_table)
     story.append(Spacer(1, 4))
 
-    # 5. FULL-WIDTH EXPENSE LEDGER TABLE
-    exp_sec_title = "اخراجات کا مکمل گوشوارہ (EXPENSE LEDGER)" if is_urdu else "EXPENSE AUDIT LEDGER"
-    h_cat = "زمرہ (Category)" if is_urdu else "Category"
-    h_desc = "تفصیل / نوٹس (Description)" if is_urdu else "Description / Details"
+    # ============================================================
+    # EXPENSE LEDGER
+    # ============================================================
+
+    exp_sec_title = (
+        "اخراجات کا مکمل گوشوارہ (EXPENSE LEDGER)"
+        if is_urdu
+        else "EXPENSE AUDIT LEDGER"
+    )
+
+    h_cat = (
+        "زمرہ (Category)"
+        if is_urdu
+        else "Category"
+    )
+
+    h_desc = (
+        "تفصیل / نوٹس (Description)"
+        if is_urdu
+        else "Description / Details"
+    )
 
     exp_rows = [
-        [Paragraph(f"<b>{shape_ur(exp_sec_title, is_urdu)}</b>", sec_title_style), "", "", ""],
+        [
+            Paragraph(
+                f"<b>{shape_ur(exp_sec_title, is_urdu)}</b>",
+                sec_title_style
+            ),
+            "",
+            "",
+            ""
+        ],
         [
             Paragraph(shape_ur(h_date, is_urdu), cell_hdr_style),
             Paragraph(shape_ur(h_cat, is_urdu), cell_hdr_style),
@@ -1731,26 +2326,89 @@ def export_monthly_pdf(request, year=None, month=None):
     ]
 
     for item in expense_items:
+
         exp_rows.append([
-            Paragraph(item['date'].strftime('%d-%b-%Y'), cell_style),
-            Paragraph(shape_ur(item['category'], is_urdu), cell_style),
-            Paragraph(shape_ur(item['description'], is_urdu), cell_style),
-            Paragraph(f"{item['amount']:,.0f}", amt_exp_style)
+            Paragraph(
+                item['date'].strftime('%d-%b-%Y'),
+                cell_style
+            ),
+            Paragraph(
+                shape_ur(item['category'], is_urdu),
+                cell_style
+            ),
+            Paragraph(
+                shape_ur(item['description'], is_urdu),
+                cell_style
+            ),
+            Paragraph(
+                f"{item['amount']:,.0f}",
+                amt_exp_style
+            )
         ])
 
     if not expense_items:
-        no_exp_msg = "اس عرصے میں کوئی اخراجات درج نہیں۔" if is_urdu else "No expenses recorded for this period."
-        exp_rows.append([Paragraph(shape_ur(no_exp_msg, is_urdu), cell_style), "", "", ""])
-    else:
-        tot_exp_lbl = "کل مجموعی اخراجات (TOTAL EXPENSE)" if is_urdu else "TOTAL EXPENSE"
-        tot_exp_style = ParagraphStyle('TES3', parent=styles['Normal'], fontName=font_bold, fontSize=8.0, leading=10, textColor=colors.white)
-        tot_exp_val = ParagraphStyle('TEV3', parent=styles['Normal'], fontName=font_bold, fontSize=8.5, leading=10, textColor=colors.HexColor("#fee2e2"), alignment=2)
+
+        no_exp_msg = (
+            "اس عرصے میں کوئی اخراجات درج نہیں۔"
+            if is_urdu
+            else "No expenses recorded for this period."
+        )
+
         exp_rows.append([
-            Paragraph(f"<b>{shape_ur(tot_exp_lbl, is_urdu)}</b>", tot_exp_style), "", "",
-            Paragraph(f"RS {month_total_expense:,.0f}", tot_exp_val)
+            Paragraph(
+                shape_ur(no_exp_msg, is_urdu),
+                cell_style
+            ),
+            "",
+            "",
+            ""
         ])
 
-    exp_table = Table(exp_rows, colWidths=[55, 110, 287, 100])
+    else:
+
+        tot_exp_lbl = (
+            "کل مجموعی اخراجات (TOTAL EXPENSE)"
+            if is_urdu
+            else "TOTAL EXPENSE"
+        )
+
+        tot_exp_style = ParagraphStyle(
+            'TES3',
+            parent=styles['Normal'],
+            fontName=font_bold,
+            fontSize=8.0,
+            leading=10,
+            textColor=colors.white
+        )
+
+        tot_exp_val = ParagraphStyle(
+            'TEV3',
+            parent=styles['Normal'],
+            fontName=font_bold,
+            fontSize=8.5,
+            leading=10,
+            textColor=colors.HexColor("#fee2e2"),
+            alignment=2
+        )
+
+        exp_rows.append([
+            Paragraph(
+                f"<b>{shape_ur(tot_exp_lbl, is_urdu)}</b>",
+                tot_exp_style
+            ),
+            "",
+            "",
+            Paragraph(
+                f"RS {month_total_expense:,.0f}",
+                tot_exp_val
+            )
+        ])
+
+    exp_table = Table(
+        exp_rows,
+        colWidths=[55, 110, 287, 100]
+    )
+
     exp_table_style = [
         ('SPAN', (0, 0), (-1, 0)),
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#991b1b")),
@@ -1764,109 +2422,320 @@ def export_monthly_pdf(request, year=None, month=None):
         ('RIGHTPADDING', (0, 0), (-1, -1), 2.5),
     ]
 
-    for r_idx in range(2, len(exp_rows) - (0 if not expense_items else 1)):
+    for r_idx in range(
+        2,
+        len(exp_rows) - (0 if not expense_items else 1)
+    ):
+
         if r_idx % 2 == 1:
-            exp_table_style.append(('BACKGROUND', (0, r_idx), (-1, r_idx), colors.HexColor("#fef2f2")))
+
+            exp_table_style.append((
+                'BACKGROUND',
+                (0, r_idx),
+                (-1, r_idx),
+                colors.HexColor("#fef2f2")
+            ))
 
     if not expense_items:
-        exp_table_style.append(('SPAN', (0, 2), (-1, 2)))
-    else:
-        exp_table_style.append(('SPAN', (0, -1), (2, -1)))
-        exp_table_style.append(('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#991b1b")))
-        exp_table_style.append(('LINEABOVE', (0, -1), (-1, -1), 1.0, colors.HexColor("#c59b27")))
 
-    exp_table.setStyle(TableStyle(exp_table_style))
+        exp_table_style.append((
+            'SPAN',
+            (0, 2),
+            (-1, 2)
+        ))
+
+    else:
+
+        exp_table_style.append((
+            'SPAN',
+            (0, -1),
+            (2, -1)
+        ))
+
+        exp_table_style.append((
+            'BACKGROUND',
+            (0, -1),
+            (-1, -1),
+            colors.HexColor("#991b1b")
+        ))
+
+        exp_table_style.append((
+            'LINEABOVE',
+            (0, -1),
+            (-1, -1),
+            1.0,
+            colors.HexColor("#c59b27")
+        ))
+
+    exp_table.setStyle(
+        TableStyle(exp_table_style)
+    )
+
     story.append(exp_table)
     story.append(Spacer(1, 4))
 
-    # 6A. Left: Expanded Imam Salary Table
-    imam_sec_title = "امام کی تنخواہ کا ریکارڈ (IMAM SALARY RECORD)" if is_urdu else "IMAM SALARY RECORD"
+    # ============================================================
+    # IMAM SALARY TABLE
+    # ============================================================
+
+    imam_sec_title = (
+        "امام کی تنخواہ کا ریکارڈ (IMAM SALARY RECORD)"
+        if is_urdu
+        else "IMAM SALARY RECORD"
+    )
+
     imam_card_rows = [
-        [Paragraph(f"<b>{shape_ur(imam_sec_title, is_urdu)}</b>", sec_title_style), "", ""]
+        [
+            Paragraph(
+                f"<b>{shape_ur(imam_sec_title, is_urdu)}</b>",
+                sec_title_style
+            ),
+            "",
+            ""
+        ]
     ]
 
     if not salaries.exists():
-        no_sal_msg = "اس عرصے کے لیے کوئی تنخواہ کا ریکارڈ نہیں۔" if is_urdu else "No Imam salary records."
-        imam_card_rows.append([Paragraph(shape_ur(no_sal_msg, is_urdu), cell_style), "", ""])
+
+        no_sal_msg = (
+            "اس عرصے کے لیے کوئی تنخواہ کا ریکارڈ نہیں۔"
+            if is_urdu
+            else "No Imam salary records."
+        )
+
+        imam_card_rows.append([
+            Paragraph(
+                shape_ur(no_sal_msg, is_urdu),
+                cell_style
+            ),
+            "",
+            ""
+        ])
+
     else:
+
         for s in salaries:
-            status_text = ("مکمل ادا" if s.is_fully_paid else "بقایا") if is_urdu else ("PAID" if s.is_fully_paid else "PENDING")
-            status_color = "#a7f3d0" if s.is_fully_paid else "#fecaca"
-            status_badge_style = ParagraphStyle(
-                'ImamStS4', parent=styles['Normal'], fontName=font_bold, fontSize=tbl_font_size, leading=tbl_leading,
-                textColor=colors.HexColor(status_color), alignment=2
+
+            status_text = (
+                ("مکمل ادا" if s.is_fully_paid else "بقایا")
+                if is_urdu
+                else ("PAID" if s.is_fully_paid else "PENDING")
             )
+
+            status_color = (
+                "#a7f3d0"
+                if s.is_fully_paid
+                else "#fecaca"
+            )
+
+            status_badge_style = ParagraphStyle(
+                'ImamStS4',
+                parent=styles['Normal'],
+                fontName=font_bold,
+                fontSize=tbl_font_size,
+                leading=tbl_leading,
+                textColor=colors.HexColor(status_color),
+                alignment=2
+            )
+
             imam_header_name_style = ParagraphStyle(
-                'ImamHdrNameS4', parent=styles['Normal'], fontName=font_bold, fontSize=tbl_hdr_font + 0.5, leading=tbl_hdr_leading + 0.5,
+                'ImamHdrNameS4',
+                parent=styles['Normal'],
+                fontName=font_bold,
+                fontSize=tbl_hdr_font + 0.5,
+                leading=tbl_hdr_leading + 0.5,
                 textColor=colors.white
             )
 
             imam_card_rows.append([
-                Paragraph(f"<b>{shape_ur(s.imam_name, is_urdu)}</b>", imam_header_name_style),
+                Paragraph(
+                    f"<b>{shape_ur(s.imam_name, is_urdu)}</b>",
+                    imam_header_name_style
+                ),
                 "",
-                Paragraph(f"<b>{shape_ur(status_text, is_urdu)}</b>", status_badge_style)
+                Paragraph(
+                    f"<b>{shape_ur(status_text, is_urdu)}</b>",
+                    status_badge_style
+                )
             ])
 
             col1 = "تاریخ" if is_urdu else "Date"
             col2 = "اقساط / تفاصیل" if is_urdu else "Installment / Details"
             col3 = "ادائیگی (PKR)" if is_urdu else "Paid (PKR)"
+
             imam_card_rows.append([
-                Paragraph(f"<b>{shape_ur(col1, is_urdu)}</b>", cell_hdr_style),
-                Paragraph(f"<b>{shape_ur(col2, is_urdu)}</b>", cell_hdr_style),
-                Paragraph(f"<b>{shape_ur(col3, is_urdu)}</b>", cell_hdr_style)
+                Paragraph(
+                    f"<b>{shape_ur(col1, is_urdu)}</b>",
+                    cell_hdr_style
+                ),
+                Paragraph(
+                    f"<b>{shape_ur(col2, is_urdu)}</b>",
+                    cell_hdr_style
+                ),
+                Paragraph(
+                    f"<b>{shape_ur(col3, is_urdu)}</b>",
+                    cell_hdr_style
+                )
             ])
 
             for p in s.installments.all().order_by('payment_date'):
-                note_str = p.notes or ("قسط کی ادائیگی" if is_urdu else "Installment")
+
+                note_str = (
+                    p.notes
+                    or (
+                        "قسط کی ادائیگی"
+                        if is_urdu
+                        else "Installment"
+                    )
+                )
+
                 imam_card_rows.append([
-                    Paragraph(p.payment_date.strftime('%d-%b-%Y'), cell_style),
-                    Paragraph(shape_ur(note_str, is_urdu), cell_style),
-                    Paragraph(f"{p.amount_paid:,.0f}", amt_inc_style)
+                    Paragraph(
+                        p.payment_date.strftime('%d-%b-%Y'),
+                        cell_style
+                    ),
+                    Paragraph(
+                        shape_ur(note_str, is_urdu),
+                        cell_style
+                    ),
+                    Paragraph(
+                        f"{p.amount_paid:,.0f}",
+                        amt_inc_style
+                    )
                 ])
 
             if not s.installments.exists():
-                no_p_str = "کوئی قسط کی ادائیگی نہیں ہوئی" if is_urdu else "No installments"
-                imam_card_rows.append([Paragraph(shape_ur(no_p_str, is_urdu), cell_style), "", ""])
 
-            rem_m_color = "#a7f3d0" if s.remaining_salary <= 0 else "#fef08a"
-            rem_y_color = "#a7f3d0" if s.remaining_yearly_salary <= 0 else "#fef08a"
+                no_p_str = (
+                    "کوئی قسط کی ادائیگی نہیں ہوئی"
+                    if is_urdu
+                    else "No installments"
+                )
 
-            lbl_m_tot = "ماهانہ کل تنخواہ" if is_urdu else "Monthly Salary"
-            lbl_m_paid = "کل ادا شد" if is_urdu else "Total Paid"
-            lbl_m_rem = "ماهانہ بقایا" if is_urdu else "Month Remaining"
+                imam_card_rows.append([
+                    Paragraph(
+                        shape_ur(no_p_str, is_urdu),
+                        cell_style
+                    ),
+                    "",
+                    ""
+                ])
 
-            lbl_y_tot = "سالانہ کل تنخواہ" if is_urdu else "Yearly Salary"
-            lbl_y_rem = "سالانہ بقایا" if is_urdu else "Year Remaining"
+            rem_m_color = (
+                "#a7f3d0"
+                if s.remaining_salary <= 0
+                else "#fef08a"
+            )
+
+            rem_y_color = (
+                "#a7f3d0"
+                if s.remaining_yearly_salary <= 0
+                else "#fef08a"
+            )
+
+            lbl_m_tot = (
+                "ماهانہ کل تنخواہ"
+                if is_urdu
+                else "Monthly Salary"
+            )
+
+            lbl_m_paid = (
+                "کل ادا شد"
+                if is_urdu
+                else "Total Paid"
+            )
+
+            lbl_m_rem = (
+                "ماهانہ بقایا"
+                if is_urdu
+                else "Month Remaining"
+            )
+
+            lbl_y_tot = (
+                "سالانہ کل تنخواہ"
+                if is_urdu
+                else "Yearly Salary"
+            )
+
+            lbl_y_rem = (
+                "سالانہ بقایا"
+                if is_urdu
+                else "Year Remaining"
+            )
 
             bar_font_size = tbl_font_size + 0.5
             bar_leading = tbl_leading + 0.5
 
             dark_bar_white = ParagraphStyle(
-                'DarkBarWhite', parent=styles['Normal'], fontName=font_bold, fontSize=bar_font_size, leading=bar_leading, textColor=colors.white
+                'DarkBarWhite',
+                parent=styles['Normal'],
+                fontName=font_bold,
+                fontSize=bar_font_size,
+                leading=bar_leading,
+                textColor=colors.white
             )
+
             dark_bar_paid = ParagraphStyle(
-                'DarkBarPaid', parent=styles['Normal'], fontName=font_bold, fontSize=bar_font_size, leading=bar_leading, textColor=colors.HexColor("#a7f3d0")
+                'DarkBarPaid',
+                parent=styles['Normal'],
+                fontName=font_bold,
+                fontSize=bar_font_size,
+                leading=bar_leading,
+                textColor=colors.HexColor("#a7f3d0")
             )
+
             dark_bar_m_rem = ParagraphStyle(
-                'DarkBarMRem', parent=styles['Normal'], fontName=font_bold, fontSize=bar_font_size, leading=bar_leading, textColor=colors.HexColor(rem_m_color), alignment=2
+                'DarkBarMRem',
+                parent=styles['Normal'],
+                fontName=font_bold,
+                fontSize=bar_font_size,
+                leading=bar_leading,
+                textColor=colors.HexColor(rem_m_color),
+                alignment=2
             )
+
             dark_bar_y_rem = ParagraphStyle(
-                'DarkBarYRem', parent=styles['Normal'], fontName=font_bold, fontSize=bar_font_size, leading=bar_leading, textColor=colors.HexColor(rem_y_color), alignment=2
+                'DarkBarYRem',
+                parent=styles['Normal'],
+                fontName=font_bold,
+                fontSize=bar_font_size,
+                leading=bar_leading,
+                textColor=colors.HexColor(rem_y_color),
+                alignment=2
             )
 
             imam_card_rows.append([
-                Paragraph(f"<b>{shape_ur(lbl_m_tot, is_urdu)}: RS {s.total_salary:,.0f}</b>", dark_bar_white),
-                Paragraph(f"<b>{shape_ur(lbl_m_paid, is_urdu)}: RS {s.total_paid:,.0f}</b>", dark_bar_paid),
-                Paragraph(f"<b>{shape_ur(lbl_m_rem, is_urdu)}: RS {s.remaining_salary:,.0f}</b>", dark_bar_m_rem),
+                Paragraph(
+                    f"<b>{shape_ur(lbl_m_tot, is_urdu)}: RS {s.total_salary:,.0f}</b>",
+                    dark_bar_white
+                ),
+                Paragraph(
+                    f"<b>{shape_ur(lbl_m_paid, is_urdu)}: RS {s.total_paid:,.0f}</b>",
+                    dark_bar_paid
+                ),
+                Paragraph(
+                    f"<b>{shape_ur(lbl_m_rem, is_urdu)}: RS {s.remaining_salary:,.0f}</b>",
+                    dark_bar_m_rem
+                ),
             ])
 
             imam_card_rows.append([
-                Paragraph(f"<b>{shape_ur(lbl_y_tot, is_urdu)}: RS {s.effective_yearly_salary:,.0f}</b>", dark_bar_white),
+                Paragraph(
+                    f"<b>{shape_ur(lbl_y_tot, is_urdu)}: RS {s.effective_yearly_salary:,.0f}</b>",
+                    dark_bar_white
+                ),
                 "",
-                Paragraph(f"<b>{shape_ur(lbl_y_rem, is_urdu)}: RS {s.remaining_yearly_salary:,.0f}</b>", dark_bar_y_rem),
+                Paragraph(
+                    f"<b>{shape_ur(lbl_y_rem, is_urdu)}: RS {s.remaining_yearly_salary:,.0f}</b>",
+                    dark_bar_y_rem
+                ),
             ])
 
-    imam_table = Table(imam_card_rows, colWidths=[110, 177, 110])
+    imam_table = Table(
+        imam_card_rows,
+        colWidths=[110, 177, 110]
+    )
+
     imam_table_style = [
         ('SPAN', (0, 0), (-1, 0)),
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#044e3a")),
@@ -1880,8 +2749,15 @@ def export_monthly_pdf(request, year=None, month=None):
     ]
 
     if not salaries.exists():
-        imam_table_style.append(('SPAN', (0, 1), (-1, 1)))
+
+        imam_table_style.append((
+            'SPAN',
+            (0, 1),
+            (-1, 1)
+        ))
+
     else:
+
         imam_table_style.extend([
             ('SPAN', (0, 1), (1, 1)),
             ('SPAN', (0, -1), (1, -1)),
@@ -1892,57 +2768,191 @@ def export_monthly_pdf(request, year=None, month=None):
             ('LINEABOVE', (0, -2), (-1, -2), 1.2, colors.HexColor("#065f46")),
             ('LINEABOVE', (0, -1), (-1, -1), 1.2, colors.HexColor("#1e293b")),
         ])
-    imam_table.setStyle(TableStyle(imam_table_style))
 
-    # 6B. Right: Ultra-Compact 3D Elevated Micro Card
-    lease_sec_title = "زمین کا ٹھیکہ" if is_urdu else "Zameen Ka Theka"
+    imam_table.setStyle(
+        TableStyle(imam_table_style)
+    )
+
+    # ============================================================
+    # LAND LEASE CARD
+    # ============================================================
+
+    lease_sec_title = (
+        "زمین کا ٹھیکہ"
+        if is_urdu
+        else "Zameen Ka Theka"
+    )
+
     card_font_size = 5.2
     card_leading = 6.2
     card_hdr_size = 5.6
     card_hdr_leading = 6.8
 
     card_lbl_style = ParagraphStyle(
-        'CardLbl', parent=styles['Normal'], fontName=font_bold, fontSize=card_font_size, leading=card_leading, textColor=colors.HexColor("#065f46")
+        'CardLbl',
+        parent=styles['Normal'],
+        fontName=font_bold,
+        fontSize=card_font_size,
+        leading=card_leading,
+        textColor=colors.HexColor("#065f46")
     )
+
     card_val_style = ParagraphStyle(
-        'CardVal', parent=styles['Normal'], fontName=font_bold if is_urdu else font_normal, fontSize=card_font_size, leading=card_leading, textColor=colors.HexColor("#0f172a")
+        'CardVal',
+        parent=styles['Normal'],
+        fontName=font_bold if is_urdu else font_normal,
+        fontSize=card_font_size,
+        leading=card_leading,
+        textColor=colors.HexColor("#0f172a")
     )
+
     card_val_urdu_style = ParagraphStyle(
-        'CardValUr', parent=styles['Normal'], fontName=urdu_font_bold, fontSize=card_font_size, leading=card_leading, textColor=colors.HexColor("#0f172a")
+        'CardValUr',
+        parent=styles['Normal'],
+        fontName=urdu_font_bold,
+        fontSize=card_font_size,
+        leading=card_leading,
+        textColor=colors.HexColor("#0f172a")
     )
+
     card_hdr_style = ParagraphStyle(
-        'CardHdr', parent=styles['Normal'], fontName=font_bold, fontSize=card_hdr_size, leading=card_hdr_leading, textColor=colors.white, alignment=1
+        'CardHdr',
+        parent=styles['Normal'],
+        fontName=font_bold,
+        fontSize=card_hdr_size,
+        leading=card_hdr_leading,
+        textColor=colors.white,
+        alignment=1
     )
 
     first_lease = leases.first()
+
     if first_lease:
-        hdr_total_str = f"RS {first_lease.total_agreed_amount:,.0f}"
-        hdr_rem_str = f"RS {first_lease.remaining_lease_amount:,.0f}"
+
+        hdr_total_str = (
+            f"RS {first_lease.total_agreed_amount:,.0f}"
+        )
+
+        hdr_rem_str = (
+            f"RS {first_lease.remaining_lease_amount:,.0f}"
+        )
+
         if is_urdu:
-            hdr_content = f"<b>{shape_ur(lease_sec_title, is_urdu)}</b><br/><font size='4.4' color='#fef08a'><b>{shape_ur('طے:', is_urdu)} {hdr_total_str} | {shape_ur('بقایا:', is_urdu)} {hdr_rem_str}</b></font>"
+
+            hdr_content = (
+                f"<b>{shape_ur(lease_sec_title, is_urdu)}</b>"
+                f"<br/>"
+                f"<font size='4.4' color='#fef08a'>"
+                f"<b>"
+                f"{shape_ur('طے:', is_urdu)} {hdr_total_str} | "
+                f"{shape_ur('بقایا:', is_urdu)} {hdr_rem_str}"
+                f"</b>"
+                f"</font>"
+            )
+
         else:
-            hdr_content = f"<b>{lease_sec_title}</b><br/><font size='4.4' color='#fef08a'><b>Agreed: {hdr_total_str} | Rem: {hdr_rem_str}</b></font>"
+
+            hdr_content = (
+                f"<b>{lease_sec_title}</b>"
+                f"<br/>"
+                f"<font size='4.4' color='#fef08a'>"
+                f"<b>Agreed: {hdr_total_str} | Rem: {hdr_rem_str}</b>"
+                f"</font>"
+            )
+
     else:
-        hdr_content = f"<b>{shape_ur(lease_sec_title, is_urdu)}</b>"
+
+        hdr_content = (
+            f"<b>{shape_ur(lease_sec_title, is_urdu)}</b>"
+        )
 
     card_rows = [
-        [Paragraph(hdr_content, card_hdr_style), ""]
+        [
+            Paragraph(
+                hdr_content,
+                card_hdr_style
+            ),
+            ""
+        ]
     ]
 
-    if not leases.exists():
-        no_lse_msg = "اس عرصے کے لیے کوئی فعال ٹھیکہ نہیں" if is_urdu else "No active leases"
-        card_rows.append([Paragraph(shape_ur(no_lse_msg, is_urdu), card_val_style), ""])
-    else:
-        for l in leases:
-            status_text = ("مکمل ادا" if l.remaining_lease_amount <= 0 else "فعال ٹھیکہ") if is_urdu else ("PAID" if l.remaining_lease_amount <= 0 else "ACTIVE")
-            tenant_disp = translate_user_input_to_urdu(l.tenant_name) if is_urdu else l.tenant_name
-            area_disp = translate_user_input_to_urdu(l.land_area) if is_urdu else l.land_area
-            phone_disp = l.tenant_contact if l.tenant_contact else "-"
+    inst_ranges = []
 
-            start_str = l.start_date.strftime('%d-%b-%Y') if l.start_date else ""
-            end_str = l.end_date.strftime('%d-%b-%Y') if l.end_date else ""
-            dur_str = f"{start_str} تا {end_str}" if is_urdu else f"{start_str} to {end_str}"
-            rem_color = "#15803d" if l.remaining_lease_amount <= 0 else "#dc2626"
+    if not leases.exists():
+
+        no_lse_msg = (
+            "اس عرصے کے لیے کوئی فعال ٹھیکہ نہیں"
+            if is_urdu
+            else "No active leases"
+        )
+
+        card_rows.append([
+            Paragraph(
+                shape_ur(no_lse_msg, is_urdu),
+                card_val_style
+            ),
+            ""
+        ])
+
+    else:
+
+        for l in leases:
+
+            status_text = (
+                (
+                    "مکمل ادا"
+                    if l.remaining_lease_amount <= 0
+                    else "فعال ٹھیکہ"
+                )
+                if is_urdu
+                else (
+                    "PAID"
+                    if l.remaining_lease_amount <= 0
+                    else "ACTIVE"
+                )
+            )
+
+            tenant_disp = (
+                translate_user_input_to_urdu(l.tenant_name)
+                if is_urdu
+                else l.tenant_name
+            )
+
+            area_disp = (
+                translate_user_input_to_urdu(l.land_area)
+                if is_urdu
+                else l.land_area
+            )
+
+            phone_disp = (
+                l.tenant_contact
+                if l.tenant_contact
+                else "-"
+            )
+
+            start_str = (
+                l.start_date.strftime('%d-%b-%Y')
+                if l.start_date
+                else ""
+            )
+
+            end_str = (
+                l.end_date.strftime('%d-%b-%Y')
+                if l.end_date
+                else ""
+            )
+
+            dur_str = (
+                f"{start_str} تا {end_str}"
+                if is_urdu
+                else f"{start_str} to {end_str}"
+            )
+
+            rem_color = (
+                "#15803d"
+                if l.remaining_lease_amount <= 0
+                else "#dc2626"
+            )
 
             lbl_thk = "ٹھیکیدار:" if is_urdu else "Tenant:"
             lbl_cnt = "رابطہ:" if is_urdu else "Phone:"
@@ -1953,89 +2963,231 @@ def export_monthly_pdf(request, year=None, month=None):
             lbl_rem_l = "بقایا رقم:" if is_urdu else "Remaining:"
 
             card_rows.append([
-                Paragraph(f"<b>{shape_ur(lbl_thk, is_urdu)}</b>", card_lbl_style),
-                Paragraph(f"<b>{shape_ur(tenant_disp, is_urdu)}</b>", card_val_urdu_style if is_urdu else card_val_style)
-            ])
-            card_rows.append([
-                Paragraph(f"<b>{shape_ur(lbl_cnt, is_urdu)}</b>", card_lbl_style),
-                Paragraph(f"<font color='#1e40af'><b>{phone_disp}</b></font>", card_val_style)
-            ])
-            card_rows.append([
-                Paragraph(f"<b>{shape_ur(lbl_ara, is_urdu)}</b>", card_lbl_style),
-                Paragraph(f"<font color='#047857'><b>{shape_ur(area_disp, is_urdu)}</b></font>", card_val_urdu_style if is_urdu else card_val_style)
-            ])
-            card_rows.append([
-                Paragraph(f"<b>{shape_ur(lbl_dur, is_urdu)}</b>", card_lbl_style),
-                Paragraph(f"<font color='#334155'>{shape_ur(dur_str, is_urdu)}</font>", card_val_urdu_style if is_urdu else card_val_style)
-            ])
-            card_rows.append([
-                Paragraph(f"<b>{shape_ur(lbl_ta, is_urdu)}</b>", card_lbl_style),
-                Paragraph(f"<b>RS {l.total_agreed_amount:,.0f}</b>", card_val_style)
-            ])
-            card_rows.append([
-                Paragraph(f"<b>{shape_ur(lbl_tr_l, is_urdu)}</b>", card_lbl_style),
-                Paragraph(f"<font color='#15803d'><b>RS {l.total_received:,.0f}</b></font>", card_val_style)
-            ])
-            card_rows.append([
-                Paragraph(f"<b>{shape_ur(lbl_rem_l, is_urdu)}</b>", card_lbl_style),
-                Paragraph(f"<font color='{rem_color}'><b>RS {l.remaining_lease_amount:,.0f}</b></font> ({shape_ur(status_text, is_urdu)})", card_val_urdu_style if is_urdu else card_val_style)
+                Paragraph(
+                    f"<b>{shape_ur(lbl_thk, is_urdu)}</b>",
+                    card_lbl_style
+                ),
+                Paragraph(
+                    f"<b>{shape_ur(tenant_disp, is_urdu)}</b>",
+                    card_val_urdu_style if is_urdu else card_val_style
+                )
             ])
 
-            inst_hdr = "اقساط کا ریکارڈ (INSTALLMENTS)" if is_urdu else "INSTALLMENTS RECORD"
-            inst_hdr_style = ParagraphStyle(
-                'InstSubHdr', parent=styles['Normal'], fontName=font_bold, fontSize=5.2, leading=6.2, textColor=colors.HexColor("#fde047"), alignment=1
-            )
-            inst_subhdr_idx = len(card_rows)
             card_rows.append([
-                Paragraph(f"<b>{shape_ur(inst_hdr, is_urdu)}</b>", inst_hdr_style), ""
+                Paragraph(
+                    f"<b>{shape_ur(lbl_cnt, is_urdu)}</b>",
+                    card_lbl_style
+                ),
+                Paragraph(
+                    f"<font color='#1e40af'><b>{phone_disp}</b></font>",
+                    card_val_style
+                )
+            ])
+
+            card_rows.append([
+                Paragraph(
+                    f"<b>{shape_ur(lbl_ara, is_urdu)}</b>",
+                    card_lbl_style
+                ),
+                Paragraph(
+                    f"<font color='#047857'><b>{shape_ur(area_disp, is_urdu)}</b></font>",
+                    card_val_urdu_style if is_urdu else card_val_style
+                )
+            ])
+
+            card_rows.append([
+                Paragraph(
+                    f"<b>{shape_ur(lbl_dur, is_urdu)}</b>",
+                    card_lbl_style
+                ),
+                Paragraph(
+                    f"<font color='#334155'>{shape_ur(dur_str, is_urdu)}</font>",
+                    card_val_urdu_style if is_urdu else card_val_style
+                )
+            ])
+
+            card_rows.append([
+                Paragraph(
+                    f"<b>{shape_ur(lbl_ta, is_urdu)}</b>",
+                    card_lbl_style
+                ),
+                Paragraph(
+                    f"<b>RS {l.total_agreed_amount:,.0f}</b>",
+                    card_val_style
+                )
+            ])
+
+            card_rows.append([
+                Paragraph(
+                    f"<b>{shape_ur(lbl_tr_l, is_urdu)}</b>",
+                    card_lbl_style
+                ),
+                Paragraph(
+                    f"<font color='#15803d'><b>RS {l.total_received:,.0f}</b></font>",
+                    card_val_style
+                )
+            ])
+
+            card_rows.append([
+                Paragraph(
+                    f"<b>{shape_ur(lbl_rem_l, is_urdu)}</b>",
+                    card_lbl_style
+                ),
+                Paragraph(
+                    f"<font color='{rem_color}'>"
+                    f"<b>RS {l.remaining_lease_amount:,.0f}</b>"
+                    f"</font> "
+                    f"({shape_ur(status_text, is_urdu)})",
+                    card_val_urdu_style if is_urdu else card_val_style
+                )
+            ])
+
+            inst_hdr = (
+                "اقساط کا ریکارڈ (INSTALLMENTS)"
+                if is_urdu
+                else "INSTALLMENTS RECORD"
+            )
+
+            inst_hdr_style = ParagraphStyle(
+                'InstSubHdr',
+                parent=styles['Normal'],
+                fontName=font_bold,
+                fontSize=5.2,
+                leading=6.2,
+                textColor=colors.HexColor("#fde047"),
+                alignment=1
+            )
+
+            inst_subhdr_idx = len(card_rows)
+
+            card_rows.append([
+                Paragraph(
+                    f"<b>{shape_ur(inst_hdr, is_urdu)}</b>",
+                    inst_hdr_style
+                ),
+                ""
             ])
 
             inst_start_idx = len(card_rows)
+
             for p in l.payments.all().order_by('payment_date'):
-                note_raw = p.notes.strip() if (p.notes and p.notes.strip()) else ""
-                date_cell = Paragraph(f"<font color='#047857'><b>{p.payment_date.strftime('%d-%b-%Y')}</b></font>", card_val_style)
+
+                note_raw = (
+                    p.notes.strip()
+                    if p.notes and p.notes.strip()
+                    else ""
+                )
+
+                date_cell = Paragraph(
+                    f"<font color='#047857'>"
+                    f"<b>{p.payment_date.strftime('%d-%b-%Y')}</b>"
+                    f"</font>",
+                    card_val_style
+                )
 
                 has_urdu_note = False
+
                 if note_raw:
+
                     try:
                         note_raw.encode('ascii')
                     except UnicodeEncodeError:
                         has_urdu_note = True
 
                 if is_urdu:
-                    note_trans = translate_user_input_to_urdu(note_raw) if note_raw else "ٹھیکہ وصولی"
+
+                    note_trans = (
+                        translate_user_input_to_urdu(note_raw)
+                        if note_raw
+                        else "ٹھیکہ وصولی"
+                    )
+
                     amt_cell = Paragraph(
-                        f"<font color='#15803d'><b>+RS {p.amount_received:,.0f}</b></font><br/>"
-                        f"<font color='#475569'><b>نوٹ: {shape_ur(note_trans, is_urdu=True)}</b></font>",
+                        f"<font color='#15803d'>"
+                        f"<b>+RS {p.amount_received:,.0f}</b>"
+                        f"</font>"
+                        f"<br/>"
+                        f"<font color='#475569'>"
+                        f"<b>نوٹ: {shape_ur(note_trans, is_urdu=True)}</b>"
+                        f"</font>",
                         card_val_urdu_style
                     )
+
                 elif has_urdu_note:
-                    shaped_note = shape_ur(note_raw, is_urdu=True)
+
+                    shaped_note = shape_ur(
+                        note_raw,
+                        is_urdu=True
+                    )
+
                     amt_cell = Paragraph(
-                        f"<font color='#15803d'><b>+RS {p.amount_received:,.0f}</b></font><br/>"
-                        f"<font color='#475569'>Note: {shaped_note}</font>",
+                        f"<font color='#15803d'>"
+                        f"<b>+RS {p.amount_received:,.0f}</b>"
+                        f"</font>"
+                        f"<br/>"
+                        f"<font color='#475569'>"
+                        f"Note: {shaped_note}"
+                        f"</font>",
                         card_val_urdu_style
                     )
+
                 else:
-                    note_eng = note_raw if note_raw else "Lease Payment"
+
+                    note_eng = (
+                        note_raw
+                        if note_raw
+                        else "Lease Payment"
+                    )
+
                     amt_cell = Paragraph(
-                        f"<font color='#15803d'><b>+RS {p.amount_received:,.0f}</b></font><br/>"
-                        f"<font color='#475569'>Note: {note_eng}</font>",
+                        f"<font color='#15803d'>"
+                        f"<b>+RS {p.amount_received:,.0f}</b>"
+                        f"</font>"
+                        f"<br/>"
+                        f"<font color='#475569'>"
+                        f"Note: {note_eng}"
+                        f"</font>",
                         card_val_style
                     )
-                card_rows.append([date_cell, amt_cell])
+
+                card_rows.append([
+                    date_cell,
+                    amt_cell
+                ])
 
             if not l.payments.exists():
-                no_lp_str = "کوئی قسط موصول نہیں ہوئی" if is_urdu else "No payments received"
-                no_lp_cell = Paragraph(f"<font color='#b45309'><b>{shape_ur(no_lp_str, is_urdu)}</b></font>", card_val_style)
-                card_rows.append([no_lp_cell, ""])
+
+                no_lp_str = (
+                    "کوئی قسط موصول نہیں ہوئی"
+                    if is_urdu
+                    else "No payments received"
+                )
+
+                no_lp_cell = Paragraph(
+                    f"<font color='#b45309'>"
+                    f"<b>{shape_ur(no_lp_str, is_urdu)}</b>"
+                    f"</font>",
+                    card_val_style
+                )
+
+                card_rows.append([
+                    no_lp_cell,
+                    ""
+                ])
 
             inst_end_idx = len(card_rows) - 1
-            if 'inst_ranges' not in locals():
-                inst_ranges = []
-            inst_ranges.append((inst_subhdr_idx, inst_start_idx, inst_end_idx))
 
-    inner_table = Table(card_rows, colWidths=[42, 92])
+            inst_ranges.append((
+                inst_subhdr_idx,
+                inst_start_idx,
+                inst_end_idx
+            ))
+
+    inner_table = Table(
+        card_rows,
+        colWidths=[42, 92]
+    )
+
     inner_table_style = [
         ('SPAN', (0, 0), (-1, 0)),
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#022c22")),
@@ -2047,90 +3199,256 @@ def export_monthly_pdf(request, year=None, month=None):
         ('RIGHTPADDING', (0, 0), (-1, -1), 1.5),
     ]
 
-    for r_i in range(1, min(8, len(card_rows))):
-        bg_col = colors.HexColor("#f8fafc") if r_i % 2 == 1 else colors.HexColor("#ffffff")
-        inner_table_style.append(('BACKGROUND', (0, r_i), (-1, r_i), bg_col))
+    for r_i in range(
+        1,
+        min(8, len(card_rows))
+    ):
 
-    if 'inst_ranges' in locals():
-        for s_idx, start_i, end_i in inst_ranges:
-            inner_table_style.append(('BACKGROUND', (0, s_idx), (-1, s_idx), colors.HexColor("#044e3a")))
-            if end_i >= start_i:
-                inner_table_style.append(('BACKGROUND', (0, start_i), (-1, end_i), colors.HexColor("#f0fdf4")))
-                inner_table_style.append(('GRID', (0, start_i), (-1, end_i), 0.3, colors.HexColor("#a7f3d0")))
+        bg_col = (
+            colors.HexColor("#f8fafc")
+            if r_i % 2 == 1
+            else colors.HexColor("#ffffff")
+        )
+
+        inner_table_style.append((
+            'BACKGROUND',
+            (0, r_i),
+            (-1, r_i),
+            bg_col
+        ))
+
+    for s_idx, start_i, end_i in inst_ranges:
+
+        inner_table_style.append((
+            'BACKGROUND',
+            (0, s_idx),
+            (-1, s_idx),
+            colors.HexColor("#044e3a")
+        ))
+
+        if end_i >= start_i:
+
+            inner_table_style.append((
+                'BACKGROUND',
+                (0, start_i),
+                (-1, end_i),
+                colors.HexColor("#f0fdf4")
+            ))
+
+            inner_table_style.append((
+                'GRID',
+                (0, start_i),
+                (-1, end_i),
+                0.3,
+                colors.HexColor("#a7f3d0")
+            ))
 
     for idx, row_item in enumerate(card_rows):
+
         if len(row_item) > 1 and row_item[1] == "":
-            inner_table_style.append(('SPAN', (0, idx), (-1, idx)))
 
-    inner_table.setStyle(TableStyle(inner_table_style))
+            inner_table_style.append((
+                'SPAN',
+                (0, idx),
+                (-1, idx)
+            ))
 
-    # Wrap in custom 3D Rounded Elevated Card Container
+    inner_table.setStyle(
+        TableStyle(inner_table_style)
+    )
+
+    # ============================================================
+    # CUSTOM 3D ROUNDED CARD
+    # ============================================================
+
     class ThreeDRoundedCard(Flowable):
+
         def __init__(self, content_table, width=140):
+
             super().__init__()
+
             self.content_table = content_table
             self.width = width
             self.height = 0
 
         def wrap(self, availWidth, availHeight):
-            w, h = self.content_table.wrap(self.width - 6, availHeight)
+
+            w, h = self.content_table.wrap(
+                self.width - 6,
+                availHeight
+            )
+
             self.height = h + 6
+
             return self.width, self.height
 
         def draw(self):
+
             c = self.canv
+
             w = self.width
             h = self.height
+
             r = 5.0
 
-            c.setFillColor(colors.HexColor("#cbd5e1"))
-            c.roundRect(2.5, -2.5, w - 2.5, h - 2.5, r, fill=1, stroke=0)
+            c.setFillColor(
+                colors.HexColor("#cbd5e1")
+            )
 
-            c.setFillColor(colors.HexColor("#fffdf5"))
-            c.setStrokeColor(colors.HexColor("#047857"))
+            c.roundRect(
+                2.5,
+                -2.5,
+                w - 2.5,
+                h - 2.5,
+                r,
+                fill=1,
+                stroke=0
+            )
+
+            c.setFillColor(
+                colors.HexColor("#fffdf5")
+            )
+
+            c.setStrokeColor(
+                colors.HexColor("#047857")
+            )
+
             c.setLineWidth(1.0)
-            c.roundRect(0, 0, w - 2.5, h - 2.5, r, fill=1, stroke=1)
 
-            self.content_table.drawOn(c, 1.5, 1.5)
+            c.roundRect(
+                0,
+                0,
+                w - 2.5,
+                h - 2.5,
+                r,
+                fill=1,
+                stroke=1
+            )
 
-    lease_table = ThreeDRoundedCard(inner_table, width=140)
+            self.content_table.drawOn(
+                c,
+                1.5,
+                1.5
+            )
 
-    row3_container = Table([[imam_table, "", lease_table]], colWidths=[397, 15, 140])
-    row3_container.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ('TOPPADDING', (0, 0), (-1, -1), 0),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-    ]))
+    lease_table = ThreeDRoundedCard(
+        inner_table,
+        width=140
+    )
+
+    row3_container = Table(
+        [[imam_table, "", lease_table]],
+        colWidths=[397, 15, 140]
+    )
+
+    row3_container.setStyle(
+        TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ])
+    )
+
     story.append(row3_container)
 
-    # Keep the complete PDF content on exactly one page.
-    # If content is too tall, ReportLab proportionally shrinks it to fit.
-    single_page_content = KeepInFrame(
-        maxWidth=doc.width,
-        maxHeight=doc.height,
-        content=story,
-        mode='shrink',
-        hAlign='LEFT',
-        vAlign='TOP'
+    # ============================================================
+    # DYNAMIC SINGLE-PAGE PDF GENERATION
+    # No KeepInFrame and no proportional shrinking.
+    # Page height adjusts according to all records.
+    # ============================================================
+
+    PAGE_WIDTH = letter[0]
+
+    RIGHT_MARGIN = 30
+    LEFT_MARGIN = 30
+    TOP_MARGIN = 26
+    BOTTOM_MARGIN = 26
+
+    AVAILABLE_WIDTH = (
+        PAGE_WIDTH
+        - LEFT_MARGIN
+        - RIGHT_MARGIN
+    )
+
+    total_content_height = 0
+
+    for flowable in story:
+
+        flowable_width, flowable_height = flowable.wrap(
+            AVAILABLE_WIDTH,
+            1000000
+        )
+
+        total_content_height += flowable_height
+
+        total_content_height += getattr(
+            flowable,
+            'spaceBefore',
+            0
+        )
+
+        total_content_height += getattr(
+            flowable,
+            'spaceAfter',
+            0
+        )
+
+    # Additional safety space
+    required_page_height = (
+        total_content_height
+        + TOP_MARGIN
+        + BOTTOM_MARGIN
+        + 15
+    )
+
+    dynamic_page_size = (
+        PAGE_WIDTH,
+        required_page_height
+    )
+
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=dynamic_page_size,
+        rightMargin=RIGHT_MARGIN,
+        leftMargin=LEFT_MARGIN,
+        topMargin=TOP_MARGIN,
+        bottomMargin=BOTTOM_MARGIN,
+        pageCompression=1
     )
 
     doc.build(
-        [single_page_content],
+        story,
         onFirstPage=draw_islamic_pdf_background,
         onLaterPages=draw_islamic_pdf_background
     )
+
     buffer.seek(0)
 
-    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
-    filename = f"Masjid_Audit_Statement_{selected_year}_{selected_month or 'annual'}_{pdf_lang}.pdf"
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response = HttpResponse(
+        buffer.getvalue(),
+        content_type='application/pdf'
+    )
+
+    filename = (
+        f"Masjid_Audit_Statement_{selected_year}_"
+        f"{selected_month if selected_month is not None else 'annual'}_"
+        f"{pdf_lang}.pdf"
+    )
+
+    response['Content-Disposition'] = (
+        f'attachment; filename="{filename}"'
+    )
+
+    response['Cache-Control'] = (
+        'no-cache, no-store, must-revalidate'
+    )
+
     response['Pragma'] = 'no-cache'
     response['Expires'] = '0'
-    return response
 
+    return response
 
 
 
