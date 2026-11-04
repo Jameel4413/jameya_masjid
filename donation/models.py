@@ -6,7 +6,39 @@ from django.db.models import Sum
 # ==========================================
 # 1. WEEKLY CHANDA COLLECTION (Thu / Fri)
 # ==========================================
-class WeeklyIncome(models.Model):
+class AutoUrduMixin:
+    """
+    Every text field listed in URDU_FIELDS has a sibling `<name>_ur` column that
+    holds the Urdu text the user approved in the form. If it is empty (API, admin,
+    old rows, ...) it is filled from the Roman-Urdu transliteration engine so the
+    PDF never has to guess later.
+    """
+    URDU_FIELDS = ()
+
+    def save(self, *args, **kwargs):
+        from .translations import translate_user_input_to_urdu
+        for name in self.URDU_FIELDS:
+            roman = (getattr(self, name, '') or '').strip()
+            if roman and not (getattr(self, name + '_ur', '') or '').strip():
+                setattr(self, name + '_ur', translate_user_input_to_urdu(roman))
+        super().save(*args, **kwargs)
+
+
+class WordMapping(models.Model):
+    """Roman word -> Urdu word, learnt from the corrections users make in the forms."""
+    roman = models.CharField(max_length=100, unique=True, help_text="Lower-case Roman Urdu word, e.g. ali")
+    urdu = models.CharField(max_length=100, help_text="Correct Urdu spelling, e.g. علی")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['roman']
+
+    def __str__(self):
+        return f"{self.roman} → {self.urdu}"
+
+
+class WeeklyIncome(AutoUrduMixin, models.Model):
+    URDU_FIELDS = ('notes',)
     DAY_CHOICES = [
         ('THURSDAY', 'Thursday Collection'),
         ('FRIDAY', 'Friday Collection'),
@@ -17,6 +49,7 @@ class WeeklyIncome(models.Model):
     day_type = models.CharField(max_length=20, choices=DAY_CHOICES)
     amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Total donation")
     notes = models.TextField(blank=True, null=True, help_text="Extra detail (optional)")
+    notes_ur = models.TextField(blank=True, default='', help_text='Urdu text for the PDF')
 
     def __str__(self):
         return f"{self.get_day_type_display()} - RS {self.amount} ({self.date})"
@@ -25,7 +58,8 @@ class WeeklyIncome(models.Model):
 # ==========================================
 # 2. GENERAL EXPENSES (Masjid Kharajaat)
 # ==========================================
-class Expense(models.Model):
+class Expense(AutoUrduMixin, models.Model):
+    URDU_FIELDS = ('description',)
     CATEGORY_CHOICES = [
         ('UTILITIES', 'Electricity / Water Bills'),
         ('REPAIR', 'Repairing & Maintenance'),
@@ -36,6 +70,7 @@ class Expense(models.Model):
 
     date = models.DateField(default=timezone.now)
     description = models.CharField(max_length=255, help_text="What was the money spent on? (Clear detail)")
+    description_ur = models.CharField(max_length=500, blank=True, default='', help_text='Urdu text for the PDF')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='OTHER')
 
@@ -46,8 +81,10 @@ class Expense(models.Model):
 # ==========================================
 # 3. IMAM SALARY & INSTALLMENTS
 # ==========================================
-class ImamSalary(models.Model):
+class ImamSalary(AutoUrduMixin, models.Model):
+    URDU_FIELDS = ('imam_name',)
     imam_name = models.CharField(max_length=100, default="Imam Masjid")
+    imam_name_ur = models.CharField(max_length=200, blank=True, default='', help_text='Urdu name for the PDF')
     month_year = models.DateField(help_text="Select month (e.g., 2026-07-01 for July 2026)")
     total_salary = models.DecimalField(max_digits=10, decimal_places=2, help_text="Per Month Total Salary")
     yearly_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="Per Year Total Salary")
@@ -111,11 +148,13 @@ class ImamSalary(models.Model):
         return f"{self.imam_name} - {self.month_year.strftime('%B %Y')} (Paid: {self.total_paid}/{self.total_salary})"
 
 
-class ImamSalaryInstallment(models.Model):
+class ImamSalaryInstallment(AutoUrduMixin, models.Model):
+    URDU_FIELDS = ('notes',)
     salary_record = models.ForeignKey(ImamSalary, on_delete=models.CASCADE, related_name='installments')
     payment_date = models.DateField(default=timezone.now)
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2, help_text="Installment / Single payment amount")
     notes = models.CharField(max_length=255, blank=True, null=True, help_text="e.g. 1st installment, advance, full pay")
+    notes_ur = models.CharField(max_length=500, blank=True, default='', help_text='Urdu text for the PDF')
 
     def __str__(self):
         return f"{self.salary_record.imam_name} - Paid RS {self.amount_paid} on {self.payment_date}"
@@ -124,9 +163,11 @@ class ImamSalaryInstallment(models.Model):
 # ==========================================
 # 4. LAND LEASE & INSTALLMENTS (2 Acre Zameen)
 # ==========================================
-class LandLease(models.Model):
+class LandLease(AutoUrduMixin, models.Model):
+    URDU_FIELDS = ('tenant_name',)
     land_area = models.CharField(max_length=50, default="2 Acres")
     tenant_name = models.CharField(max_length=100, help_text="Thekedar name")
+    tenant_name_ur = models.CharField(max_length=200, blank=True, default='', help_text='Urdu name for the PDF')
     tenant_contact = models.CharField(max_length=20, blank=True, null=True, help_text="Phone number")
 
     start_date = models.DateField(help_text="Theka start date")
@@ -149,11 +190,13 @@ class LandLease(models.Model):
         return f"{self.tenant_name} ({self.land_area}) - Remaining: RS {self.remaining_lease_amount}"
 
 
-class LandLeasePayment(models.Model):
+class LandLeasePayment(AutoUrduMixin, models.Model):
+    URDU_FIELDS = ('notes',)
     lease = models.ForeignKey(LandLease, on_delete=models.CASCADE, related_name='payments')
     payment_date = models.DateField(default=timezone.now)
     amount_received = models.DecimalField(max_digits=10, decimal_places=2, help_text="Installment recieved")
     notes = models.CharField(max_length=255, blank=True, null=True, help_text="e.g. Installment 1, 2, etc")
+    notes_ur = models.CharField(max_length=500, blank=True, default='', help_text='Urdu text for the PDF')
 
     def __str__(self):
         return f"{self.lease.tenant_name} - Received RS {self.amount_received} on {self.payment_date}"
@@ -162,7 +205,8 @@ class LandLeasePayment(models.Model):
 # ==========================================
 # 5. SPECIAL EID COLLECTION (Imams' Collection)
 # ==========================================
-class EidCollection(models.Model):
+class EidCollection(AutoUrduMixin, models.Model):
+    URDU_FIELDS = ('imam_name', 'notes')
     EID_TYPE_CHOICES = [
         ('EID_UL_FITR', 'Eid-ul-Fitr'),
         ('EID_UL_ADHA', 'Eid-ul-Adha'),
@@ -179,6 +223,8 @@ class EidCollection(models.Model):
     imam_type = models.CharField(max_length=100, choices=IMAM_TYPE_CHOICES, default='RESIDENT')
     amount_collected = models.DecimalField(max_digits=10, decimal_places=2, help_text="Total eid amount")
     notes = models.TextField(blank=True, null=True)
+    notes_ur = models.TextField(blank=True, default='', help_text='Urdu text for the PDF')
+    imam_name_ur = models.CharField(max_length=200, blank=True, default='', help_text='Urdu name for the PDF')
 
     def __str__(self):
         return f"{self.get_eid_name_display()} ({self.date.year}) - {self.imam_name}: RS {self.amount_collected}"

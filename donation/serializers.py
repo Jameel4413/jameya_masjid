@@ -53,6 +53,7 @@ class WeeklyIncomeSerializer(serializers.ModelSerializer):
             "day_type_display",
             "amount",
             "notes",
+            "notes_ur",
         ]
 
 
@@ -82,6 +83,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
             "id",
             "date",
             "description",
+            "description_ur",
             "amount",
             "category",
             "category_display",
@@ -117,10 +119,12 @@ class EidCollectionSerializer(serializers.ModelSerializer):
             "eid_name_display",
             "date",
             "imam_name",
+            "imam_name_ur",
             "imam_type",
             "imam_type_display",
             "amount_collected",
             "notes",
+            "notes_ur",
         ]
 
 
@@ -139,6 +143,7 @@ class LandLeasePaymentSerializer(serializers.ModelSerializer):
             "payment_date",
             "amount_received",
             "notes",
+            "notes_ur",
         ]
 
 
@@ -153,6 +158,7 @@ class LandLeaseSerializer(serializers.ModelSerializer):
             "id",
             "land_area",
             "tenant_name",
+            "tenant_name_ur",
             "tenant_contact",
             "start_date",
             "end_date",
@@ -179,6 +185,7 @@ class ImamSalaryInstallmentSerializer(serializers.ModelSerializer):
             "payment_date",
             "amount_paid",
             "notes",
+            "notes_ur",
         ]
 
 
@@ -196,6 +203,7 @@ class InstallmentCreateSerializer(serializers.ModelSerializer):
             "payment_date",
             "amount_paid",
             "notes",
+            "notes_ur",
         ]
         extra_kwargs = {
             "salary_record": {"required": False}
@@ -221,6 +229,7 @@ class ImamSalarySerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "imam_name",
+            "imam_name_ur",
             "month_year",
             "total_salary",
             "yearly_salary",

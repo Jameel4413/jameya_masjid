@@ -155,6 +155,14 @@
         }, true);
     </script>
 
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Editable Urdu preview under every Roman-Urdu text field (see urdu-preview script at the bottom) */
+        .urdu-wrap { margin-top: 6px; }
+        .urdu-wrap .urdu-label { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #64748b; margin-bottom: 3px; direction: rtl; }
+        .urdu-wrap .urdu-reset { border: 0; background: none; color: #047857; font-size: 11px; cursor: pointer; padding: 0; }
+        .urdu-wrap .urdu-input { direction: rtl; text-align: right; font-family: 'Jameel Noori Nastaleeq','Noto Nastaliq Urdu','Alvi Nastaleeq',serif; font-size: 20px !important; line-height: 2.1; min-height: 46px; background: #f0fdf4; border: 1px solid #86efac; }
+    </style>
     {% block extra_css %}{% endblock %}
     <script>
         const CURRENT_LANG = '{{ LANG|default:"en" }}';
@@ -612,6 +620,89 @@
     })();
     </script>
 
+    <script>
+    /* Roman Urdu in -> editable Urdu preview. The Urdu box (<name>_ur) is what gets saved and printed in the PDF. */
+    (function () {
+        var SUGGEST_URL = "{% url 'urdu_suggest' %}";
+        var FIELDS = { notes: 1, description: 1, imam_name: 1, tenant_name: 1 };
+        var timers = new WeakMap();
+
+        function baseName(el) { return (el.name || '').replace(/\[\]$/, ''); }
+        function isSource(el) {
+            return el && el.tagName && ((el.tagName === 'INPUT' && el.type === 'text') || el.tagName === 'TEXTAREA') &&
+                FIELDS[baseName(el)] === 1 && el.form && !el.classList.contains('urdu-input');
+        }
+        function anchorOf(el) { return el.closest('.input-group') || el; }
+        function wrapOf(el) { var n = anchorOf(el).nextElementSibling; return (n && n.classList.contains('urdu-wrap')) ? n : null; }
+        function sourceOf(wrap) {
+            var p = wrap.previousElementSibling;
+            return p && p.matches('.input-group') ? p.querySelector('input,textarea') : p;
+        }
+
+        function suggest(el, force) {
+            var wrap = wrapOf(el); if (!wrap) return;
+            var ur = wrap.querySelector('.urdu-input');
+            if (ur._manual && !force) return;
+            var v = el.value.trim();
+            if (!v) { ur.value = ''; ur._manual = false; return; }
+            fetch(SUGGEST_URL + '?text=' + encodeURIComponent(v), { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (j) {
+                    if (el.value.trim() !== v) return;            // user kept typing
+                    if (ur._manual && !force) return;             // user edited the Urdu meanwhile
+                    ur.value = j.urdu || ''; ur._manual = false;
+                }).catch(function () {});
+        }
+
+        function build(el) {
+            if (wrapOf(el)) return;
+            var list = /\[\]$/.test(el.name);
+            var wrap = document.createElement('div');
+            wrap.className = 'urdu-wrap';
+            wrap.innerHTML = '<div class="urdu-label"><span>اردو (PDF میں یہی چھپے گا) — آپ خود ٹھیک کر سکتے ہیں</span>' +
+                             '<button type="button" class="urdu-reset">↻ دوبارہ تجویز</button></div>';
+            var ur = document.createElement(el.tagName === 'TEXTAREA' ? 'textarea' : 'input');
+            if (ur.tagName === 'INPUT') ur.type = 'text'; else ur.rows = 2;
+            ur.name = baseName(el) + '_ur' + (list ? '[]' : '');
+            ur.className = el.className + ' urdu-input';
+            ur.setAttribute('dir', 'rtl'); ur.setAttribute('lang', 'ur'); ur.setAttribute('autocomplete', 'off');
+            ur.placeholder = 'اردو یہاں خود بخود آئے گی';
+            wrap.appendChild(ur);
+            anchorOf(el).insertAdjacentElement('afterend', wrap);
+            var init = el.getAttribute('data-ur') || '';
+            if (init) { ur.value = init; ur._manual = true; }
+            else if (el.value.trim()) { suggest(el); }
+        }
+
+        document.addEventListener('input', function (e) {
+            var t = e.target;
+            if (t.classList && t.classList.contains('urdu-input')) { t._manual = t.value.trim() !== ''; return; }
+            if (isSource(t)) {
+                build(t);
+                clearTimeout(timers.get(t));
+                timers.set(t, setTimeout(function () { suggest(t); }, 250));
+            }
+        });
+        document.addEventListener('click', function (e) {
+            if (e.target.classList && e.target.classList.contains('urdu-reset')) {
+                var src = sourceOf(e.target.closest('.urdu-wrap')); if (src) suggest(src, true);
+            }
+        });
+
+        function scan(root) {
+            if (!root.querySelectorAll) return;
+            root.querySelectorAll('input[type=text],textarea').forEach(function (el) { if (isSource(el)) build(el); });
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            scan(document);
+            new MutationObserver(function (ms) {            // rows added dynamically ("+ add row")
+                ms.forEach(function (m) {
+                    m.addedNodes.forEach(function (n) { if (n.nodeType === 1) { if (isSource(n)) build(n); scan(n); } });
+                });
+            }).observe(document.body, { childList: true, subtree: true });
+        });
+    })();
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

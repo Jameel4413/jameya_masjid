@@ -89,7 +89,7 @@
                                         </div>
                                         <div class="form-group-pro">
                                             <label class="form-label-pro"><i class="fa-solid fa-align-left"></i> {{ T.expense_detail }}</label>
-                                            <input type="text" name="description" class="form-control-pro" value="{{ expense.description }}" required>
+                                            <input type="text" name="description" data-ur="{{ expense.description_ur|default:'' }}" class="form-control-pro" value="{{ expense.description }}" required>
                                         </div>
                                         <div class="form-group-pro mb-0">
                                             <label class="form-label-pro"><i class="fa-solid fa-money-bill"></i> {{ T.amount }}</label>

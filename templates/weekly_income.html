@@ -151,7 +151,7 @@
                                         </div>
                                         <div class="form-group-pro mb-0">
                                             <label class="form-label-pro"><i class="fa-solid fa-note-sticky"></i> {{ T.notes }} <span class="optional-tag">(optional)</span></label>
-                                            <textarea name="notes" class="form-control-pro" rows="2">{{ income.notes }}</textarea>
+                                            <textarea name="notes" data-ur="{{ income.notes_ur|default:'' }}" class="form-control-pro" rows="2">{{ income.notes }}</textarea>
                                         </div>
                                     </div>
                                     <div class="modal-footer">

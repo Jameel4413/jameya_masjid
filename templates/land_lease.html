@@ -171,7 +171,7 @@
                                                 </div>
                                                 <div class="form-group-pro mb-0">
                                                     <label class="form-label-pro"><i class="fa-solid fa-note-sticky"></i> {{ T.notes }} <span class="optional-tag">(optional)</span></label>
-                                                    <input type="text" name="notes" class="form-control-pro" value="{{ payment.notes|default:'' }}">
+                                                    <input type="text" name="notes" data-ur="{{ payment.notes_ur|default:'' }}" class="form-control-pro" value="{{ payment.notes|default:'' }}">
                                                 </div>
                                             </div>
                                             <div class="modal-footer">
@@ -276,7 +276,7 @@
                         <div class="form-row-pro">
                             <div class="form-group-pro">
                                 <label class="form-label-pro"><i class="fa-solid fa-user"></i> {{ T.tenant_name }}</label>
-                                <input type="text" name="tenant_name" class="form-control-pro" value="{{ lease.tenant_name }}" required>
+                                <input type="text" name="tenant_name" data-ur="{{ lease.tenant_name_ur|default:'' }}" class="form-control-pro" value="{{ lease.tenant_name }}" required>
                             </div>
                             <div class="form-group-pro">
                                 <label class="form-label-pro"><i class="fa-solid fa-phone"></i> {{ T.tenant_contact }}</label>

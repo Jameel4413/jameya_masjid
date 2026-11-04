@@ -32,6 +32,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('change-password/', views.change_password_view, name='change_password'),
     path('set-language/', views.set_language, name='set_language'),
+    path('urdu-suggest/', views.urdu_suggest_view, name='urdu_suggest'),
 
 
 

@@ -47,6 +47,8 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from .urdu_pdf import Paragraph
+from .urdu_input import ur_value, ur_text, composed_ur
+from django.http import JsonResponse
 
 from .models import (
     WeeklyIncome,
@@ -426,6 +428,7 @@ def add_imam_salary_view(request):
 
             salary_obj = ImamSalary.objects.create(
                 imam_name=imam_name,
+                imam_name_ur=ur_value(request, 'imam_name', imam_name),
                 month_year=date_obj,
                 total_salary=tot_sal_float,
                 yearly_salary=yearly_sal_val
@@ -437,14 +440,16 @@ def add_imam_salary_view(request):
                     salary_record=salary_obj,
                     payment_date=payment_date or timezone.now().date(),
                     amount_paid=tot_sal_float,
-                    notes=f"Full Payment ({notes})" if notes else "Full Payment"
+                    notes=f"Full Payment ({notes})" if notes else "Full Payment",
+                    notes_ur=composed_ur("Full Payment", notes, request.POST.get('notes_ur', ''))
                 )
             elif payment_type == 'installment' and initial_amount_paid:
                 ImamSalaryInstallment.objects.create(
                     salary_record=salary_obj,
                     payment_date=payment_date or timezone.now().date(),
                     amount_paid=float(initial_amount_paid),
-                    notes=f"Qist/Installment ({notes})" if notes else "Pehli Qist"
+                    notes=f"Qist/Installment ({notes})" if notes else "Pehli Qist",
+                    notes_ur=composed_ur("Qist/Installment", notes, request.POST.get('notes_ur', ''), "Pehli Qist")
                 )
 
             messages.success(request, "Imam ki monthly salary record add ho gayi.")
@@ -469,9 +474,11 @@ def add_imam_installment_view(request):
         if payment_type == 'full':
             amount_to_pay = float(salary_obj.remaining_salary)
             notes_detail = f"Full Payment ({notes})" if notes else "Full Payment"
+            notes_detail_ur = composed_ur("Full Payment", notes, request.POST.get('notes_ur', ''))
         else:
             amount_to_pay = float(amount_paid) if amount_paid else 0.0
             notes_detail = f"Qist/Installment ({notes})" if notes else "Qist Payment"
+            notes_detail_ur = composed_ur("Qist/Installment", notes, request.POST.get('notes_ur', ''), "Qist Payment")
 
         # Never allow overpaying beyond what's actually remaining
         amount_to_pay = min(amount_to_pay, float(salary_obj.remaining_salary))
@@ -481,7 +488,8 @@ def add_imam_installment_view(request):
                 salary_record=salary_obj,
                 payment_date=payment_date,
                 amount_paid=amount_to_pay,
-                notes=notes_detail
+                notes=notes_detail,
+                notes_ur=notes_detail_ur
             )
             messages.success(request, "Salary payment record ho gayi.")
         else:
@@ -498,6 +506,7 @@ def update_imam_installment_view(request, pk):
         installment.payment_date = request.POST.get('payment_date')
         installment.amount_paid = float(request.POST.get('amount_paid'))
         installment.notes = request.POST.get('notes')
+        installment.notes_ur = ur_value(request, 'notes', installment.notes)
         installment.save()
         messages.success(request, "Payment detail update ho gayi!")
     return redirect('imam_salary')
@@ -518,6 +527,7 @@ def update_imam_salary_view(request, pk):
     salary = get_object_or_404(ImamSalary, pk=pk)
     if request.method == 'POST':
         salary.imam_name = request.POST.get('imam_name')
+        salary.imam_name_ur = ur_value(request, 'imam_name', salary.imam_name)
         tot_sal = float(request.POST.get('total_salary'))
         salary.total_salary = tot_sal
         yearly_sal_raw = request.POST.get('yearly_salary')
@@ -852,7 +862,7 @@ def export_imam_salary_pdf(request):
             salary_card_data = [
                 # Row 0: Imam Name & Status Badge
                 [
-                    Paragraph(f"<b>{shape_ur(s.imam_name, is_urdu)}</b>", imam_name_style),
+                    Paragraph(f"<b>{shape_ur(ur_text(s, 'imam_name', is_urdu), is_urdu)}</b>", imam_name_style),
                     "",
                     Paragraph(f"<b>{shape_ur(st_prefix + status_text, is_urdu)}</b>", status_badge_style)
                 ],
@@ -871,7 +881,7 @@ def export_imam_salary_pdf(request):
             ]
             
             for p in s.installments.all().order_by('payment_date'):
-                note_str = p.notes or ("قسط ادائیگی" if is_urdu else "Installment Payment")
+                note_str = ur_text(p, 'notes', is_urdu) or ("قسط ادائیگی" if is_urdu else "Installment Payment")
                 salary_card_data.append([
                     Paragraph(p.payment_date.strftime('%d-%b-%Y'), cell_style),
                     Paragraph(f"RS {p.amount_paid:,.0f}", cell_amount_style),
@@ -995,9 +1005,11 @@ def add_eid_collection(request):
             date=date,
             eid_name=eid_name,
             imam_name=imam_name,
+            imam_name_ur=ur_value(request, 'imam_name', imam_name),
             imam_type=imam_type,
             amount_collected=amount_collected,
-            notes=notes
+            notes=notes,
+            notes_ur=ur_value(request, 'notes', notes)
         )
         messages.success(request, "Eid collection record save ho gaya (Ye central income mein shamil nahi hoga).")
         return redirect('eid_collections')
@@ -1012,9 +1024,11 @@ def update_eid_collection(request, pk):
         collection.date = request.POST.get('date')
         collection.eid_name = request.POST.get('eid_name')
         collection.imam_name = request.POST.get('imam_name')
+        collection.imam_name_ur = ur_value(request, 'imam_name', collection.imam_name)
         collection.imam_type = request.POST.get('imam_type')
         collection.amount_collected = request.POST.get('amount_collected')
         collection.notes = request.POST.get('notes', '')
+        collection.notes_ur = ur_value(request, 'notes', collection.notes)
         collection.save()
         messages.success(request, "Eid collection record update ho gaya!")
     return redirect('eid_collections')
@@ -1057,7 +1071,8 @@ def add_income_view(request):
                         date=parsed_date,
                         day_type=dt,
                         amount=float(amt_raw),
-                        notes=note
+                        notes=note,
+                        notes_ur=ur_value(request, 'notes', note, index=i)
                     )
                     created_count += 1
             
@@ -1079,6 +1094,7 @@ def update_income(request, pk):
         income.day_type = request.POST.get('day_type')
         income.amount = request.POST.get('amount')
         income.notes = request.POST.get('notes')
+        income.notes_ur = ur_value(request, 'notes', income.notes)
         income.save()
         messages.success(request, "Weekly income record update ho gaya!")
     return redirect('weekly_income')
@@ -1121,6 +1137,7 @@ def add_expense_view(request):
                         date=parsed_date,
                         category=cat,
                         description=desc,
+                        description_ur=ur_value(request, 'description', desc, index=i),
                         amount=float(amt_raw)
                     )
                     created_count += 1
@@ -1142,6 +1159,7 @@ def update_expense_view(request, pk):
         expense.date = request.POST.get('date')
         expense.category = request.POST.get('category')
         expense.description = request.POST.get('description')
+        expense.description_ur = ur_value(request, 'description', expense.description)
         expense.amount = request.POST.get('amount')
         expense.save()
         messages.success(request, "Kharche ka record update ho gaya!")
@@ -1167,6 +1185,7 @@ def add_land_lease_view(request):
         LandLease.objects.create(
             land_area=request.POST.get('land_area') or "2 Acres",
             tenant_name=request.POST.get('tenant_name'),
+            tenant_name_ur=ur_value(request, 'tenant_name', request.POST.get('tenant_name')),
             tenant_contact=request.POST.get('tenant_contact'),
             start_date=request.POST.get('start_date'),
             end_date=request.POST.get('end_date'),
@@ -1183,6 +1202,7 @@ def update_land_lease_view(request, pk):
     if request.method == 'POST':
         lease.land_area = request.POST.get('land_area')
         lease.tenant_name = request.POST.get('tenant_name')
+        lease.tenant_name_ur = ur_value(request, 'tenant_name', lease.tenant_name)
         lease.tenant_contact = request.POST.get('tenant_contact')
         lease.start_date = request.POST.get('start_date')
         lease.end_date = request.POST.get('end_date')
@@ -1218,7 +1238,8 @@ def add_lease_payment_view(request):
                 lease=lease_obj,
                 payment_date=payment_date,
                 amount_received=amount_received,
-                notes=notes
+                notes=notes,
+                notes_ur=ur_value(request, 'notes', notes)
             )
             messages.success(request, "Theke ki payment record ho gayi.")
 
@@ -1241,6 +1262,7 @@ def update_lease_payment_view(request, pk):
         payment.payment_date = payment_date
         payment.amount_received = amount_received
         payment.notes = notes
+        payment.notes_ur = ur_value(request, 'notes', notes)
         payment.save()
         messages.success(request, "Theke ki payment record update ho gayi!")
     return redirect('land_lease')
@@ -1547,14 +1569,15 @@ def export_monthly_pdf(request, year=None, month=None):
             else inc.get_day_type_display()
         )
 
+        _inc_notes = ur_text(inc, 'notes', is_urdu)
         notes_disp = (
-            translate_user_input_to_urdu(inc.notes)
+            translate_user_input_to_urdu(_inc_notes)
             if (
                 is_urdu
-                and inc.notes
-                and inc.notes.strip() != "-"
+                and _inc_notes
+                and _inc_notes.strip() != "-"
             )
-            else (inc.notes or "-")
+            else (_inc_notes or "-")
         )
 
         income_items.append({
@@ -1585,11 +1608,12 @@ def export_monthly_pdf(request, year=None, month=None):
             else exp.get_category_display()
         )
 
+        _exp_desc = ur_text(exp, 'description', is_urdu)
         raw_desc = (
-            exp.description
+            _exp_desc
             if (
-                exp.description
-                and exp.description.strip() != "-"
+                _exp_desc
+                and _exp_desc.strip() != "-"
             )
             else "-"
         )
@@ -1623,14 +1647,14 @@ def export_monthly_pdf(request, year=None, month=None):
             )
 
             notes_str = (
-                f" - {translate_user_input_to_urdu(sal.notes)}"
+                f" - {translate_user_input_to_urdu(ur_text(sal, 'notes', True))}"
                 if sal.notes
                 else ""
             )
 
             desc_disp = (
                 f"قسط: "
-                f"{translate_user_input_to_urdu(sal.salary_record.imam_name)} "
+                f"{translate_user_input_to_urdu(ur_text(sal.salary_record, 'imam_name', True))} "
                 f"({sm_name} {sal.salary_record.month_year.year})"
                 f"{notes_str}"
             )
@@ -2549,7 +2573,7 @@ def export_monthly_pdf(request, year=None, month=None):
 
             imam_card_rows.append([
                 Paragraph(
-                    f"<b>{shape_ur(s.imam_name, is_urdu)}</b>",
+                    f"<b>{shape_ur(ur_text(s, 'imam_name', is_urdu), is_urdu)}</b>",
                     imam_header_name_style
                 ),
                 "",
@@ -2581,7 +2605,7 @@ def export_monthly_pdf(request, year=None, month=None):
             for p in s.installments.all().order_by('payment_date'):
 
                 note_str = (
-                    p.notes
+                    ur_text(p, 'notes', is_urdu)
                     or (
                         "قسط کی ادائیگی"
                         if is_urdu
@@ -2913,7 +2937,7 @@ def export_monthly_pdf(request, year=None, month=None):
             )
 
             tenant_disp = (
-                translate_user_input_to_urdu(l.tenant_name)
+                translate_user_input_to_urdu(ur_text(l, 'tenant_name', True))
                 if is_urdu
                 else l.tenant_name
             )
@@ -3072,9 +3096,10 @@ def export_monthly_pdf(request, year=None, month=None):
 
             for p in l.payments.all().order_by('payment_date'):
 
+                _pn = ur_text(p, 'notes', is_urdu)
                 note_raw = (
-                    p.notes.strip()
-                    if p.notes and p.notes.strip()
+                    _pn.strip()
+                    if _pn and _pn.strip()
                     else ""
                 )
 
@@ -3763,3 +3788,10 @@ class MonthlyPdfView(_PdfProxyView):
 
 class ImamSalaryPdfView(_PdfProxyView):
     pdf_view = staticmethod(web_views.export_imam_salary_pdf)
+
+
+@login_required(login_url='/admin/login/')
+def urdu_suggest_view(request):
+    """Live Urdu suggestion for the form preview box (Roman Urdu in, Urdu out)."""
+    text = (request.GET.get('text') or '')[:500]
+    return JsonResponse({'urdu': translate_user_input_to_urdu(text) if text.strip() else ''})

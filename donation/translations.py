@@ -1187,6 +1187,30 @@ def roman_to_urdu_phonetic(word):
     return "".join(res)
 
 
+# --- Words learnt from user corrections (WordMapping table) override the built-in dictionary ---
+USER_MAP_PROVIDER = None   # set by donation.urdu_input; returns {roman_word: urdu_word}
+
+
+class _MergedMap:
+    def __contains__(self, key):
+        user = USER_MAP_PROVIDER() if USER_MAP_PROVIDER else {}
+        return key in user or key in ROMAN_URDU_TO_URDU_MAP
+
+    def __getitem__(self, key):
+        user = USER_MAP_PROVIDER() if USER_MAP_PROVIDER else {}
+        return user[key] if key in user else ROMAN_URDU_TO_URDU_MAP[key]
+
+
+_MERGED_MAP = _MergedMap()
+
+_FIXED_PHRASES = (
+    ("Qist/Installment", "قسط"),
+    ("Full Payment", "مکمل ادائیگی"),
+    ("Qist Payment", "قسط کی ادائیگی"),
+    ("Pehli Qist", "پہلی قسط"),
+)
+
+
 def translate_user_input_to_urdu(text):
     if not text:
         return ""
@@ -1194,11 +1218,15 @@ def translate_user_input_to_urdu(text):
     if not str_text or str_text == "-":
         return "-"
 
+    # Fixed prefixes the views add automatically ("Qist/Installment (note)", "Full Payment (note)")
+    for _roman, _urdu in _FIXED_PHRASES:
+        str_text = re.sub(re.escape(_roman), _urdu, str_text, flags=re.I)
+
     # Check full phrase match
     lower_full = str_text.lower()
     clean_full = re.sub(r'[^\w\s]', '', lower_full).strip()
-    if clean_full in ROMAN_URDU_TO_URDU_MAP:
-        return ROMAN_URDU_TO_URDU_MAP[clean_full]
+    if clean_full in _MERGED_MAP:
+        return _MERGED_MAP[clean_full]
 
     # Tokenize input while preserving word structure and punctuation
     tokens = str_text.split()
@@ -1217,13 +1245,13 @@ def translate_user_input_to_urdu(text):
                 clean_phrase_words.append(m.group(2).lower() if m else t.lower())
             
             clean_phrase = " ".join(clean_phrase_words).strip()
-            if clean_phrase in ROMAN_URDU_TO_URDU_MAP:
+            if clean_phrase in _MERGED_MAP:
                 m_first = re.match(r'^([^\w]*)(.*?)([^\w]*)$', phrase_tokens[0])
                 m_last = re.match(r'^([^\w]*)(.*?)([^\w]*)$', phrase_tokens[-1])
                 lead = m_first.group(1) if m_first else ""
                 trail = m_last.group(3) if m_last else ""
                 
-                urdu_trans = ROMAN_URDU_TO_URDU_MAP[clean_phrase]
+                urdu_trans = _MERGED_MAP[clean_phrase]
                 result_tokens.append(f"{lead}{urdu_trans}{trail}")
                 i += window
                 matched = True
@@ -1235,8 +1263,8 @@ def translate_user_input_to_urdu(text):
             if m:
                 lead, core, trail = m.groups()
                 clean_core = core.lower()
-                if clean_core in ROMAN_URDU_TO_URDU_MAP:
-                    result_tokens.append(f"{lead}{ROMAN_URDU_TO_URDU_MAP[clean_core]}{trail}")
+                if clean_core in _MERGED_MAP:
+                    result_tokens.append(f"{lead}{_MERGED_MAP[clean_core]}{trail}")
                 elif re.search(r'[a-zA-Z]', core):
                     # HYBRID PHONETIC FALLBACK: Transliterate unknown Roman Urdu word into Urdu Script
                     phonetic_urdu = roman_to_urdu_phonetic(core)
