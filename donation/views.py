@@ -41,7 +41,7 @@ import arabic_reshaper
 # from bidi.algorithm import get_display
 import arabic_reshaper
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Spacer, Table, TableStyle, Image as RLImage, Flowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
@@ -564,17 +564,12 @@ def draw_islamic_pdf_background(canvas, doc):
     canvas.saveState()
     width, height = doc.pagesize
 
-    # When the monthly report is scaled down to fit A4, `print_scale` < 1.
-    # The frame is kept a fixed ~18pt (6mm) from the *physical* paper edge so
-    # printers never clip the border (margin is expressed in scaled units).
-    _s = getattr(doc, 'print_scale', 1.0) or 1.0
-
     # 1. Canvas Fill: Rich Soft Islamic Sage Tint (#e1f0e6)
     canvas.setFillColor(colors.HexColor('#e1f0e6'))
     canvas.rect(0, 0, width, height, fill=1, stroke=0)
 
     # 2. Outer Bold Golden Frame (#c59b27 - Rich Gold)
-    margin = 18.0 / _s
+    margin = 18
     canvas.setStrokeColor(colors.HexColor('#c59b27'))
     canvas.setLineWidth(3.0)
     canvas.rect(margin, margin, width - (2 * margin), height - (2 * margin))
@@ -616,7 +611,7 @@ def draw_islamic_pdf_background(canvas, doc):
     canvas.restoreState()
 
     # 4. Executive Footer Line
-    footer_y = 26.0 + (margin - 18.0)
+    footer_y = 26
     canvas.setStrokeColor(colors.HexColor('#c59b27'))
     canvas.setLineWidth(1.2)
     canvas.line(margin + 6, footer_y + 8, width - margin - 6, footer_y + 8)
@@ -3396,15 +3391,12 @@ def export_monthly_pdf(request, year=None, month=None):
     story.append(row3_container)
 
     # ============================================================
-    # PAGE SETUP
-    #   * Monthly report  -> exactly ONE A4 page (210 x 297 mm).
-    #     The whole layout is drawn at its designed size and then scaled
-    #     uniformly (same factor for text, tables, borders) so it fits A4.
-    #     Nothing is re-flowed, so the layout stays identical.
-    #   * Annual report   -> unchanged (one tall dynamic-height page).
+    # DYNAMIC SINGLE-PAGE PDF GENERATION
+    # No KeepInFrame and no proportional shrinking.
+    # Page height adjusts according to all records.
     # ============================================================
 
-    DESIGN_WIDTH = letter[0]   # ledger tables are designed for 552pt content width
+    PAGE_WIDTH = letter[0]
 
     RIGHT_MARGIN = 30
     LEFT_MARGIN = 30
@@ -3412,7 +3404,7 @@ def export_monthly_pdf(request, year=None, month=None):
     BOTTOM_MARGIN = 26
 
     AVAILABLE_WIDTH = (
-        DESIGN_WIDTH
+        PAGE_WIDTH
         - LEFT_MARGIN
         - RIGHT_MARGIN
     )
@@ -3440,62 +3432,33 @@ def export_monthly_pdf(request, year=None, month=None):
             0
         )
 
-    print_scale = 1.0
+    # Additional safety space
+    required_page_height = (
+        total_content_height
+        + TOP_MARGIN
+        + BOTTOM_MARGIN
+        + 15
+    )
 
-    if is_annual:
-        # ---- legacy behaviour: one tall page, no scaling ----
-        page_size = (
-            DESIGN_WIDTH,
-            total_content_height + TOP_MARGIN + BOTTOM_MARGIN + 15
-        )
-        page_decor = draw_islamic_pdf_background
-
-    else:
-        # ---- A4 single page ----
-        A4_W, A4_H = A4
-
-        # Scale limits (uniform scale s, 0 < s <= 1):
-        #   width : designed 612pt wide page must fit A4 width
-        #   height: content + frame padding + top/bottom margins must fit
-        #           A4 height.  Margins are 26 + (18/s - 18) so the border
-        #           stays 18pt from the physical paper edge:
-        #           A4_H/s >= content + 31 + 36/s   (+4 safety)
-        width_limit = A4_W / DESIGN_WIDTH
-        height_limit = (A4_H - 36.0) / (total_content_height + 35.0)
-
-        print_scale = min(1.0, width_limit, height_limit)
-
-        _pad = (18.0 / print_scale) - 18.0
-        TOP_MARGIN = 26 + _pad
-        BOTTOM_MARGIN = 26 + _pad
-
-        page_size = (A4_W / print_scale, A4_H / print_scale)
-
-        # centre the designed-width content on the (virtual) page
-        _side = (page_size[0] - AVAILABLE_WIDTH) / 2.0
-        LEFT_MARGIN = _side
-        RIGHT_MARGIN = _side
-
-        def page_decor(canvas, doc):
-            canvas.setPageSize(A4)
-            canvas.scale(print_scale, print_scale)
-            draw_islamic_pdf_background(canvas, doc)
+    dynamic_page_size = (
+        PAGE_WIDTH,
+        required_page_height
+    )
 
     doc = SimpleDocTemplate(
         buffer,
-        pagesize=page_size,
+        pagesize=dynamic_page_size,
         rightMargin=RIGHT_MARGIN,
         leftMargin=LEFT_MARGIN,
         topMargin=TOP_MARGIN,
         bottomMargin=BOTTOM_MARGIN,
         pageCompression=1
     )
-    doc.print_scale = print_scale
 
     doc.build(
         story,
-        onFirstPage=page_decor,
-        onLaterPages=page_decor
+        onFirstPage=draw_islamic_pdf_background,
+        onLaterPages=draw_islamic_pdf_background
     )
 
     buffer.seek(0)
