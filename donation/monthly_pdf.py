@@ -26,7 +26,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.platypus import (
-    BaseDocTemplate, Frame, Image as RLImage, KeepTogether, PageTemplate, Spacer, Table, TableStyle,
+    BaseDocTemplate, Flowable, Frame, Image as RLImage, KeepInFrame, PageTemplate, Spacer, Table, TableStyle,
 )
 
 from .urdu_pdf import Paragraph
@@ -36,6 +36,8 @@ CONTENT_W = 535                      # A4 width (595.3) minus ~30pt margin each 
 MARGIN_TOP = 30
 MARGIN_BOTTOM = 42                   # footer line / page number background ke liye jagah
 FRAME_H = PAGE_H - MARGIN_TOP - MARGIN_BOTTOM
+BOTTOM_MIN = 4.8                     # imam/lease sections ka sab se chhota font
+BOTTOM_MAX = 7.5                     # aur sab se bara
 FIT_SAFETY = 3                       # pt - rounding ki wajah se page ke kinare par na chipke
 
 # (font size, row padding) - bara se chhota. Urdu mein asal glyph size ~1.55x hota hai
@@ -82,6 +84,29 @@ def _ps(name, font, size, color, align=0, leading=None):
         name, fontName=font, fontSize=size, leading=leading or round(size * 1.25, 2),
         textColor=_c(color) if isinstance(color, str) else color, alignment=align,
     )
+
+
+class _Card(Flowable):
+    """Lease ka rounded 'card' (original 3D look)."""
+
+    def __init__(self, content, width):
+        super().__init__()
+        self.content, self.width, self.height = content, width, 0
+
+    def wrap(self, aw, ah):
+        _, h = self.content.wrap(self.width - 6, ah)
+        self.height = h + 6
+        return self.width, self.height
+
+    def draw(self):
+        c, w, h, r = self.canv, self.width, self.height, 5.0
+        c.setFillColor(_c("#cbd5e1"))
+        c.roundRect(2.5, -2.5, w - 2.5, h - 2.5, r, fill=1, stroke=0)
+        c.setFillColor(_c("#fffdf5"))
+        c.setStrokeColor(_c("#047857"))
+        c.setLineWidth(1.0)
+        c.roundRect(0, 0, w - 2.5, h - 2.5, r, fill=1, stroke=1)
+        self.content.drawOn(c, 1.5, 1.5)
 
 
 # ==========================================================================
@@ -384,91 +409,91 @@ def _build_imam(ctx, fs, pad, width):
     return tbl
 
 
-def _build_lease_table(ctx, fs, pad):
-    """Zameen ke theke ki full-width compact table (sirf tab jab lease maujood ho)."""
+def _build_lease_card(ctx, fs, width):
+    """Side ka lease card (original design) - font bottom_fs ke saath chhota/bara hota hai."""
     is_urdu, shape, fb = ctx['is_urdu'], ctx['shape'], ctx['fonts']['bold']
-    lead = round(fs * 1.25, 2)
+    fs = max(fs, 4.6)
+    lead = round(fs * 1.2, 2)
     L = lambda ur, en: ur if is_urdu else en
-    S = lambda t, s_: Paragraph(esc(shape(t, is_urdu)), s_)
+    S = lambda t, st: Paragraph(esc(shape(t, is_urdu)), st)
     lbl = _ps('ls_l', fb, fs, "#065f46", 0, lead)
     val = _ps('ls_v', fb, fs, INK, 0, lead)
-    hdr = _ps('ls_h', fb, fs + 1.5, GOLD_LIGHT, 1, round((fs + 1.5) * 1.25, 2))
-    sub = _ps('ls_s', fb, fs + 0.3, "#fde047", 1, lead)
+    hdr = _ps('ls_h', fb, fs + 0.6, "#ffffff", 1, round((fs + 0.6) * 1.2, 2))
+    sub = _ps('ls_s', fb, fs, "#fde047", 1, lead)
     first = ctx['leases'][0]
-    head = "<b>%s</b>" % esc(shape(L("زمین کا ٹھیکہ", "Zameen Ka Theka"), is_urdu))
-    if len(ctx['leases']) == 1:
-        head += "  <font color='#ffffff'>|  %s RS %s  |  %s RS %s</font>" % (
-            esc(shape(L("طے:", "Agreed:"), is_urdu)), money(first['total']),
-            esc(shape(L("بقایا:", "Remaining:"), is_urdu)), money(first['remaining']))
-    lw, vw = 56, 122
-    widths = [lw, vw, lw, vw, lw, CONTENT_W - 2 * (lw + vw) - lw]
-    rows = [[Paragraph(head, hdr), "", "", "", "", ""]]
-    style = [
-        ('FONTSIZE', (0, 0), (-1, -1), 1), ('LEADING', (0, 0), (-1, -1), 1),   # khali cells row ko lamba na karein
-        ('SPAN', (0, 0), (-1, 0)), ('BACKGROUND', (0, 0), (-1, 0), _c(EMERALD_DARK)),
-        ('BOX', (0, 0), (-1, -1), 1.2, _c("#047857")), ('GRID', (0, 1), (-1, -1), 0.3, _c("#a7f3d0")),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), pad), ('BOTTOMPADDING', (0, 0), (-1, -1), pad),
-        ('LEFTPADDING', (0, 0), (-1, -1), 3), ('RIGHTPADDING', (0, 0), (-1, -1), 3),
-    ]
+    head = ("<b>%s</b><br/><font size='%.1f' color='#fef08a'><b>%s RS %s | %s RS %s</b></font>" % (
+        esc(shape(L("زمین کا ٹھیکہ", "Zameen Ka Theka"), is_urdu)), fs,
+        esc(shape(L("طے:", "Agreed:"), is_urdu)), money(first['total']),
+        esc(shape(L("بقایا:", "Rem:"), is_urdu)), money(first['remaining'])))
+    rows = [[Paragraph(head, hdr), ""]]
+    blocks = []
     for l in ctx['leases']:
         status = L("مکمل ادا", "PAID") if l['is_paid'] else L("فعال ٹھیکہ", "ACTIVE")
         rem_col = "#15803d" if l['remaining'] <= 0 else "#dc2626"
-        i = len(rows)
-        pair = lambda k, v: [S(k, lbl), Paragraph(v, val)]
-        rows.append(pair(L("ٹھیکیدار:", "Tenant:"), "<b>%s</b>" % esc(shape(l['tenant'], is_urdu))) +
-                    pair(L("رابطہ:", "Phone:"), "<font color='#1e40af'><b>%s</b></font>" % esc(l['phone'] or "-")) +
-                    pair(L("رقبہ:", "Area:"), "<font color='#047857'><b>%s</b></font>" % esc(shape(l['area'], is_urdu))))
-        rows.append(pair(L("مدت:", "Period:"), "<font color='#334155'>%s</font>" % esc(l['duration'])) +
-                    pair(L("کل رقم:", "Agreed:"), "<b>RS %s</b>" % money(l['total'])) +
-                    pair(L("وصول شدہ:", "Received:"), "<font color='#15803d'><b>RS %s</b></font>" % money(l['received'])))
-        rows.append([S(L("بقایا رقم:", "Remaining:"), lbl),
-                     Paragraph("<font color='%s'><b>RS %s</b></font> (%s)" % (rem_col, money(l['remaining']), esc(shape(status, is_urdu))), val),
-                     "", "", "", ""])
-        style += [('SPAN', (1, i + 2), (-1, i + 2)),
-                  ('BACKGROUND', (0, i), (-1, i), _c("#f8fafc")), ('BACKGROUND', (0, i + 1), (-1, i + 1), _c("#ffffff")),
-                  ('BACKGROUND', (0, i + 2), (-1, i + 2), _c("#f8fafc"))]
+        data = [
+            (L("ٹھیکیدار:", "Tenant:"), "<b>%s</b>" % esc(shape(l['tenant'], is_urdu))),
+            (L("رابطہ:", "Phone:"), "<font color='#1e40af'><b>%s</b></font>" % esc(l['phone'] or "-")),
+            (L("رقبہ:", "Area:"), "<font color='#047857'><b>%s</b></font>" % esc(shape(l['area'], is_urdu))),
+            (L("مدت:", "Period:"), "<font color='#334155'>%s</font>" % esc(l['duration'])),
+            (L("کل رقم:", "Agreed:"), "<b>RS %s</b>" % money(l['total'])),
+            (L("وصول شدہ:", "Received:"), "<font color='#15803d'><b>RS %s</b></font>" % money(l['received'])),
+            (L("بقایا رقم:", "Remaining:"), "<font color='%s'><b>RS %s</b></font> (%s)" % (rem_col, money(l['remaining']), esc(shape(status, is_urdu)))),
+        ]
+        for k, v in data:
+            rows.append([S(k, lbl), Paragraph(v, val)])
         sub_i = len(rows)
-        rows.append([S(L("اقساط کا ریکارڈ", "INSTALLMENTS RECORD"), sub), "", "", "", "", ""])
-        style += [('SPAN', (0, sub_i), (-1, sub_i)), ('BACKGROUND', (0, sub_i), (-1, sub_i), _c(EMERALD))]
+        rows.append([S(L("اقساط کا ریکارڈ", "INSTALLMENTS RECORD"), sub), ""])
+        start = len(rows)
         if l['payments']:
             for p in l['payments']:
-                j = len(rows)
                 note = esc(shape(p['note'], is_urdu)) if p['note'] else L("ٹھیکہ وصولی", "Lease Payment")
-                rows.append([Paragraph("<font color='#047857'><b>%s</b></font>" % p['date'].strftime('%d-%b-%Y'), val), "",
-                             Paragraph("<font color='#15803d'><b>+RS %s</b></font>" % money(p['amount']), val), "",
-                             Paragraph("<font color='#475569'>%s</font>" % note, val), ""])
-                style += [('SPAN', (0, j), (1, j)), ('SPAN', (2, j), (3, j)), ('SPAN', (4, j), (5, j)),
-                          ('BACKGROUND', (0, j), (-1, j), _c("#f0fdf4"))]
+                rows.append([Paragraph("<font color='#047857'><b>%s</b></font>" % p['date'].strftime('%d-%b-%Y'), val),
+                             Paragraph("<font color='#15803d'><b>+RS %s</b></font><br/><font color='#475569'>%s</font>" % (money(p['amount']), note), val)])
         else:
-            j = len(rows)
-            rows.append([S(L("کوئی قسط موصول نہیں ہوئی", "No payments received"), val), "", "", "", "", ""])
-            style += [('SPAN', (0, j), (-1, j)), ('BACKGROUND', (0, j), (-1, j), _c("#f0fdf4"))]
-    tbl = Table(rows, colWidths=widths)
+            rows.append([S(L("کوئی قسط موصول نہیں ہوئی", "No payments received"), val), ""])
+        blocks.append((sub_i, start, len(rows) - 1))
+    lw = round((width - 6) * 0.34)
+    tbl = Table(rows, colWidths=[lw, width - 6 - lw])
+    style = [
+        ('FONTSIZE', (0, 0), (-1, -1), 1), ('LEADING', (0, 0), (-1, -1), 1),
+        ('SPAN', (0, 0), (-1, 0)), ('BACKGROUND', (0, 0), (-1, 0), _c(EMERALD_DARK)),
+        ('LINEBELOW', (0, 0), (-1, 0), 1.0, _c(GOLD)), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 0.6), ('BOTTOMPADDING', (0, 0), (-1, -1), 0.6),
+        ('LEFTPADDING', (0, 0), (-1, -1), 1.5), ('RIGHTPADDING', (0, 0), (-1, -1), 1.5),
+    ]
+    for r_i in range(1, len(rows)):
+        style.append(('BACKGROUND', (0, r_i), (-1, r_i), _c("#f8fafc") if r_i % 2 else _c("#ffffff")))
+    for sub_i, start, end in blocks:
+        style += [('BACKGROUND', (0, sub_i), (-1, sub_i), _c(EMERALD)),
+                  ('BACKGROUND', (0, start), (-1, end), _c("#f0fdf4")),
+                  ('GRID', (0, start), (-1, end), 0.3, _c("#a7f3d0"))]
+    for idx, row in enumerate(rows):
+        if len(row) > 1 and row[1] == "":
+            style.append(('SPAN', (0, idx), (-1, idx)))
     tbl.setStyle(TableStyle(style))
-    return tbl
+    return _Card(tbl, width)
 
 
 def _build_bottom(ctx, fs, pad):
-    out = [_build_imam(ctx, fs, pad, CONTENT_W)]
+    """Imam salary (left) + lease card (right) ek hi line mein; lease na ho to imam poori chorai."""
     if ctx['leases']:
-        out += [Spacer(1, 3), _build_lease_table(ctx, fs, pad)]
-    else:
-        # lease nahi hai to khali card ke bajaye ek patli patti
-        is_urdu, shape, fb = ctx['is_urdu'], ctx['shape'], ctx['fonts']['bold']
-        msg = ("زمین کا ٹھیکہ: اس عرصے کے لیے کوئی فعال ٹھیکہ نہیں" if is_urdu
-               else "Zameen Ka Theka: No active leases for this period")
-        strip = Table([[Paragraph("<b>%s</b>" % esc(shape(msg, is_urdu)), _ps('ls_none', fb, fs, "#334155", 1))]],
-                      colWidths=[CONTENT_W])
-        strip.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, -1), _c("#f8fafc")),
-                                   ('BOX', (0, 0), (-1, -1), 0.8, _c("#047857")),
-                                   ('TOPPADDING', (0, 0), (-1, -1), pad), ('BOTTOMPADDING', (0, 0), (-1, -1), pad)]))
-        out += [Spacer(1, 3), strip]
-    return out
-
-
-def _build_body(ctx, fs, pad):
-    return [_build_ledger(ctx, fs, pad), Spacer(1, 4)], _build_bottom(ctx, fs, pad)
+        gap, card_w = 10, 160
+        imam = _build_imam(ctx, fs, pad, CONTENT_W - gap - card_w)
+        card = _build_lease_card(ctx, fs, card_w)
+        row = Table([[imam, "", card]], colWidths=[CONTENT_W - gap - card_w, gap, card_w])
+        row.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                                 ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                                 ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0)]))
+        return [row]
+    is_urdu, shape, fb = ctx['is_urdu'], ctx['shape'], ctx['fonts']['bold']
+    msg = ("زمین کا ٹھیکہ: اس عرصے کے لیے کوئی فعال ٹھیکہ نہیں" if is_urdu
+           else "Zameen Ka Theka: No active leases for this period")
+    strip = Table([[Paragraph("<b>%s</b>" % esc(shape(msg, is_urdu)), _ps('ls_none', fb, fs, "#334155", 1))]],
+                  colWidths=[CONTENT_W])
+    strip.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, -1), _c("#f8fafc")),
+                               ('BOX', (0, 0), (-1, -1), 0.8, _c("#047857")),
+                               ('TOPPADDING', (0, 0), (-1, -1), pad), ('BOTTOMPADDING', (0, 0), (-1, -1), pad)]))
+    return [_build_imam(ctx, fs, pad, CONTENT_W), Spacer(1, 3), strip]
 
 
 def _height(flowables):
@@ -487,28 +512,54 @@ def render_monthly_pdf(ctx, background_cb):
     import io
     levels = LEVELS_URDU if ctx['is_urdu'] else LEVELS_EN
 
-    def attempt(i):
+    # --- Stage 1: ledger ka sab se bara font jo is tarah aaye ke neeche ke sections minimum
+    #     size (BOTTOM_MIN) par hon.   Stage 2: us font par neeche ke sections jitne bare ho sakein.
+    def ledger_part(i):
         fs, pad, compact = levels[i]
-        header, body = _build_header(ctx, compact), None
-        body = _build_body(ctx, fs, pad)
-        ok = _height(header) + _height(body[0]) + _height(body[1]) <= FRAME_H - FIT_SAFETY
-        return header, body, ok
+        return _build_header(ctx, compact), [_build_ledger(ctx, fs, pad), Spacer(1, 4)]
 
-    lo, hi = 0, len(levels) - 1          # sab se bara font jo ek page mein aaye (binary search)
-    best = None
-    while lo <= hi:
-        mid = (lo + hi) // 2
-        h, bd, ok = attempt(mid)
-        if ok:
-            best, hi = (mid, h, bd), mid - 1
-        else:
-            lo = mid + 1
-    fits = best is not None
-    if not fits:                          # minimum size par bhi na aaye -> agla A4 page
-        h, bd, _ = attempt(len(levels) - 1)
-        best = (len(levels) - 1, h, bd)
-    idx, header, body = best
+    def bottom_part(i, bfs):
+        pad = max(0.5, min(levels[i][1], 1.6))
+        return _build_bottom(ctx, bfs, pad)
+
+    def fits_at(i, bfs):
+        h, led = ledger_part(i)
+        return _height(h) + _height(led) + _height(bottom_part(i, bfs)) <= FRAME_H - FIT_SAFETY
+
+    def search(floor_of):
+        lo, hi, found = 0, len(levels) - 1, None
+        while lo <= hi:                               # binary search (bara -> chhota font)
+            mid = (lo + hi) // 2
+            if fits_at(mid, floor_of(levels[mid][0])):
+                found, hi = mid, mid - 1
+            else:
+                lo = mid + 1
+        return found
+
+    # Pehle: neeche ke sections ledger ke ~80% font par (balanced look). Agar phir bhi na aaye
+    # to neeche ke sections minimum tak chhote hote jate hain, phir ledger chhota hota hai.
+    ratio_floor = lambda f: max(BOTTOM_MIN, min(BOTTOM_MAX, round(f * 0.8, 2)))
+    found = search(ratio_floor)
+    floor_of = ratio_floor
+    if found is None:
+        found = search(lambda f: BOTTOM_MIN)
+        floor_of = lambda f: BOTTOM_MIN
+    fits = found is not None
+    idx = found if fits else len(levels) - 1
+    bfs = floor_of(levels[idx][0])
+    if fits:                                          # ab neeche ke sections jitne bare ho sakein
+        v = min(levels[idx][0], BOTTOM_MAX)
+        while v > bfs + 1e-9:
+            if fits_at(idx, round(v, 2)):
+                bfs = round(v, 2)
+                break
+            v -= 0.2
+    header, led = ledger_part(idx)
+    story = header + led + bottom_part(idx, bfs)
     chosen = levels[idx]
+    if not fits:
+        # aakhri hal: poora page proportionally shrink - data kabhi doosre page par nahi jata
+        story = [KeepInFrame(CONTENT_W, FRAME_H - FIT_SAFETY, story, mode='shrink')]
 
     buf = io.BytesIO()
     doc = BaseDocTemplate(buf, pagesize=A4, pageCompression=1,
@@ -518,7 +569,6 @@ def render_monthly_pdf(ctx, background_cb):
     frame = Frame((PAGE_W - CONTENT_W) / 2, MARGIN_BOTTOM, CONTENT_W, FRAME_H, id='main',
                   leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
     doc.addPageTemplates([PageTemplate(id='a4', frames=[frame], onPage=background_cb, pagesize=A4)])
-    # neeche ka imam/lease block ek saath rahe (do page mein na tute)
-    doc.build(header + body[0] + [KeepTogether(body[1])])
+    doc.build(story)
     return buf.getvalue(), {'font_size': chosen[0], 'padding': chosen[1], 'compact_header': chosen[2],
-                            'single_page': fits, 'pages': doc.page}
+                            'bottom_font': bfs, 'fully_fit': fits, 'pages': doc.page}
