@@ -6,7 +6,8 @@ from .models import (
     ImamSalaryInstallment,
     LandLease,
     LandLeasePayment,
-    EidCollection
+    EidCollection,
+    WordMapping,
 )
 # Register your models here.
 # Admin Site Title & Header Customize
@@ -37,7 +38,7 @@ class ExpenseAdmin(admin.ModelAdmin):
 class ImamSalaryInstallmentInline(admin.TabularInline):
     model = ImamSalaryInstallment
     extra = 1
-    fields = ('payment_date', 'amount_paid', 'notes')
+    fields = ('payment_date', 'amount_paid', 'notes', 'notes_ur')
 
 
 @admin.register(ImamSalary)
@@ -63,7 +64,7 @@ class ImamSalaryAdmin(admin.ModelAdmin):
 class LandLeasePaymentInline(admin.TabularInline):
     model = LandLeasePayment
     extra = 1
-    fields = ('payment_date', 'amount_received', 'notes')
+    fields = ('payment_date', 'amount_received', 'notes', 'notes_ur')
 
 
 @admin.register(LandLease)
@@ -86,3 +87,30 @@ class EidCollectionAdmin(admin.ModelAdmin):
     list_display = ('eid_name', 'imam_name', 'imam_type', 'amount_collected', 'date')
     list_filter = ('eid_name', 'imam_type', 'date')
     search_fields = ('imam_name',)
+
+
+# 8. Word Mapping (Roman Urdu -> Urdu words learnt from corrections in the forms)
+@admin.register(WordMapping)
+class WordMappingAdmin(admin.ModelAdmin):
+    list_display = ('roman', 'urdu', 'updated_at')
+    search_fields = ('roman', 'urdu')
+    ordering = ('roman',)
+    list_per_page = 100
+
+    def _refresh_cache(self):
+        from .urdu_input import _invalidate
+        _invalidate()          # forms / PDFs pick up the change immediately
+
+    def save_model(self, request, obj, form, change):
+        obj.roman = (obj.roman or '').strip().lower()
+        obj.urdu = (obj.urdu or '').strip()
+        super().save_model(request, obj, form, change)
+        self._refresh_cache()
+
+    def delete_model(self, request, obj):
+        super().delete_model(request, obj)
+        self._refresh_cache()
+
+    def delete_queryset(self, request, queryset):
+        super().delete_queryset(request, queryset)
+        self._refresh_cache()

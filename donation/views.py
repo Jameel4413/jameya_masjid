@@ -957,6 +957,20 @@ def export_imam_salary_pdf(request):
             story.append(salary_card_table)
             story.append(Spacer(1, 15))
 
+    # Dynamic single page: never spill onto a second page, however many records there are.
+    _avail_w = letter[0] - 72
+    _content_h = 0
+    for _fl in story:
+        _w, _h = _fl.wrap(_avail_w, 1000000)
+        _content_h += _h + getattr(_fl, 'spaceBefore', 0) + getattr(_fl, 'spaceAfter', 0)
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=(letter[0], max(letter[1], _content_h + 72 + 15)),
+        rightMargin=36,
+        leftMargin=36,
+        topMargin=36,
+        bottomMargin=36
+    )
     doc.build(story, onFirstPage=draw_islamic_pdf_background, onLaterPages=draw_islamic_pdf_background)
     buffer.seek(0)
 
@@ -1886,8 +1900,7 @@ def export_monthly_pdf(request, year=None, month=None):
 
     center_table = Table(
         center_table_data,
-        colWidths=[372],
-        rowHeights=[52, 20]
+        colWidths=[372]
     )
 
     center_table.setStyle(
@@ -1964,8 +1977,7 @@ def export_monthly_pdf(request, year=None, month=None):
 
     month_banner_table = Table(
         [[p_month_banner]],
-        colWidths=[552],
-        rowHeights=[18]
+        colWidths=[552]
     )
 
     month_banner_table.setStyle(

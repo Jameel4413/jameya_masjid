@@ -8,11 +8,12 @@ from reportlab.platypus import Paragraph as _RLParagraph
 from reportlab.platypus.flowables import Flowable
 
 FONT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fonts', 'JameelNooriNastaleeq.ttf')
-SIZE_FACTOR = 1.25   # Nastaleeq Naskh se chhota lagta hai
-LINE_FACTOR = 1.55   # minimum line height = fontSize * LINE_FACTOR
-BASELINE = 1.08
+SIZE_FACTOR = 1.55   # Nastaleeq Naskh se chhota lagta hai (visibility ke liye bara kiya)
+LINE_FACTOR = 1.45   # minimum line height = fontSize * LINE_FACTOR
+BASELINE = LINE_FACTOR / 2 + 0.325   # ink spans about -0.35em..+1.0em, so this centres it in the line box
 SPACE_EM = 0.26      # font ki apni space ~0 chaurai ki hai
-BOLD_STROKE = 0.028  # font mein bold nahi, is liye faux-bold
+BOLD_STROKE = 0.04    # faux-bold (font mein bold nahi)
+REGULAR_STROKE = 0.016  # normal text par bareek stroke, taake patli Nastaleeq lakeeren chhoti print mein saaf rahein
 
 _lock = threading.Lock(); _hb_font = None; _upem = 2048
 
@@ -188,9 +189,9 @@ class UrduParagraph(Flowable):
         canv.saveState()
         color = t.color or black
         canv.setFillColor(color)
-        if t.bold:
-            canv.setStrokeColor(color); canv.setLineWidth(t.size*SIZE_FACTOR*BOLD_STROKE); canv.setLineJoin(1)
-        canv.drawPath(p, stroke=1 if t.bold else 0, fill=1, fillMode=FILL_NON_ZERO)
+        canv.setStrokeColor(color)
+        canv.setLineWidth(t.size*SIZE_FACTOR*(BOLD_STROKE if t.bold else REGULAR_STROKE)); canv.setLineJoin(1)
+        canv.drawPath(p, stroke=1, fill=1, fillMode=FILL_NON_ZERO)
         canv.restoreState()
 
 def Paragraph(text, style, bulletText=None, **kw):

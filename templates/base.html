@@ -630,7 +630,7 @@
         function baseName(el) { return (el.name || '').replace(/\[\]$/, ''); }
         function isSource(el) {
             return el && el.tagName && ((el.tagName === 'INPUT' && el.type === 'text') || el.tagName === 'TEXTAREA') &&
-                FIELDS[baseName(el)] === 1 && el.form && !el.classList.contains('urdu-input');
+                FIELDS[baseName(el)] === 1 && !el.classList.contains('urdu-input');   // no el.form check: edit modals sit inside <tbody>, so the parser leaves their <form> empty
         }
         function anchorOf(el) { return el.closest('.input-group') || el; }
         function wrapOf(el) { var n = anchorOf(el).nextElementSibling; return (n && n.classList.contains('urdu-wrap')) ? n : null; }
