@@ -2150,9 +2150,9 @@ def export_monthly_pdf(request, year=None, month=None):
     )
 
     h_date = "تاریخ" if is_urdu else "Date"
-    h_src = "زمرہ / ذریعہ" if is_urdu else "Source / Type"
+    h_src = "ذریعہ" if is_urdu else "Source / Type"
     h_notes = "تفصیلات / نوٹس" if is_urdu else "Details / Notes"
-    h_amt = "رقم (PKR)" if is_urdu else "Amount (PKR)"
+    h_amt = "رقم" if is_urdu else "Amount (PKR)"
 
     inc_rows = [
         [
@@ -2670,13 +2670,13 @@ def export_monthly_pdf(request, year=None, month=None):
             )
 
             lbl_m_tot = (
-                "ماهانہ کل تنخواہ"
+                "ماھانہ کل تنخواہ"
                 if is_urdu
                 else "Monthly Salary"
             )
 
             lbl_m_paid = (
-                    "ماهانہ ادا شدہ"
+                    "ماھانہ ادا شدہ"
                 if is_urdu
                 else "Total Paid"
             )
