@@ -60,7 +60,27 @@
                         </td>
                     </tr>
 
-                    <!-- Edit Eid Modal -->
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <i class="fa-solid fa-kaaba"></i>
+                                </div>
+                                <h6>{{ T.no_eid_record }}</h6>
+                                <p>{{ T.no_record_this_period_eid }}</p>
+                                <button class="btn-pro btn-pro-warning btn-pro-sm" data-bs-toggle="modal" data-bs-target="#addEidModal">
+                                    <i class="fa-solid fa-plus"></i> {{ T.add_eid_record }}
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+{# Modals live OUTSIDE <table>: HTML parser breaks <form> inside <tbody> #}
+{% for collection in eid_collections %}
+<!-- Edit Eid Modal -->
                     <div class="modal fade modal-pro" id="editEidModal{{ collection.id }}" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered">
                             <div class="modal-content">
@@ -140,25 +160,8 @@
                             </div>
                         </div>
                     </div>
+{% endfor %}
 
-                    {% empty %}
-                    <tr>
-                        <td colspan="7" class="text-center text-muted py-4">
-                            <div class="empty-state">
-                                <div class="empty-state-icon">
-                                    <i class="fa-solid fa-kaaba"></i>
-                                </div>
-                                <h6>{{ T.no_eid_record }}</h6>
-                                <p>{{ T.no_record_this_period_eid }}</p>
-                                <button class="btn-pro btn-pro-warning btn-pro-sm" data-bs-toggle="modal" data-bs-target="#addEidModal">
-                                    <i class="fa-solid fa-plus"></i> {{ T.add_eid_record }}
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
     </div>
 </div>

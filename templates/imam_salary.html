@@ -172,7 +172,16 @@
                             </tr>
 
                             <!-- MODAL: Edit Installment -->
-                            <div class="modal fade modal-pro" id="editInstallmentModal{{ inst.id }}" tabindex="-1">
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted small py-3">{{ T.no_payment_added }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+{# Modals live OUTSIDE <table>: HTML parser breaks <form> inside <tbody> #}
+{% for inst in salary.installments.all %}
+<div class="modal fade modal-pro" id="editInstallmentModal{{ inst.id }}" tabindex="-1">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
                                         <div class="modal-header modal-header-primary">
@@ -232,13 +241,8 @@
                                     </div>
                                 </div>
                             </div>
-                            {% empty %}
-                            <tr>
-                                <td colspan="4" class="text-center text-muted small py-3">{{ T.no_payment_added }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+{% endfor %}
+
                 </div>
             </div>
         </div>

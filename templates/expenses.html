@@ -62,7 +62,18 @@
                         </td>
                     </tr>
 
-                    <!-- Edit Modal -->
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">
+                            {% include 'includes/empty_state.html' with icon='fa-solid fa-receipt' title=T.no_expense_found message=T.first_expense_message button_text=T.add_expense_btn button_target='addExpenseModal' %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+{# Modals live OUTSIDE <table>: HTML parser breaks <form> inside <tbody> #}
+{% for expense in expenses %}
+<!-- Edit Modal -->
                     <div class="modal fade modal-pro" id="editExpenseModal{{ expense.id }}" tabindex="-1">
                         <div class="modal-dialog modal-dialog-centered">
                             <div class="modal-content">
@@ -132,16 +143,8 @@
                             </div>
                         </div>
                     </div>
+{% endfor %}
 
-                    {% empty %}
-                    <tr>
-                        <td colspan="5">
-                            {% include 'includes/empty_state.html' with icon='fa-solid fa-receipt' title=T.no_expense_found message=T.first_expense_message button_text=T.add_expense_btn button_target='addExpenseModal' %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
     </div>
 </div>

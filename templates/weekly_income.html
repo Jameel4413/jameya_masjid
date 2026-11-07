@@ -119,7 +119,18 @@
                         </td>
                     </tr>
 
-                    <!-- Edit Modal -->
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">
+                            {% include 'includes/empty_state.html' with icon='fa-solid fa-hand-holding-dollar' title=T.no_record message=T.first_chanda_message button_text=T.new_record button_target='addIncomeModal' %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+{# Modals live OUTSIDE <table>: HTML parser breaks <form> inside <tbody> #}
+{% for income in incomes %}
+<!-- Edit Modal -->
                     <div class="modal fade modal-pro" id="editIncomeModal{{ income.id }}" tabindex="-1">
                         <div class="modal-dialog modal-dialog-centered">
                             <div class="modal-content">
@@ -188,16 +199,8 @@
                             </div>
                         </div>
                     </div>
+{% endfor %}
 
-                    {% empty %}
-                    <tr>
-                        <td colspan="5">
-                            {% include 'includes/empty_state.html' with icon='fa-solid fa-hand-holding-dollar' title=T.no_record message=T.first_chanda_message button_text=T.new_record button_target='addIncomeModal' %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
     </div>
 </div>
