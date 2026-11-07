@@ -2048,7 +2048,7 @@ def export_monthly_pdf(request, year=None, month=None):
 
     lbl_tot_inc = "کل آمدنی" if is_urdu else "TOTAL INCOME"
     lbl_tot_exp = "کل اخراجات" if is_urdu else "TOTAL EXPENSE"
-    lbl_net_bal = "خالص بیلنس" if is_urdu else "NET BALANCE"
+    lbl_net_bal = "ماہانہ بقایا بیلنس" if is_urdu else "NET BALANCE"
 
     summary_data = [
         [
@@ -2144,7 +2144,7 @@ def export_monthly_pdf(request, year=None, month=None):
     # ============================================================
 
     inc_sec_title = (
-        "آمدنی کا مکمل گوشوارہ (INCOME LEDGER)"
+        "آمدنی کا مکمل گوشوارہ"
         if is_urdu
         else "INCOME AUDIT LEDGER"
     )
@@ -2214,7 +2214,7 @@ def export_monthly_pdf(request, year=None, month=None):
     else:
 
         tot_inc_lbl = (
-            "کل مجموعی آمدنی (TOTAL INCOME)"
+            "کل مجموعی آمدنی"
             if is_urdu
             else "TOTAL INCOME"
         )
@@ -2326,19 +2326,19 @@ def export_monthly_pdf(request, year=None, month=None):
     # ============================================================
 
     exp_sec_title = (
-        "اخراجات کا مکمل گوشوارہ (EXPENSE LEDGER)"
+        "اخراجات کا مکمل گوشوارہ"
         if is_urdu
         else "EXPENSE AUDIT LEDGER"
     )
 
     h_cat = (
-        "زمرہ (Category)"
+        "خرچے کی قسم"
         if is_urdu
         else "Category"
     )
 
     h_desc = (
-        "تفصیل / نوٹس (Description)"
+        "تفصیل / نوٹس"
         if is_urdu
         else "Description / Details"
     )
@@ -2403,7 +2403,7 @@ def export_monthly_pdf(request, year=None, month=None):
     else:
 
         tot_exp_lbl = (
-            "کل مجموعی اخراجات (TOTAL EXPENSE)"
+            "کل مجموعی اخراجات"
             if is_urdu
             else "TOTAL EXPENSE"
         )
@@ -2515,7 +2515,7 @@ def export_monthly_pdf(request, year=None, month=None):
     # ============================================================
 
     imam_sec_title = (
-        "امام کی تنخواہ کا ریکارڈ (IMAM SALARY RECORD)"
+        "امام کی تنخواہ کا ریکارڈ"
         if is_urdu
         else "IMAM SALARY RECORD"
     )
@@ -2597,7 +2597,7 @@ def export_monthly_pdf(request, year=None, month=None):
 
             col1 = "تاریخ" if is_urdu else "Date"
             col2 = "اقساط / تفاصیل" if is_urdu else "Installment / Details"
-            col3 = "ادائیگی (PKR)" if is_urdu else "Paid (PKR)"
+            col3 = "ادائیگی" if is_urdu else "Paid (PKR)"
 
             imam_card_rows.append([
                 Paragraph(
@@ -2676,7 +2676,7 @@ def export_monthly_pdf(request, year=None, month=None):
             )
 
             lbl_m_paid = (
-                "کل ادا شد"
+                    "ماهانہ ادا شدہ"
                 if is_urdu
                 else "Total Paid"
             )
