@@ -118,7 +118,6 @@ def _build_header(ctx, compact=False):
     font_bism, font_bold = f['bism'], f['bold']
     ur_font = f.get('urdu') or font_bism
     story = []
-    img_h = 48 if compact else 66
 
     p_arabic = Paragraph(shape("بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ", True),
                          _ps('bismA', font_bism, 13 if compact else 15, "#fde047", 1, 14 if compact else 17))
@@ -146,17 +145,46 @@ def _build_header(ctx, compact=False):
     ]))
 
     def _img(path, h):
+        """Image ko header ki poori height (h) par laata hai.
+
+        PNG ke aas-paas ki transparent patti (jo khali jagah bana rahi thi) pehle trim
+        ki jati hai, taake gumbad / kaaba green section ke upar, neeche aur bahar wali
+        side ke border se chipak jayein.
+        """
         if path and os.path.exists(path):
             try:
-                from reportlab.lib.utils import ImageReader
-                iw, ih = ImageReader(path).getSize()
-                return RLImage(path, width=h * iw / ih, height=h)
+                from io import BytesIO
+                from PIL import Image as PILImage
+                im = PILImage.open(path).convert('RGBA')
+                w0, h0 = im.size
+                mask = im.getchannel('A').point(lambda v: 255 if v > 128 else 0)
+                cols = list(mask.resize((w0, 1), PILImage.BOX).getdata())
+                rows = list(mask.resize((1, h0), PILImage.BOX).getdata())
+                thr = 255 * 0.02          # 2% se kam opaque column/row = stray pixels, ignore
+                xs = [i for i, v in enumerate(cols) if v > thr]
+                ys = [i for i, v in enumerate(rows) if v > thr]
+                if xs and ys:
+                    im = im.crop((xs[0], ys[0], xs[-1] + 1, ys[-1] + 1))
+                iw, ih = im.size
+                target_px = 480           # ~450 dpi at 75pt tall - print ke liye kaafi, file halki
+                if ih > target_px:
+                    im = im.resize((max(1, round(iw * target_px / ih)), target_px), PILImage.LANCZOS)
+                    iw, ih = im.size
+                buf = BytesIO()
+                im.save(buf, 'PNG')
+                buf.seek(0)
+                return RLImage(buf, width=h * iw / ih, height=h)
             except Exception:
                 pass
         return ""
 
-    box = Table([[_img(ctx.get('gumbad_path'), img_h), center, _img(ctx.get('kaaba_path'), img_h)]],
-                colWidths=[side_w, center_w, side_w])
+    # Header row ki height wahi jo beech wale block ko chahiye (kam az kam purani fixed height).
+    # Images isi poori height ko bharti hain.
+    _, center_h = center.wrap(center_w, 10000)
+    row_h = max(center_h + 2, 50 if compact else 68)
+
+    box = Table([[_img(ctx.get('gumbad_path'), row_h), center, _img(ctx.get('kaaba_path'), row_h)]],
+                colWidths=[side_w, center_w, side_w], rowHeights=[row_h])
     box.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), _c(EMERALD_DARK)),
         ('BOX', (0, 0), (-1, -1), 2.2, _c(GOLD)),
@@ -164,8 +192,9 @@ def _build_header(ctx, compact=False):
         ('LINEBELOW', (0, 0), (-1, -1), 1.0, _c(GOLD_LIGHT)),
         ('ALIGN', (0, 0), (0, 0), 'LEFT'), ('ALIGN', (1, 0), (1, 0), 'CENTER'), ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 1), ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
-        ('LEFTPADDING', (0, 0), (0, 0), 4), ('RIGHTPADDING', (2, 0), (2, 0), 4),
+        # zero padding: images bahar wali side, upar aur neeche border ko touch karein
+        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ('LEFTPADDING', (0, 0), (0, 0), 0), ('RIGHTPADDING', (2, 0), (2, 0), 0),
     ]))
     story += [box, Spacer(1, 3)]
 
