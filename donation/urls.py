@@ -21,6 +21,7 @@ api_urlpatterns = [
     path("auth/me/", views.MeView.as_view(), name="api-me"),
     path("auth/change-password/", views.ChangePasswordView.as_view(), name="api-change-password"),
     path("meta/", views.MetaView.as_view(), name="api-meta"),
+    path("urdu-suggest/", views.UrduSuggestApiView.as_view(), name="api-urdu-suggest"),
     path("dashboard/", views.DashboardView.as_view(), name="api-dashboard"),
     path("reports/monthly-pdf/", views.MonthlyPdfView.as_view(), name="api-monthly-pdf"),
     path("reports/imam-salary-pdf/", views.ImamSalaryPdfView.as_view(), name="api-imam-salary-pdf"),

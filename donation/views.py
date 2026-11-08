@@ -1984,6 +1984,17 @@ class MetaView(APIView):
         })
 
 
+class UrduSuggestApiView(APIView):
+    """Roman Urdu in, Urdu out: same engine as the website's live "Urdu preview" box."""
+
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "urdu_suggest"
+
+    def get(self, request):
+        text = (request.query_params.get("text") or "")[:500]
+        return Response({"urdu": translate_user_input_to_urdu(text) if text.strip() else ""})
+
+
 class DashboardView(APIView):
     def get(self, request):
         period = services.parse_period(request.query_params)
@@ -2021,8 +2032,7 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     serializer_class = ExpenseSerializer
 
     def list(self, request, *args, **kwargs):
-        period = services.parse_period(request.query_params)
-        qs = services.filter_by_month_year(self.get_queryset(), "date", period)
+        qs = services.explicit_period_filter(self.get_queryset(), "date", request.query_params)
         category = request.query_params.get("category")
         if category:
             qs = qs.filter(category=category)
@@ -2048,8 +2058,7 @@ class EidCollectionViewSet(viewsets.ModelViewSet):
     serializer_class = EidCollectionSerializer
 
     def list(self, request, *args, **kwargs):
-        period = services.parse_period(request.query_params)
-        qs = services.filter_by_month_year(self.get_queryset(), "date", period)
+        qs = services.explicit_period_filter(self.get_queryset(), "date", request.query_params)
         imam_type = request.query_params.get("imam_type")
         if imam_type:
             qs = qs.filter(imam_type=imam_type)
@@ -2065,8 +2074,7 @@ class LandLeaseViewSet(viewsets.ModelViewSet):
     serializer_class = LandLeaseSerializer
 
     def list(self, request, *args, **kwargs):
-        period = services.parse_period(request.query_params)
-        qs = services.filter_by_month_year(self.get_queryset(), "start_date", period)
+        qs = services.explicit_period_filter(self.get_queryset(), "start_date", request.query_params)
         leases = list(qs)
         pending = sum(l.remaining_lease_amount for l in leases)
         return Response({

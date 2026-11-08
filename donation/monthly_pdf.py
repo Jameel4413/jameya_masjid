@@ -1,3 +1,23 @@
+"""
+Monthly / annual financial statement - A4 layout.
+
+Ye module sirf *layout* sambhalta hai (ORM ko haath nahi lagata). views.export_monthly_pdf
+database se data nikaal kar plain dict/list ki shakal mein `render_monthly_pdf(ctx, background_cb)`
+ko deta hai.
+
+Mukhya khubiyan
+---------------
+* Page hamesha A4 (595 x 842 pt) - ab content ke hisab se page lamba nahi hota.
+* Income aur Expense ab ek hi "merged ledger" mein hain:
+      income  ->  us ke baad ke expenses  ->  (agli income)  -> ...
+  har row par running "Balance" (bacha hua amount) update hota hai; har income-group ki
+  aakhri row ka balance highlight hota hai (yani us income aur us ke expenses ke baad ka bacha hua).
+* Font size khud-ba-khud itna bara chuna jata hai jitna ek A4 page mein poora aa jaye.
+  Agar data itna zyada ho ke minimum readable size par bhi single page mein na aaye
+  (aksar saalana report) to text chhota karne ke bajaye agla A4 page shuru ho jata hai.
+* Poori A4 chorai istemal hoti hai (koi khali side nahi); imam / lease ka block bhi
+  lease na ho to poori chorai le leta hai.
+"""
 import html
 import os
 
@@ -98,6 +118,7 @@ def _build_header(ctx, compact=False):
     font_bism, font_bold = f['bism'], f['bold']
     ur_font = f.get('urdu') or font_bism
     story = []
+    img_h = 48 if compact else 66
 
     p_arabic = Paragraph(shape("بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ", True),
                          _ps('bismA', font_bism, 13 if compact else 15, "#fde047", 1, 14 if compact else 17))
@@ -115,42 +136,27 @@ def _build_header(ctx, compact=False):
         ('TOPPADDING', (0, 0), (-1, -1), 1 if compact else 2), ('BOTTOMPADDING', (0, 0), (-1, -1), 1 if compact else 2),
     ]))
 
-    def _make_center(width):
-        t = Table([[[p_arabic, Spacer(1, 1), p_tarjuma]], [hadees_box]], colWidths=[width])
-        t.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
-            ('TOPPADDING', (0, 0), (0, 0), 3), ('BOTTOMPADDING', (0, -1), (0, -1), 3),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ]))
-        return t
+    side_w = 90
+    center_w = CONTENT_W - 2 * side_w
+    center = Table([[[p_arabic, Spacer(1, 1), p_tarjuma]], [hadees_box]], colWidths=[center_w])
+    center.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+    ]))
 
-    def _img_ratio(path):
-        """width/height of the PNG (None if file missing)."""
+    def _img(path, h):
         if path and os.path.exists(path):
             try:
                 from reportlab.lib.utils import ImageReader
                 iw, ih = ImageReader(path).getSize()
-                return iw / ih
+                return RLImage(path, width=h * iw / ih, height=h)
             except Exception:
                 pass
-        return None
+        return ""
 
-    # Header ki height beech wale text se banti hai; gumbad / kaaba ki images is poori
-    # height (upar-neeche) aur bahar ki taraf (left/right) box ke border se chipki hon.
-    g_path, k_path = ctx.get('gumbad_path'), ctx.get('kaaba_path')
-    g_ratio, k_ratio = _img_ratio(g_path), _img_ratio(k_path)
-    row_h = _make_center(CONTENT_W - 2 * 90).wrap(CONTENT_W - 2 * 90, 10 ** 7)[1]
-    g_w = row_h * g_ratio if g_ratio else 0
-    k_w = row_h * k_ratio if k_ratio else 0
-    side_w = max(g_w, k_w, 20)                       # dono taraf barabar, text beech mein rahe
-    center_w = CONTENT_W - 2 * side_w
-    center = _make_center(center_w)
-
-    g_img = RLImage(g_path, width=g_w, height=row_h) if g_ratio else ""
-    k_img = RLImage(k_path, width=k_w, height=row_h) if k_ratio else ""
-
-    box = Table([[g_img, center, k_img]], colWidths=[side_w, center_w, side_w], rowHeights=[row_h])
+    box = Table([[_img(ctx.get('gumbad_path'), img_h), center, _img(ctx.get('kaaba_path'), img_h)]],
+                colWidths=[side_w, center_w, side_w])
     box.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), _c(EMERALD_DARK)),
         ('BOX', (0, 0), (-1, -1), 2.2, _c(GOLD)),
@@ -158,8 +164,8 @@ def _build_header(ctx, compact=False):
         ('LINEBELOW', (0, 0), (-1, -1), 1.0, _c(GOLD_LIGHT)),
         ('ALIGN', (0, 0), (0, 0), 'LEFT'), ('ALIGN', (1, 0), (1, 0), 'CENTER'), ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 1), ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+        ('LEFTPADDING', (0, 0), (0, 0), 4), ('RIGHTPADDING', (2, 0), (2, 0), 4),
     ]))
     story += [box, Spacer(1, 3)]
 

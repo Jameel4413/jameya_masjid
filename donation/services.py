@@ -50,6 +50,23 @@ def parse_period(query_params):
     return Period(year=curr_year, month=curr_month, is_all_months=is_all_months)
 
 
+def explicit_period_filter(queryset, date_field, query_params):
+    """
+    Website-style filter: only filter by what the client actually asked for.
+
+    No `year` -> all years, `month=all` / no `month` -> all months.  (parse_period() would
+    silently fall back to the *current* year, which hides older land leases / Eid records.)
+    """
+    year = str(query_params.get("year", "") or "").strip() if query_params else ""
+    month = str(query_params.get("month", "") or "").strip() if query_params else ""
+    kwargs = {}
+    if year.isdigit():
+        kwargs[f"{date_field}__year"] = int(year)
+    if month.isdigit():
+        kwargs[f"{date_field}__month"] = int(month)
+    return queryset.filter(**kwargs) if kwargs else queryset
+
+
 def filter_by_month_year(queryset, date_field, period):
     """Filters a queryset by year and month from a Period object or dict."""
     if not period:
@@ -230,6 +247,8 @@ def imam_salary_overview(query_params):
         "total_year_remaining": total_year_remaining,
         "selected_year": str(curr_year),
         "selected_month": str(curr_month) if (is_default_view or month) else "",
+        "year": curr_year,
+        "month": curr_month if (is_default_view or (month and str(month).isdigit())) else None,
         "current_period_label": datetime(curr_year, curr_month, 1).strftime("%B %Y") if (curr_year and curr_month) else "",
     }
     return salaries, summary
